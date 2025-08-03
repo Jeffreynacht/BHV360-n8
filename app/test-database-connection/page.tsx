@@ -37,7 +37,6 @@ export default function TestDatabaseConnectionPage() {
     setError(null)
 
     try {
-      // Simulate test progress
       const steps = [
         "Checking environment variables...",
         "Testing database connection...",
@@ -52,7 +51,6 @@ export default function TestDatabaseConnectionPage() {
         await new Promise((resolve) => setTimeout(resolve, 800))
       }
 
-      // Fetch test results
       const response = await fetch("/api/debug/database")
 
       if (!response.ok) {
@@ -65,7 +63,6 @@ export default function TestDatabaseConnectionPage() {
         throw new Error(data.error)
       }
 
-      // Transform API response to test results format
       const testResults: TestResults = {
         environment: [
           {
@@ -270,7 +267,6 @@ export default function TestDatabaseConnectionPage() {
                 </Button>
               </div>
 
-              {/* Summary Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card>
                   <CardContent className="pt-6">
