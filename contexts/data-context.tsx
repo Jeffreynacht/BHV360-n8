@@ -278,18 +278,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       // Refresh all data sources
       await refreshCustomers()
-      await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500)) // Simulate API call
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
       setIsLoading(false)
     }
   }
-
-  // Initial data load
-  useEffect(() => {
-    refreshData()
-  }, [])
 
   const value: DataContextType = {
     getUsersByCustomer,

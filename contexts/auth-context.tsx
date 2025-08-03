@@ -7,8 +7,7 @@ interface User {
   id: string
   email: string
   name: string
-  role: "super-admin" | "customer-admin" | "bhv-coordinator" | "bhv" | "employee"
-  customerId?: string
+  role: string
 }
 
 interface AuthContextType {
@@ -21,27 +20,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
-  }
-  return context
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Check for existing session on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem("bhv360-user")
+    // Check for existing session
+    const savedUser = localStorage.getItem("bhv360_user")
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser))
       } catch (error) {
         console.error("Error parsing saved user:", error)
-        localStorage.removeItem("bhv360-user")
+        localStorage.removeItem("bhv360_user")
       }
     }
     setIsLoading(false)
@@ -51,34 +42,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true)
 
     try {
-      // Your real login credentials
+      // Simulate API call delay
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Check credentials
       if (email === "jef.nachtegaal@gmail.com" && password === "Jefnacht01") {
         const userData: User = {
           id: "1",
           email: "jef.nachtegaal@gmail.com",
-          name: "Jef Nachtegaal",
-          role: "super-admin",
+          name: "Jeffrey Nachtegaal",
+          role: "super_admin",
         }
 
         setUser(userData)
-        localStorage.setItem("bhv360-user", JSON.stringify(userData))
-        setIsLoading(false)
+        localStorage.setItem("bhv360_user", JSON.stringify(userData))
         return true
       }
 
-      // Invalid credentials
-      setIsLoading(false)
       return false
     } catch (error) {
       console.error("Login error:", error)
-      setIsLoading(false)
       return false
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem("bhv360-user")
+    localStorage.removeItem("bhv360_user")
   }
 
   const value: AuthContextType = {
@@ -90,4 +82,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider")
+  }
+  return context
 }

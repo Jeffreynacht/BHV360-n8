@@ -10,22 +10,20 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, LogIn, Shield } from "lucide-react"
+import { Loader2, LogIn, User } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-
-  const { login } = useAuth()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { login, isLoading } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    setIsLoading(true)
+    setIsSubmitting(true)
 
     try {
       const success = await login(email, password)
@@ -34,111 +32,127 @@ export default function LoginPage() {
       } else {
         setError("Ongeldige inloggegevens. Controleer je email en wachtwoord.")
       }
-    } catch (error) {
+    } catch (err) {
       setError("Er is een fout opgetreden bij het inloggen. Probeer het opnieuw.")
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
-  const handleQuickLogin = () => {
+  const handleQuickLogin = async () => {
     setEmail("jef.nachtegaal@gmail.com")
     setPassword("Jefnacht01")
+    setError("")
+    setIsSubmitting(true)
+
+    try {
+      const success = await login("jef.nachtegaal@gmail.com", "Jefnacht01")
+      if (success) {
+        router.push("/dashboard")
+      } else {
+        setError("Quick login failed")
+      }
+    } catch (err) {
+      setError("Er is een fout opgetreden bij het inloggen.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
-            <div className="bg-blue-600 p-3 rounded-full">
-              <Shield className="h-8 w-8 text-white" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-bold text-center">BHV360</CardTitle>
-          <CardDescription className="text-center">Log in op je BHV360 account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="jef.nachtegaal@gmail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">BHV360</h1>
+          <p className="mt-2 text-gray-600">Professional Safety Management</p>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Wachtwoord</Label>
-              <div className="relative">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-center">Inloggen</CardTitle>
+            <CardDescription className="text-center">Voer je inloggegevens in om toegang te krijgen</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="jef.nachtegaal@gmail.com"
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="password">Wachtwoord</Label>
                 <Input
                   id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Voer je wachtwoord in"
+                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Jefnacht01"
                   required
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
+              </div>
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Inloggen...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Inloggen
+                  </>
+                )}
+              </Button>
+            </form>
+
+            <div className="mt-6 pt-6 border-t">
+              <div className="text-center mb-4">
+                <p className="text-sm text-gray-600">Quick Login voor Testing</p>
+              </div>
+
+              <Button
+                onClick={handleQuickLogin}
+                variant="outline"
+                className="w-full bg-transparent"
+                disabled={isSubmitting}
+              >
+                <User className="mr-2 h-4 w-4" />
+                Jeffrey Nachtegaal (Super Admin)
+              </Button>
+
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-xs text-blue-800 font-medium">Login Gegevens:</p>
+                <p className="text-xs text-blue-700">Email: jef.nachtegaal@gmail.com</p>
+                <p className="text-xs text-blue-700">Wachtwoord: Jefnacht01</p>
               </div>
             </div>
-
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Inloggen...
-                </>
-              ) : (
-                <>
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Inloggen
-                </>
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-6 pt-6 border-t">
-            <div className="text-sm text-gray-600 mb-3">
-              <strong>Test Account:</strong>
-            </div>
-            <Button
-              variant="outline"
-              onClick={handleQuickLogin}
-              className="w-full text-sm bg-transparent"
-              disabled={isLoading}
-            >
-              Vul test gegevens in
-            </Button>
-            <div className="mt-2 text-xs text-gray-500 text-center">
-              Email: jef.nachtegaal@gmail.com
-              <br />
-              Wachtwoord: Jefnacht01
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

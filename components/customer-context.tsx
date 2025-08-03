@@ -3,86 +3,63 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 
-export interface Customer {
+interface Customer {
   id: string
   name: string
-  contactPerson: string
-  email: string
-  phone: string
-  address: string
+  contactPerson?: string
+  email?: string
+  phone?: string
+  address?: string
+  active: boolean
   createdAt: string
-  isActive: boolean
-  modules: string[]
-  userCount: number
-  lastActivity?: string
+  updatedAt: string
 }
 
 interface CustomerContextType {
   customers: Customer[]
   selectedCustomer: Customer | null
   setSelectedCustomer: (customer: Customer | null) => void
-  addCustomer: (customer: Omit<Customer, "id" | "createdAt">) => Promise<Customer>
-  updateCustomer: (id: string, updates: Partial<Customer>) => Promise<Customer>
-  deleteCustomer: (id: string) => Promise<void>
+  addCustomer: (customer: Omit<Customer, "id" | "createdAt" | "updatedAt">) => Promise<Customer>
+  updateCustomer: (id: string, customer: Partial<Customer>) => Promise<Customer>
+  deleteCustomer: (id: string) => Promise<boolean>
   refreshCustomers: () => Promise<void>
   isLoading: boolean
+  error: string | null
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined)
 
-// Export both useCustomer and useCustomers for compatibility
-export function useCustomer() {
-  const context = useContext(CustomerContext)
-  if (context === undefined) {
-    throw new Error("useCustomer must be used within a CustomerProvider")
-  }
-  return context
-}
-
-export function useCustomers() {
-  const context = useContext(CustomerContext)
-  if (context === undefined) {
-    throw new Error("useCustomers must be used within a CustomerProvider")
-  }
-  return context
-}
-
 export function CustomerProvider({ children }: { children: React.ReactNode }) {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Load customers on mount
-  useEffect(() => {
-    refreshCustomers()
-  }, [])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const refreshCustomers = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch("/api/customers")
-      if (response.ok) {
-        const data = await response.json()
-        setCustomers(data.customers || [])
+      setError(null)
 
-        // If no customer is selected and we have customers, select the first one
-        if (!selectedCustomer && data.customers && data.customers.length > 0) {
-          setSelectedCustomer(data.customers[0])
-        }
-      } else {
-        console.error("Failed to fetch customers")
-        setCustomers([])
+      const response = await fetch("/api/customers")
+      if (!response.ok) {
+        throw new Error("Failed to fetch customers")
       }
-    } catch (error) {
-      console.error("Error fetching customers:", error)
-      setCustomers([])
+
+      const data = await response.json()
+      setCustomers(data.customers || [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred")
+      console.error("Error fetching customers:", err)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const addCustomer = async (customerData: Omit<Customer, "id" | "createdAt">): Promise<Customer> => {
+  const addCustomer = async (customerData: Omit<Customer, "id" | "createdAt" | "updatedAt">): Promise<Customer> => {
     try {
+      setIsLoading(true)
+      setError(null)
+
       const response = await fetch("/api/customers", {
         method: "POST",
         headers: {
@@ -97,27 +74,26 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
 
       const newCustomer = await response.json()
       setCustomers((prev) => [...prev, newCustomer])
-
-      // Auto-select the new customer if it's the first one
-      if (customers.length === 0) {
-        setSelectedCustomer(newCustomer)
-      }
-
       return newCustomer
-    } catch (error) {
-      console.error("Error adding customer:", error)
-      throw error
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred")
+      throw err
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const updateCustomer = async (id: string, updates: Partial<Customer>): Promise<Customer> => {
+  const updateCustomer = async (id: string, customerData: Partial<Customer>): Promise<Customer> => {
     try {
+      setIsLoading(true)
+      setError(null)
+
       const response = await fetch(`/api/customers/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(customerData),
       })
 
       if (!response.ok) {
@@ -132,14 +108,19 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
       }
 
       return updatedCustomer
-    } catch (error) {
-      console.error("Error updating customer:", error)
-      throw error
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred")
+      throw err
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const deleteCustomer = async (id: string): Promise<void> => {
+  const deleteCustomer = async (id: string): Promise<boolean> => {
     try {
+      setIsLoading(true)
+      setError(null)
+
       const response = await fetch(`/api/customers/${id}`, {
         method: "DELETE",
       })
@@ -151,14 +132,21 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
       setCustomers((prev) => prev.filter((c) => c.id !== id))
 
       if (selectedCustomer?.id === id) {
-        const remainingCustomers = customers.filter((c) => c.id !== id)
-        setSelectedCustomer(remainingCustomers.length > 0 ? remainingCustomers[0] : null)
+        setSelectedCustomer(null)
       }
-    } catch (error) {
-      console.error("Error deleting customer:", error)
-      throw error
+
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred")
+      throw err
+    } finally {
+      setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    refreshCustomers()
+  }, [])
 
   const value: CustomerContextType = {
     customers,
@@ -169,7 +157,19 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
     deleteCustomer,
     refreshCustomers,
     isLoading,
+    error,
   }
 
   return <CustomerContext.Provider value={value}>{children}</CustomerContext.Provider>
 }
+
+export function useCustomers() {
+  const context = useContext(CustomerContext)
+  if (context === undefined) {
+    throw new Error("useCustomers must be used within a CustomerProvider")
+  }
+  return context
+}
+
+// Backward compatibility export
+export const useCustomer = useCustomers

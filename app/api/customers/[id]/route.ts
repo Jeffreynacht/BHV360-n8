@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// In-memory storage for testing (replace with database in production)
+// This would be replaced with actual database operations
 const customers: any[] = []
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
@@ -30,7 +30,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     customers[customerIndex] = {
       ...customers[customerIndex],
       ...body,
-      id: params.id, // Ensure ID doesn't change
       updatedAt: new Date().toISOString(),
     }
 

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// In-memory storage for testing (replace with database in production)
+// In-memory storage for customers (replace with database in production)
 const customers: any[] = []
 let nextId = 1
 
@@ -13,7 +13,15 @@ export async function GET() {
     })
   } catch (error) {
     console.error("Error fetching customers:", error)
-    return NextResponse.json({ success: false, error: "Failed to fetch customers" }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to fetch customers",
+        customers: [],
+        count: 0,
+      },
+      { status: 500 },
+    )
   }
 }
 
@@ -23,16 +31,10 @@ export async function POST(request: NextRequest) {
 
     const newCustomer = {
       id: nextId.toString(),
-      name: body.name,
-      contactPerson: body.contactPerson || "",
-      email: body.email || "",
-      phone: body.phone || "",
-      address: body.address || "",
+      ...body,
+      active: true,
       createdAt: new Date().toISOString(),
-      isActive: true,
-      modules: body.modules || ["basic"],
-      userCount: body.userCount || 1,
-      lastActivity: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
 
     customers.push(newCustomer)
@@ -41,6 +43,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newCustomer, { status: 201 })
   } catch (error) {
     console.error("Error creating customer:", error)
-    return NextResponse.json({ success: false, error: "Failed to create customer" }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to create customer",
+      },
+      { status: 500 },
+    )
   }
 }
