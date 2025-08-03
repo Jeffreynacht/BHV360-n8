@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -18,10 +17,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Building2, Plus, Edit, Trash2, Crown } from "lucide-react"
+import { Building2, Plus, Edit, Trash2, Crown, X } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 
 interface Customer {
@@ -86,6 +84,7 @@ export default function KlantenPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
+  const [activeTab, setActiveTab] = useState("basic")
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -157,8 +156,8 @@ export default function KlantenPage() {
         })
       }
 
-      setIsDialogOpen(false)
-      resetForm()
+      // Close dialog and reset form
+      handleCloseDialog()
     } catch (error) {
       console.error("Error saving customer:", error)
       toast({
@@ -212,8 +211,10 @@ export default function KlantenPage() {
     }
   }
 
-  const resetForm = () => {
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false)
     setEditingCustomer(null)
+    setActiveTab("basic")
     setFormData({
       name: "",
       email: "",
@@ -235,6 +236,11 @@ export default function KlantenPage() {
     })
   }
 
+  const handleNewCustomer = () => {
+    handleCloseDialog() // Reset everything first
+    setIsDialogOpen(true)
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -250,312 +256,10 @@ export default function KlantenPage() {
           <h1 className="text-3xl font-bold tracking-tight">Klanten Beheer</h1>
           <p className="text-muted-foreground">Beheer alle klanten en hun configuraties</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="mr-2 h-4 w-4" />
-              Nieuwe Klant
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingCustomer ? "Klant Bewerken" : "Nieuwe Klant Toevoegen"}</DialogTitle>
-              <DialogDescription>
-                Vul alle benodigde informatie in om een klant toe te voegen of te bewerken.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleSubmit}>
-              <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="basic">Basis Info</TabsTrigger>
-                  <TabsTrigger value="subscription">Abonnement</TabsTrigger>
-                  <TabsTrigger value="whitelabel">Whitelabel</TabsTrigger>
-                  <TabsTrigger value="advanced">Geavanceerd</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="basic" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Bedrijfsnaam *</Label>
-                      <Input
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="contactPerson">Contactpersoon *</Label>
-                      <Input
-                        id="contactPerson"
-                        value={formData.contactPerson}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, contactPerson: e.target.value }))}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email *</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Telefoon</Label>
-                      <Input
-                        id="phone"
-                        value={formData.phone}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Adres</Label>
-                    <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">Stad</Label>
-                      <Input
-                        id="city"
-                        value={formData.city}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="postalCode">Postcode</Label>
-                      <Input
-                        id="postalCode"
-                        value={formData.postalCode}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, postalCode: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="country">Land</Label>
-                      <Select
-                        value={formData.country}
-                        onValueChange={(value) => setFormData((prev) => ({ ...prev, country: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Nederland">Nederland</SelectItem>
-                          <SelectItem value="België">België</SelectItem>
-                          <SelectItem value="Duitsland">Duitsland</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="subscription" className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Abonnement Type</Label>
-                    <Select
-                      value={formData.subscriptionType}
-                      onValueChange={(value: any) => setFormData((prev) => ({ ...prev, subscriptionType: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(subscriptionTypes).map(([key, sub]) => (
-                          <SelectItem key={key} value={key}>
-                            {sub.name} - Max {sub.maxUsers} gebruikers, {sub.maxBuildings} gebouwen
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {formData.subscriptionType && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">
-                          {subscriptionTypes[formData.subscriptionType].name} Abonnement
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          <p>
-                            <strong>Max Gebruikers:</strong> {subscriptionTypes[formData.subscriptionType].maxUsers}
-                          </p>
-                          <p>
-                            <strong>Max Gebouwen:</strong> {subscriptionTypes[formData.subscriptionType].maxBuildings}
-                          </p>
-                          <div>
-                            <strong>Inbegrepen Features:</strong>
-                            <ul className="list-disc list-inside mt-1">
-                              {subscriptionTypes[formData.subscriptionType].features.map((feature, index) => (
-                                <li key={index} className="text-sm text-muted-foreground">
-                                  {feature}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="whitelabel" className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="isWhitelabel"
-                      checked={formData.isWhitelabel}
-                      onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isWhitelabel: checked }))}
-                    />
-                    <Label htmlFor="isWhitelabel">Whitelabel Klant</Label>
-                  </div>
-
-                  {formData.isWhitelabel && (
-                    <div className="space-y-4 p-4 border rounded-lg">
-                      <div className="space-y-2">
-                        <Label htmlFor="brandName">Merk Naam</Label>
-                        <Input
-                          id="brandName"
-                          value={formData.whitelabelConfig.brandName}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              whitelabelConfig: { ...prev.whitelabelConfig, brandName: e.target.value },
-                            }))
-                          }
-                          placeholder="Bijv. Jouw Bedrijf BHV"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="primaryColor">Primaire Kleur</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id="primaryColor"
-                              type="color"
-                              value={formData.whitelabelConfig.primaryColor}
-                              onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  whitelabelConfig: { ...prev.whitelabelConfig, primaryColor: e.target.value },
-                                }))
-                              }
-                              className="w-16 h-10"
-                            />
-                            <Input
-                              value={formData.whitelabelConfig.primaryColor}
-                              onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  whitelabelConfig: { ...prev.whitelabelConfig, primaryColor: e.target.value },
-                                }))
-                              }
-                              placeholder="#3b82f6"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="secondaryColor">Secundaire Kleur</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id="secondaryColor"
-                              type="color"
-                              value={formData.whitelabelConfig.secondaryColor}
-                              onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  whitelabelConfig: { ...prev.whitelabelConfig, secondaryColor: e.target.value },
-                                }))
-                              }
-                              className="w-16 h-10"
-                            />
-                            <Input
-                              value={formData.whitelabelConfig.secondaryColor}
-                              onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  whitelabelConfig: { ...prev.whitelabelConfig, secondaryColor: e.target.value },
-                                }))
-                              }
-                              placeholder="#1e40af"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="logoUrl">Logo URL</Label>
-                        <Input
-                          id="logoUrl"
-                          value={formData.whitelabelConfig.logoUrl}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              whitelabelConfig: { ...prev.whitelabelConfig, logoUrl: e.target.value },
-                            }))
-                          }
-                          placeholder="https://example.com/logo.png"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="customDomain">Custom Domein</Label>
-                        <Input
-                          id="customDomain"
-                          value={formData.whitelabelConfig.customDomain}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              whitelabelConfig: { ...prev.whitelabelConfig, customDomain: e.target.value },
-                            }))
-                          }
-                          placeholder="bhv.jouwbedrijf.nl"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="advanced" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Geavanceerde Instellingen</CardTitle>
-                      <CardDescription>Extra configuratie opties voor deze klant</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="text-sm text-muted-foreground">
-                        Geavanceerde instellingen worden automatisch geconfigureerd op basis van het gekozen abonnement.
-                        Voor custom configuraties, neem contact op met support.
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-
-              <DialogFooter className="mt-6">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Annuleren
-                </Button>
-                <Button type="submit">{editingCustomer ? "Bijwerken" : "Toevoegen"}</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={handleNewCustomer}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nieuwe Klant
+        </Button>
       </div>
 
       {customers.length === 0 ? (
@@ -566,7 +270,7 @@ export default function KlantenPage() {
             <p className="text-muted-foreground text-center mb-4">
               Je hebt nog geen klanten toegevoegd. Klik op "Nieuwe Klant" om te beginnen.
             </p>
-            <Button onClick={() => setIsDialogOpen(true)}>
+            <Button onClick={handleNewCustomer}>
               <Plus className="mr-2 h-4 w-4" />
               Eerste Klant Toevoegen
             </Button>
@@ -644,6 +348,315 @@ export default function KlantenPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle>{editingCustomer ? "Klant Bewerken" : "Nieuwe Klant Toevoegen"}</DialogTitle>
+                <DialogDescription>
+                  Vul alle benodigde informatie in om een klant toe te voegen of te bewerken.
+                </DialogDescription>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleCloseDialog}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit}>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="basic">Basis Info</TabsTrigger>
+                <TabsTrigger value="subscription">Abonnement</TabsTrigger>
+                <TabsTrigger value="whitelabel">Whitelabel</TabsTrigger>
+                <TabsTrigger value="advanced">Geavanceerd</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="basic" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Bedrijfsnaam *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPerson">Contactpersoon *</Label>
+                    <Input
+                      id="contactPerson"
+                      value={formData.contactPerson}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, contactPerson: e.target.value }))}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefoon</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address">Adres</Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">Stad</Label>
+                    <Input
+                      id="city"
+                      value={formData.city}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="postalCode">Postcode</Label>
+                    <Input
+                      id="postalCode"
+                      value={formData.postalCode}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, postalCode: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Land</Label>
+                    <Select
+                      value={formData.country}
+                      onValueChange={(value) => setFormData((prev) => ({ ...prev, country: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Nederland">Nederland</SelectItem>
+                        <SelectItem value="België">België</SelectItem>
+                        <SelectItem value="Duitsland">Duitsland</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="subscription" className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Abonnement Type</Label>
+                  <Select
+                    value={formData.subscriptionType}
+                    onValueChange={(value: any) => setFormData((prev) => ({ ...prev, subscriptionType: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(subscriptionTypes).map(([key, sub]) => (
+                        <SelectItem key={key} value={key}>
+                          {sub.name} - Max {sub.maxUsers} gebruikers, {sub.maxBuildings} gebouwen
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.subscriptionType && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        {subscriptionTypes[formData.subscriptionType].name} Abonnement
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <p>
+                          <strong>Max Gebruikers:</strong> {subscriptionTypes[formData.subscriptionType].maxUsers}
+                        </p>
+                        <p>
+                          <strong>Max Gebouwen:</strong> {subscriptionTypes[formData.subscriptionType].maxBuildings}
+                        </p>
+                        <div>
+                          <strong>Inbegrepen Features:</strong>
+                          <ul className="list-disc list-inside mt-1">
+                            {subscriptionTypes[formData.subscriptionType].features.map((feature, index) => (
+                              <li key={index} className="text-sm text-muted-foreground">
+                                {feature}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              <TabsContent value="whitelabel" className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="isWhitelabel"
+                    checked={formData.isWhitelabel}
+                    onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isWhitelabel: checked }))}
+                  />
+                  <Label htmlFor="isWhitelabel">Whitelabel Klant</Label>
+                </div>
+
+                {formData.isWhitelabel && (
+                  <div className="space-y-4 p-4 border rounded-lg">
+                    <div className="space-y-2">
+                      <Label htmlFor="brandName">Merk Naam</Label>
+                      <Input
+                        id="brandName"
+                        value={formData.whitelabelConfig.brandName}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            whitelabelConfig: { ...prev.whitelabelConfig, brandName: e.target.value },
+                          }))
+                        }
+                        placeholder="Bijv. Jouw Bedrijf BHV"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="primaryColor">Primaire Kleur</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="primaryColor"
+                            type="color"
+                            value={formData.whitelabelConfig.primaryColor}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                whitelabelConfig: { ...prev.whitelabelConfig, primaryColor: e.target.value },
+                              }))
+                            }
+                            className="w-16 h-10"
+                          />
+                          <Input
+                            value={formData.whitelabelConfig.primaryColor}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                whitelabelConfig: { ...prev.whitelabelConfig, primaryColor: e.target.value },
+                              }))
+                            }
+                            placeholder="#3b82f6"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="secondaryColor">Secundaire Kleur</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="secondaryColor"
+                            type="color"
+                            value={formData.whitelabelConfig.secondaryColor}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                whitelabelConfig: { ...prev.whitelabelConfig, secondaryColor: e.target.value },
+                              }))
+                            }
+                            className="w-16 h-10"
+                          />
+                          <Input
+                            value={formData.whitelabelConfig.secondaryColor}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                whitelabelConfig: { ...prev.whitelabelConfig, secondaryColor: e.target.value },
+                              }))
+                            }
+                            placeholder="#1e40af"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="logoUrl">Logo URL</Label>
+                      <Input
+                        id="logoUrl"
+                        value={formData.whitelabelConfig.logoUrl}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            whitelabelConfig: { ...prev.whitelabelConfig, logoUrl: e.target.value },
+                          }))
+                        }
+                        placeholder="https://example.com/logo.png"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="customDomain">Custom Domein</Label>
+                      <Input
+                        id="customDomain"
+                        value={formData.whitelabelConfig.customDomain}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            whitelabelConfig: { ...prev.whitelabelConfig, customDomain: e.target.value },
+                          }))
+                        }
+                        placeholder="bhv.jouwbedrijf.nl"
+                      />
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="advanced" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Geavanceerde Instellingen</CardTitle>
+                    <CardDescription>Extra configuratie opties voor deze klant</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="text-sm text-muted-foreground">
+                      Geavanceerde instellingen worden automatisch geconfigureerd op basis van het gekozen abonnement.
+                      Voor custom configuraties, neem contact op met support.
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                Annuleren
+              </Button>
+              <Button type="submit">{editingCustomer ? "Bijwerken" : "Toevoegen"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

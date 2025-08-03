@@ -1,7 +1,38 @@
 "use client"
 
 import type * as React from "react"
+import { usePathname } from "next/navigation"
+import Link from "next/link"
+import Image from "next/image"
 import { useAuth } from "@/contexts/auth-context"
+import { useCustomer } from "@/components/customer-context"
+import {
+  Building2,
+  Users,
+  Shield,
+  AlertTriangle,
+  Settings,
+  FileText,
+  BarChart3,
+  Crown,
+  Globe,
+  Database,
+  HelpCircle,
+  LogOut,
+  ChevronDown,
+  Home,
+  MapPin,
+  Bell,
+  Wrench,
+  Monitor,
+  Smartphone,
+  Calendar,
+  Package,
+  Activity,
+  Zap,
+  Plus,
+} from "lucide-react"
+
 import {
   Sidebar,
   SidebarContent,
@@ -13,53 +44,34 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarRail,
+  SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import Image from "next/image"
 import {
-  LayoutDashboard,
-  Building2,
-  Users,
-  Shield,
-  AlertTriangle,
-  BarChart3,
-  Settings,
-  HelpCircle,
-  LogOut,
-  ChevronUp,
-  Palette,
-  Globe,
-  Database,
-  FileText,
-  Activity,
-} from "lucide-react"
-import Link from "next/link"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 const navigationItems = [
   {
     title: "Dashboard",
-    items: [
-      {
-        title: "Overzicht",
-        url: "/dashboard",
-        icon: LayoutDashboard,
-      },
-      {
-        title: "BHV Status",
-        url: "/bhv-status",
-        icon: Shield,
-      },
-      {
-        title: "Incidenten",
-        url: "/incidenten",
-        icon: AlertTriangle,
-      },
-    ],
+    url: "/dashboard",
+    icon: Home,
+    roles: ["super-admin", "admin", "customer-admin", "bhv-coordinator", "employee"],
   },
   {
-    title: "Klanten Beheer",
+    title: "Klanten",
+    icon: Building2,
+    roles: ["super-admin", "admin"],
     items: [
       {
         title: "Alle Klanten",
@@ -69,7 +81,7 @@ const navigationItems = [
       {
         title: "Whitelabel Klanten",
         url: "/whitelabel-klanten",
-        icon: Palette,
+        icon: Crown,
       },
       {
         title: "Klant Overzichten",
@@ -79,32 +91,82 @@ const navigationItems = [
     ],
   },
   {
-    title: "Whitelabel",
+    title: "BHV Management",
+    icon: Shield,
+    roles: ["super-admin", "admin", "customer-admin", "bhv-coordinator"],
     items: [
       {
-        title: "Configuratie",
-        url: "/white-label/configure",
-        icon: Settings,
-      },
-      {
-        title: "Partner Klanten",
-        url: "/white-label/partner-customers",
+        title: "BHV Personeel",
+        url: "/gebruikers",
         icon: Users,
       },
       {
-        title: "Domeinen",
-        url: "/white-label/domains",
-        icon: Globe,
+        title: "BHV Aanwezigheid",
+        url: "/bhv-aanwezigheid",
+        icon: Calendar,
+      },
+      {
+        title: "BHV Coordinator",
+        url: "/bhv-coordinator",
+        icon: Shield,
+      },
+    ],
+  },
+  {
+    title: "Plotkaart & Locaties",
+    icon: MapPin,
+    roles: ["super-admin", "admin", "customer-admin", "bhv-coordinator", "employee"],
+    items: [
+      {
+        title: "Plotkaart Bekijken",
+        url: "/plotkaart",
+        icon: MapPin,
+      },
+      {
+        title: "Plotkaart Editor",
+        url: "/beheer/plotkaart-editor",
+        icon: Settings,
+        roles: ["super-admin", "admin", "customer-admin"],
+      },
+      {
+        title: "Voorzieningen",
+        url: "/beheer/voorzieningen",
+        icon: Package,
+        roles: ["super-admin", "admin", "customer-admin"],
+      },
+    ],
+  },
+  {
+    title: "Incidenten",
+    icon: AlertTriangle,
+    roles: ["super-admin", "admin", "customer-admin", "bhv-coordinator", "employee"],
+    items: [
+      {
+        title: "Incident Overzicht",
+        url: "/incidenten",
+        icon: AlertTriangle,
+      },
+      {
+        title: "Nieuwe Melding",
+        url: "/incidenten/nieuw",
+        icon: Plus,
       },
     ],
   },
   {
     title: "Beheer",
+    icon: Settings,
+    roles: ["super-admin", "admin", "customer-admin"],
     items: [
       {
-        title: "Gebruikers",
+        title: "Gebruikers Beheer",
         url: "/beheer/gebruikers",
         icon: Users,
+      },
+      {
+        title: "Autorisaties",
+        url: "/beheer/autorisaties",
+        icon: Shield,
       },
       {
         title: "Rapportages",
@@ -112,69 +174,228 @@ const navigationItems = [
         icon: FileText,
       },
       {
-        title: "Performance",
-        url: "/beheer/performance",
-        icon: Activity,
-      },
-      {
         title: "Backups",
         url: "/beheer/backups",
         icon: Database,
       },
+      {
+        title: "Performance",
+        url: "/beheer/performance",
+        icon: Activity,
+      },
     ],
   },
   {
-    title: "Support",
+    title: "Geavanceerd",
+    icon: Wrench,
+    roles: ["super-admin", "admin"],
     items: [
       {
-        title: "Help Dashboard",
-        url: "/help-dashboard",
-        icon: HelpCircle,
+        title: "API Integraties",
+        url: "/beheer/api-integraties",
+        icon: Zap,
       },
       {
-        title: "Instellingen",
-        url: "/instellingen",
-        icon: Settings,
+        title: "NFC Overzicht",
+        url: "/beheer/nfc-overzicht",
+        icon: Smartphone,
+      },
+      {
+        title: "System Health",
+        url: "/system-health",
+        icon: Monitor,
+      },
+    ],
+  },
+  {
+    title: "Super Admin",
+    icon: Crown,
+    roles: ["super-admin"],
+    items: [
+      {
+        title: "Partners",
+        url: "/super-admin/partners",
+        icon: Globe,
+      },
+      {
+        title: "System Overview",
+        url: "/super-admin",
+        icon: Monitor,
       },
     ],
   },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname()
   const { user, logout } = useAuth()
+  const { selectedCustomer, customers } = useCustomer()
+  const { state } = useSidebar()
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
+  }
+
+  const filteredNavigation = navigationItems.filter((item) => {
+    if (!item.roles || !user?.role) return false
+    return item.roles.includes(user.role)
+  })
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-2">
-          <Image src="/images/bhv360-logo.png" alt="BHV360 Logo" width={32} height={32} className="rounded-lg" />
-          <div className="group-data-[collapsible=icon]:hidden">
-            <p className="text-sm font-semibold">BHV360</p>
-            <p className="text-xs text-muted-foreground">Safety Management</p>
-          </div>
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <Link href="/dashboard">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-blue-600 text-white">
+                  <Image
+                    src="/images/bhv360-logo.png"
+                    alt="BHV360 Logo"
+                    width={32}
+                    height={32}
+                    className="rounded-lg"
+                  />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">BHV360</span>
+                  <span className="truncate text-xs">Safety Management</span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
-        {navigationItems.map((group) => (
-          <SidebarGroup key={group.title}>
-            <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
+        {/* Customer Selection */}
+        {user?.role !== "employee" && (
+          <>
+            <SidebarGroup>
+              <SidebarGroupLabel>Klant</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton>
+                          <Building2 className="h-4 w-4" />
+                          <span className="truncate">
+                            {selectedCustomer ? selectedCustomer.name : "Selecteer klant"}
+                          </span>
+                          <ChevronDown className="ml-auto h-4 w-4" />
+                        </SidebarMenuButton>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-[--radix-popper-anchor-width]" align="start">
+                        {customers.length === 0 ? (
+                          <DropdownMenuItem disabled>Geen klanten beschikbaar</DropdownMenuItem>
+                        ) : (
+                          customers.map((customer) => (
+                            <DropdownMenuItem key={customer.id}>
+                              <Building2 className="mr-2 h-4 w-4" />
+                              {customer.name}
+                            </DropdownMenuItem>
+                          ))
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href="/klanten">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Nieuwe klant
+                          </Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            <SidebarSeparator />
+          </>
+        )}
+
+        {/* Navigation */}
+        {filteredNavigation.map((item) => (
+          <SidebarGroup key={item.title}>
+            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
+                {item.items ? (
+                  <Collapsible defaultOpen className="group/collapsible">
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton tooltip={item.title}>
+                          {item.icon && <item.icon className="h-4 w-4" />}
+                          <span>{item.title}</span>
+                          <ChevronDown className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {item.items.map((subItem) => {
+                            const isActive = pathname === subItem.url
+                            const hasAccess = !subItem.roles || subItem.roles.includes(user?.role || "")
+
+                            if (!hasAccess) return null
+
+                            return (
+                              <SidebarMenuSubItem key={subItem.title}>
+                                <SidebarMenuSubButton asChild isActive={isActive}>
+                                  <Link href={subItem.url}>
+                                    {subItem.icon && <subItem.icon className="h-4 w-4" />}
+                                    <span>{subItem.title}</span>
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            )
+                          })}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                ) : (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === item.url} tooltip={item.title}>
                       <Link href={item.url}>
-                        <item.icon />
+                        {item.icon && <item.icon className="h-4 w-4" />}
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                ))}
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+
+        {/* Quick Actions */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Snelle Acties</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Help & Support">
+                  <Link href="/help">
+                    <HelpCircle className="h-4 w-4" />
+                    <span>Help</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Notificaties">
+                  <Link href="/notificaties">
+                    <Bell className="h-4 w-4" />
+                    <span>Notificaties</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter>
@@ -187,23 +408,43 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarFallback className="rounded-lg">{user?.name?.charAt(0) || "U"}</AvatarFallback>
+                    <AvatarImage src="/placeholder-user.jpg" alt={user?.name} />
+                    <AvatarFallback className="rounded-lg">
+                      {user?.name
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase() || "U"}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user?.name}</span>
+                    <span className="truncate font-semibold">{user?.name || "Gebruiker"}</span>
                     <span className="truncate text-xs">{user?.email}</span>
                   </div>
-                  <ChevronUp className="ml-auto size-4" />
+                  <ChevronDown className="ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                side="bottom"
+                className="w-[--radix-popper-anchor-width] min-w-56 rounded-lg"
+                side={state === "collapsed" ? "right" : "bottom"}
                 align="end"
                 sideOffset={4}
               >
-                <DropdownMenuItem onClick={logout}>
-                  <LogOut />
+                <DropdownMenuItem asChild>
+                  <Link href="/instellingen">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Instellingen
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/help">
+                    <HelpCircle className="mr-2 h-4 w-4" />
+                    Help & Support
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
                   Uitloggen
                 </DropdownMenuItem>
               </DropdownMenuContent>
