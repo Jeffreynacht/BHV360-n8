@@ -17,6 +17,7 @@ const publicRoutes = [
   "/debug-deployment",
   "/database-test",
   "/test-database",
+  "/test-database-connection",
   "/setup-demo",
   "/gratis-bhv-software",
 ]
@@ -24,6 +25,8 @@ const publicRoutes = [
 export function middleware(request: NextRequest) {
   const { pathname, origin } = request.nextUrl
   const hostname = request.headers.get("host") || ""
+
+  console.log(`🔍 Middleware: ${request.method} ${pathname} on ${hostname}`)
 
   // Skip middleware for API routes, static files, and Next.js internals
   if (
@@ -37,7 +40,19 @@ export function middleware(request: NextRequest) {
 
   // In development or preview, allow all domains
   const env = getCurrentEnvironment()
-  if (env === "development" || env === "preview") {
+  console.log(`🌍 Environment: ${env}, Hostname: ${hostname}`)
+
+  // Always allow Vercel preview domains and development
+  if (
+    env === "development" ||
+    env === "preview" ||
+    hostname.includes("vercel.app") ||
+    hostname.includes("vusercontent.net") ||
+    hostname.includes("netlify.app") ||
+    hostname.includes("localhost")
+  ) {
+    console.log(`✅ Allowing domain: ${hostname} (${env})`)
+
     const response = NextResponse.next()
 
     // Add security headers
@@ -51,7 +66,7 @@ export function middleware(request: NextRequest) {
 
   // Check if domain is allowed in production
   if (!isDomainAllowed(hostname)) {
-    console.log(`Blocked request from unauthorized domain: ${hostname}`)
+    console.log(`❌ Blocked request from unauthorized domain: ${hostname}`)
 
     // Redirect to main domain instead of showing error
     const mainDomain = "https://www.bhv360.nl"
@@ -89,6 +104,7 @@ export function middleware(request: NextRequest) {
 
   // Allow public routes
   if (publicRoutes.some((route) => pathname.startsWith(route))) {
+    console.log(`✅ Public route allowed: ${pathname}`)
     return response
   }
 
@@ -121,6 +137,7 @@ export function middleware(request: NextRequest) {
   response.headers.set("X-Environment", env || "development")
   response.headers.set("X-Hostname", hostname)
 
+  console.log(`✅ Request allowed: ${pathname} on ${hostname}`)
   return response
 }
 

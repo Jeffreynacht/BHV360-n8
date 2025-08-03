@@ -9,7 +9,14 @@ export const ALLOWED_DOMAINS: DomainConfig = {
   production: ["bhv360.nl", "www.bhv360.nl", "app.bhv360.nl", "dashboard.bhv360.nl"],
   staging: ["staging.bhv360.nl", "test.bhv360.nl", "dev.bhv360.nl"],
   development: ["localhost", "127.0.0.1", "0.0.0.0"],
-  preview: ["vercel.app", "vercel-preview.app", "netlify.app"],
+  preview: [
+    "vercel.app",
+    "vercel-preview.app",
+    "netlify.app",
+    "vusercontent.net", // Add this for Vercel preview domains
+    "bhv360.vercel.app",
+    "preview-bhv360",
+  ],
 }
 
 export function getCurrentEnvironment(): keyof DomainConfig {
@@ -23,7 +30,7 @@ export function getCurrentEnvironment(): keyof DomainConfig {
     }
 
     if (vercelEnv === "preview" || nodeEnv === "development") {
-      return "development"
+      return "preview" // Changed from development to preview for Vercel previews
     }
 
     if (vercelEnv === "staging") {
@@ -39,7 +46,7 @@ export function getCurrentEnvironment(): keyof DomainConfig {
       return "development"
     }
 
-    if (hostname.includes("vercel.app") || hostname.includes("netlify.app")) {
+    if (hostname.includes("vercel.app") || hostname.includes("netlify.app") || hostname.includes("vusercontent.net")) {
       return "preview"
     }
 
@@ -63,6 +70,16 @@ export function getAllowedDomains(): string[] {
 export function isDomainAllowed(domain: string): boolean {
   const allowedDomains = getAllowedDomains()
 
+  // Always allow Vercel preview domains
+  if (domain.includes("vercel.app") || domain.includes("vusercontent.net") || domain.includes("netlify.app")) {
+    return true
+  }
+
+  // Always allow localhost and development
+  if (domain.includes("localhost") || domain.includes("127.0.0.1") || domain.includes("0.0.0.0")) {
+    return true
+  }
+
   // Check exact match
   if (allowedDomains.includes(domain)) {
     return true
@@ -73,7 +90,7 @@ export function isDomainAllowed(domain: string): boolean {
     if (allowedDomain.startsWith(".")) {
       return domain.endsWith(allowedDomain)
     }
-    return domain.endsWith(`.${allowedDomain}`)
+    return domain.endsWith(`.${allowedDomain}`) || domain.includes(allowedDomain)
   })
 }
 
@@ -130,5 +147,8 @@ export function getCorsOrigins(): string[] {
     "http://localhost:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3000",
+    "https://*.vercel.app",
+    "https://*.vusercontent.net",
+    "https://*.netlify.app",
   ]
 }
