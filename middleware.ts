@@ -11,13 +11,14 @@ const publicRoutes = [
   "/api/auth/status",
   "/api/test-db",
   "/api/debug",
+  "/api/debug/database", // Add this line
   "/simple-test",
   "/debug",
   "/debug-auth",
   "/debug-deployment",
   "/database-test",
   "/test-database",
-  "/test-database-connection",
+  "/test-database-connection", // Add this line
   "/setup-demo",
   "/gratis-bhv-software",
 ]

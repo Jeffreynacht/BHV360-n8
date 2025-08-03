@@ -1,8 +1,30 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+
+// Add CORS headers for all requests
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  })
+}
 
 export async function GET(request: NextRequest) {
+  // Add CORS headers
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Content-Type": "application/json",
+  }
+
   try {
+    // Import neon dynamically to avoid issues
+    const { neon } = await import("@neondatabase/serverless")
+
     const startTime = Date.now()
 
     // Check environment variables
@@ -28,7 +50,7 @@ export async function GET(request: NextRequest) {
         const connectionStart = Date.now()
 
         // Simple connection test
-        const result = await sql`SELECT 1 as test`
+        const result = await sql`SELECT 1 as test, NOW() as current_time, version() as db_version`
         const connectionTime = Date.now() - connectionStart
 
         connection = {
@@ -41,10 +63,11 @@ export async function GET(request: NextRequest) {
 
         // Test schema access
         try {
-          await sql`SELECT table_name FROM information_schema.tables LIMIT 1`
+          const tables =
+            await sql`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' LIMIT 5`
           schema = {
             accessible: true,
-            details: "Schema access confirmed",
+            details: `Found ${tables.length} tables in public schema`,
           }
         } catch (schemaError) {
           schema = {
@@ -55,14 +78,15 @@ export async function GET(request: NextRequest) {
 
         // Check SSL configuration
         const dbUrl = new URL(process.env.DATABASE_URL)
+        const sslMode = dbUrl.searchParams.get("sslmode") || "prefer"
         ssl = {
-          enabled: dbUrl.searchParams.get("sslmode") !== "disable",
-          details: `SSL mode: ${dbUrl.searchParams.get("sslmode") || "default"}`,
+          enabled: sslMode !== "disable",
+          details: `SSL mode: ${sslMode}`,
         }
 
         // Check connection pooling
         pool = {
-          configured: process.env.POSTGRES_PRISMA_URL !== undefined,
+          configured: !!process.env.POSTGRES_PRISMA_URL,
           details: process.env.POSTGRES_PRISMA_URL ? "Prisma pooling detected" : "No pooling configuration found",
         }
       } catch (dbError) {
@@ -105,18 +129,21 @@ export async function GET(request: NextRequest) {
 
     const totalTime = Date.now() - startTime
 
-    return NextResponse.json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      totalTestTime: totalTime,
-      environment,
-      connection,
-      ssl,
-      pool,
-      performance,
-      schema,
-      recommendations,
-    })
+    return NextResponse.json(
+      {
+        success: true,
+        timestamp: new Date().toISOString(),
+        totalTestTime: totalTime,
+        environment,
+        connection,
+        ssl,
+        pool,
+        performance,
+        schema,
+        recommendations,
+      },
+      { headers },
+    )
   } catch (error) {
     console.error("Database debug error:", error)
 
@@ -137,7 +164,7 @@ export async function GET(request: NextRequest) {
           "Review error logs for more details",
         ],
       },
-      { status: 500 },
+      { status: 500, headers },
     )
   }
 }
