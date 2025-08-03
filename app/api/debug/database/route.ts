@@ -5,51 +5,91 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now()
 
   try {
+    console.log("🔍 Starting database debug test...")
+
+    // Environment check
     const environment = {
       DATABASE_URL: !!process.env.DATABASE_URL,
       POSTGRES_URL: !!process.env.POSTGRES_URL,
       POSTGRES_PRISMA_URL: !!process.env.POSTGRES_PRISMA_URL,
+      DATABASE_URL_UNPOOLED: !!process.env.DATABASE_URL_UNPOOLED,
       POSTGRES_URL_NON_POOLING: !!process.env.POSTGRES_URL_NON_POOLING,
-      NODE_ENV: process.env.NODE_ENV,
-      VERCEL_ENV: process.env.VERCEL_ENV,
+      NODE_ENV: process.env.NODE_ENV || "unknown",
+      VERCEL_ENV: process.env.VERCEL_ENV || "unknown",
+      NEON_PROJECT_ID: !!process.env.NEON_PROJECT_ID,
     }
 
-    let connectionResult = { success: false, message: "", responseTime: 0 }
-    let sslResult = { enabled: false, details: "" }
-    let poolResult = { configured: false, details: "" }
-    let performanceResult = { responseTime: 0 }
-    let schemaResult = { accessible: false, details: "" }
+    console.log("📊 Environment check:", environment)
 
+    // Database connection test
+    let connection = {
+      success: false,
+      message: "Not tested",
+      responseTime: 0,
+    }
+
+    let ssl = {
+      enabled: false,
+      details: "SSL configuration not checked",
+    }
+
+    let pool = {
+      configured: false,
+      details: "Connection pooling not detected",
+    }
+
+    let schema = {
+      accessible: false,
+      details: "Schema access not tested",
+    }
+
+    const performance = {
+      responseTime: 0,
+    }
+
+    // Test database connection if DATABASE_URL is available
     if (process.env.DATABASE_URL) {
       try {
-        const sql = neon(process.env.DATABASE_URL)
+        console.log("🔗 Testing database connection...")
         const connectionStart = Date.now()
 
-        const result = await sql`SELECT 1 as test, NOW() as current_time, version() as db_version`
+        const sql = neon(process.env.DATABASE_URL)
+
+        // Simple connection test
+        const result = await sql`SELECT 1 as test, NOW() as current_time`
+
         const connectionTime = Date.now() - connectionStart
 
-        connectionResult = {
+        connection = {
           success: true,
-          message: "Database connection successful",
+          message: `Connected successfully. Query returned: ${result[0]?.test}`,
           responseTime: connectionTime,
         }
 
-        performanceResult = { responseTime: connectionTime }
+        performance.responseTime = connectionTime
 
-        const dbUrl = new URL(process.env.DATABASE_URL)
-        const sslMode = dbUrl.searchParams.get("sslmode") || "prefer"
-        sslResult = {
-          enabled: sslMode !== "disable",
-          details: `SSL mode: ${sslMode}`,
+        // SSL check
+        ssl = {
+          enabled:
+            process.env.DATABASE_URL.includes("sslmode=require") ||
+            process.env.DATABASE_URL.includes("ssl=true") ||
+            process.env.DATABASE_URL.includes("neon.tech"),
+          details: process.env.DATABASE_URL.includes("neon.tech")
+            ? "SSL enabled (Neon database detected)"
+            : "SSL configuration detected in connection string",
         }
 
-        poolResult = {
-          configured: !!process.env.POSTGRES_PRISMA_URL,
+        // Connection pooling check
+        pool = {
+          configured: !!process.env.POSTGRES_PRISMA_URL || !!process.env.DATABASE_URL_UNPOOLED,
           details: process.env.POSTGRES_PRISMA_URL
-            ? "Prisma pooling detected"
-            : "Neon serverless driver with built-in connection pooling",
+            ? "Prisma connection pooling detected"
+            : process.env.DATABASE_URL_UNPOOLED
+              ? "Unpooled connection available"
+              : "No specific pooling configuration detected",
         }
 
+        // Schema access test
         try {
           const schemaTest = await sql`
             SELECT table_name 
@@ -57,25 +97,30 @@ export async function GET(request: NextRequest) {
             WHERE table_schema = 'public' 
             LIMIT 5
           `
-          schemaResult = {
+
+          schema = {
             accessible: true,
-            details: `Found ${schemaTest.length} tables in public schema`,
+            details: `Schema accessible. Found ${schemaTest.length} tables in public schema`,
           }
         } catch (schemaError) {
-          schemaResult = {
+          schema = {
             accessible: false,
-            details: schemaError instanceof Error ? schemaError.message : "Schema access error",
+            details: `Schema access limited: ${schemaError instanceof Error ? schemaError.message : "Unknown error"}`,
           }
         }
+
+        console.log("✅ Database connection successful")
       } catch (dbError) {
-        connectionResult = {
+        console.error("❌ Database connection failed:", dbError)
+
+        connection = {
           success: false,
-          message: dbError instanceof Error ? dbError.message : "Unknown database error",
+          message: `Connection failed: ${dbError instanceof Error ? dbError.message : "Unknown database error"}`,
           responseTime: Date.now() - startTime,
         }
       }
     } else {
-      connectionResult = {
+      connection = {
         success: false,
         message: "DATABASE_URL environment variable not found",
         responseTime: 0,
@@ -84,89 +129,112 @@ export async function GET(request: NextRequest) {
 
     const totalTestTime = Date.now() - startTime
 
+    // Generate recommendations
     const recommendations = []
+
     if (!environment.DATABASE_URL) {
-      recommendations.push("Set DATABASE_URL environment variable for database connectivity")
+      recommendations.push("Set up DATABASE_URL environment variable for database connectivity")
     }
-    if (!sslResult.enabled) {
+
+    if (!ssl.enabled) {
       recommendations.push("Enable SSL for secure database connections in production")
     }
-    if (!poolResult.configured && !process.env.DATABASE_URL?.includes("neon")) {
+
+    if (!pool.configured) {
       recommendations.push("Consider setting up connection pooling for better performance")
     }
-    if (performanceResult.responseTime > 1000) {
-      recommendations.push("Database response time is high, consider optimizing queries or upgrading database plan")
+
+    if (performance.responseTime > 1000) {
+      recommendations.push("Database response time is high. Consider optimizing queries or upgrading database plan")
     }
-    if (!schemaResult.accessible) {
-      recommendations.push("Verify database permissions and schema access")
+
+    if (!schema.accessible) {
+      recommendations.push("Ensure proper database permissions for schema access")
     }
+
     if (recommendations.length === 0) {
-      recommendations.push("Database configuration looks good!")
-      recommendations.push("Consider setting up monitoring for production environments")
-      recommendations.push("Regular backups are recommended for data safety")
+      recommendations.push("Database configuration looks good! Consider monitoring performance regularly")
     }
 
     const response = {
-      success: true,
+      success: connection.success,
+      timestamp: new Date().toISOString(),
       environment,
-      connection: connectionResult,
-      ssl: sslResult,
-      pool: poolResult,
-      performance: performanceResult,
-      schema: schemaResult,
+      connection,
+      ssl,
+      pool,
+      performance,
+      schema,
       totalTestTime,
       recommendations,
-      timestamp: new Date().toISOString(),
     }
 
+    console.log("📋 Test completed:", response)
+
     return NextResponse.json(response, {
+      status: 200,
       headers: {
+        "Content-Type": "application/json",
         "Cache-Control": "no-cache, no-store, must-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       },
     })
   } catch (error) {
-    console.error("Database debug error:", error)
+    console.error("💥 Database debug test failed:", error)
 
-    return NextResponse.json(
-      {
+    const errorResponse = {
+      success: false,
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : "Unknown error occurred",
+      environment: {
+        DATABASE_URL: !!process.env.DATABASE_URL,
+        POSTGRES_URL: !!process.env.POSTGRES_URL,
+        POSTGRES_PRISMA_URL: !!process.env.POSTGRES_PRISMA_URL,
+        NODE_ENV: process.env.NODE_ENV || "unknown",
+        VERCEL_ENV: process.env.VERCEL_ENV || "unknown",
+      },
+      connection: {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error occurred",
-        environment: {
-          DATABASE_URL: !!process.env.DATABASE_URL,
-          POSTGRES_URL: !!process.env.POSTGRES_URL,
-          NODE_ENV: process.env.NODE_ENV,
-          VERCEL_ENV: process.env.VERCEL_ENV,
-        },
-        recommendations: [
-          "Check server logs for detailed error information",
-          "Verify environment variables are properly set",
-          "Ensure database service is running and accessible",
-          "Check network connectivity to database server",
-        ],
-        timestamp: new Date().toISOString(),
+        message: "Test failed due to error",
+        responseTime: 0,
       },
-      {
-        status: 500,
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
+      ssl: {
+        enabled: false,
+        details: "Could not check SSL configuration",
       },
-    )
-  }
-}
+      pool: {
+        configured: false,
+        details: "Could not check pooling configuration",
+      },
+      performance: {
+        responseTime: 0,
+      },
+      schema: {
+        accessible: false,
+        details: "Could not check schema access",
+      },
+      totalTestTime: Date.now() - startTime,
+      recommendations: [
+        "Check server logs for detailed error information",
+        "Verify environment variables are properly set",
+        "Ensure database service is running and accessible",
+        "Check network connectivity to database server",
+      ],
+    }
 
-export async function POST(request: NextRequest) {
-  return GET(request)
+    return NextResponse.json(errorResponse, {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
+    })
+  }
 }
 
 export async function OPTIONS(request: NextRequest) {
