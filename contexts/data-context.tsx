@@ -5,25 +5,25 @@ import { createContext, useContext, useState, useEffect } from "react"
 import { useCustomer } from "@/components/customer-context"
 
 interface DataContextType {
-  // Users - Mock data voor nu
+  // Users
   getUsersByCustomer: (customerId: number) => any[]
   addUser: (user: any, customerId: number) => void
   updateUser: (id: number, user: any) => void
   deleteUser: (id: number) => void
 
-  // Facilities - Mock data voor nu
+  // Facilities
   getFacilitiesByCustomer: (customerId: number) => any[]
   addFacility: (facility: any, customerId: number) => void
   updateFacility: (id: string, facility: any) => void
   deleteFacility: (id: string) => void
 
-  // NFC Tags - Mock data voor nu
+  // NFC Tags
   getNfcTagsByCustomer: (customerId: number) => Promise<any[]>
   addNfcTag: (tag: any, customerId: number) => Promise<any>
   updateNfcTag: (id: string, tag: any) => Promise<any>
   deleteNfcTag: (id: string) => Promise<boolean>
 
-  // Plotkaart - Mock data voor nu
+  // Plotkaart
   getPlotkaartByCustomer: (customerId: number) => any
   updatePlotkaartForCustomer: (customerId: number, floors: any[]) => void
 
@@ -37,6 +37,9 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
 
+// In-memory storage for customer data
+const customerData: { [customerId: number]: any } = {}
+
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
   const [isClient, setIsClient] = useState(false)
@@ -47,239 +50,217 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setIsClient(true)
   }, [])
 
-  // Customer-specific mock data - GEEN provincie referenties
-  const getCustomerData = (customerId: number) => {
-    switch (customerId) {
-      case 1: // BHV360 Demo Organisatie
-        return {
-          users: [
-            {
-              id: 1,
-              name: "Jan de Vries",
-              email: "jan@bhv360demo.nl",
-              phone: "06-12345678",
-              role: "admin",
-              department: "Veiligheid",
-              bhvRoles: ["BHV", "EHBO"],
-              active: true,
-              certificates: {
-                bhv: { valid: true, expiryDate: "2024-12-31", level: "basis" },
-                ehbo: { valid: true, expiryDate: "2024-11-30", level: "diploma" },
-              },
-            },
-            {
-              id: 2,
-              name: "Marie Bakker",
-              email: "marie@bhv360demo.nl",
-              phone: "06-23456789",
-              role: "employee",
-              department: "HR",
-              bhvRoles: [],
-              active: true,
-              certificates: {},
-            },
-          ],
-          facilities: [
-            {
-              id: "demo-fac-1",
-              name: "Brandblusser BHV-001",
-              type: "fire-extinguisher",
-              building: "BHV360 Hoofdgebouw",
-              floor: "Begane Grond",
-              zone: "Noord",
-              status: "operational",
-            },
-          ],
-          nfcTags: [
-            {
-              id: "demo-nfc-1",
-              name: "BHV360-NFC-001",
-              uid: "04:52:3A:B2:C1:80",
-              type: "facility",
-              location: "BHV360 Hoofdingang",
-              building: "BHV360 Hoofdgebouw",
-              status: "active",
-            },
-          ],
-        }
-
-      case 2: // TechCorp Nederland
-        return {
-          users: [
-            {
-              id: 3,
-              name: "Piet van der Berg",
-              email: "piet@techcorp.nl",
-              phone: "06-34567890",
-              role: "admin",
-              department: "IT",
-              bhvRoles: ["BHV"],
-              active: true,
-              certificates: {
-                bhv: { valid: true, expiryDate: "2024-10-15", level: "basis" },
-              },
-            },
-          ],
-          facilities: [
-            {
-              id: "tech-fac-1",
-              name: "TechCorp Brandblusser-001",
-              type: "fire-extinguisher",
-              building: "TechCorp Gebouw",
-              floor: "Verdieping 1",
-              zone: "Oost",
-              status: "operational",
-            },
-          ],
-          nfcTags: [
-            {
-              id: "tech-nfc-1",
-              name: "TechCorp-NFC-001",
-              uid: "04:52:3A:B2:C1:81",
-              type: "facility",
-              location: "TechCorp Locatie",
-              building: "TechCorp Gebouw",
-              status: "active",
-            },
-          ],
-        }
-
-      case 3: // Zorggroep Centraal
-        return {
-          users: [
-            {
-              id: 4,
-              name: "Dr. Maria Jansen",
-              email: "m.jansen@zorgcentraal.nl",
-              phone: "06-45678901",
-              role: "bhv-coordinator",
-              department: "Facilitair",
-              bhvRoles: ["BHV", "Ploegleider"],
-              active: true,
-              certificates: {
-                bhv: { valid: true, expiryDate: "2025-01-15", level: "ploegleider" },
-              },
-            },
-          ],
-          facilities: [
-            {
-              id: "zorg-fac-1",
-              name: "Zorgcentrum AED-001",
-              type: "aed",
-              building: "Zorgcentrum Hoofdgebouw",
-              floor: "Begane Grond",
-              zone: "Receptie",
-              status: "operational",
-            },
-          ],
-          nfcTags: [
-            {
-              id: "zorg-nfc-1",
-              name: "Zorgcentrum-NFC-001",
-              uid: "04:52:3A:B2:C1:82",
-              type: "facility",
-              location: "Zorgcentrum Ingang",
-              building: "Zorgcentrum Hoofdgebouw",
-              status: "active",
-            },
-          ],
-        }
-
-      default:
-        return { users: [], facilities: [], nfcTags: [] }
+  // Initialize customer data if it doesn't exist
+  const initializeCustomerData = (customerId: number) => {
+    if (!customerData[customerId]) {
+      customerData[customerId] = {
+        users: [],
+        facilities: [],
+        nfcTags: [],
+        plotkaart: {
+          id: customerId,
+          floors: [],
+          lastUpdated: new Date().toISOString(),
+          updatedBy: "System",
+        },
+      }
     }
   }
 
   // Update users when customer changes
   useEffect(() => {
     if (selectedCustomer && isClient) {
-      const customerData = getCustomerData(Number.parseInt(selectedCustomer.id))
-      setUsers(customerData.users)
+      const customerId = Number.parseInt(selectedCustomer.id.toString())
+      initializeCustomerData(customerId)
+      setUsers(customerData[customerId].users)
     } else {
       setUsers([])
     }
   }, [selectedCustomer, isClient])
 
-  // Safe functions that work during SSR
+  // User management functions
   const getUsersByCustomer = (customerId: number) => {
     if (!isClient) return []
-    const customerData = getCustomerData(customerId)
-    return customerData.users
-  }
-
-  const getFacilitiesByCustomer = (customerId: number) => {
-    if (!isClient) return []
-    const customerData = getCustomerData(customerId)
-    return customerData.facilities
-  }
-
-  const getNfcTagsByCustomer = async (customerId: number) => {
-    if (!isClient) return []
-    const customerData = getCustomerData(customerId)
-    return customerData.nfcTags
+    initializeCustomerData(customerId)
+    return customerData[customerId].users
   }
 
   const addUser = (user: any, customerId: number) => {
     if (!isClient) return
-    console.log("Adding user:", user, "for customer:", customerId)
+    initializeCustomerData(customerId)
+
+    const newUser = {
+      ...user,
+      id: Date.now(),
+      customerId,
+      active: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+
+    customerData[customerId].users.push(newUser)
+
+    if (selectedCustomer && Number.parseInt(selectedCustomer.id.toString()) === customerId) {
+      setUsers([...customerData[customerId].users])
+    }
+
+    console.log("Added user:", newUser)
   }
 
   const updateUser = (id: number, user: any) => {
-    if (!isClient) return
-    console.log("Updating user:", id, user)
+    if (!isClient || !selectedCustomer) return
+
+    const customerId = Number.parseInt(selectedCustomer.id.toString())
+    initializeCustomerData(customerId)
+
+    const userIndex = customerData[customerId].users.findIndex((u: any) => u.id === id)
+    if (userIndex !== -1) {
+      customerData[customerId].users[userIndex] = {
+        ...customerData[customerId].users[userIndex],
+        ...user,
+        updatedAt: new Date().toISOString(),
+      }
+      setUsers([...customerData[customerId].users])
+      console.log("Updated user:", customerData[customerId].users[userIndex])
+    }
   }
 
   const deleteUser = (id: number) => {
-    if (!isClient) return
-    console.log("Deleting user:", id)
+    if (!isClient || !selectedCustomer) return
+
+    const customerId = Number.parseInt(selectedCustomer.id.toString())
+    initializeCustomerData(customerId)
+
+    customerData[customerId].users = customerData[customerId].users.filter((u: any) => u.id !== id)
+    setUsers([...customerData[customerId].users])
+    console.log("Deleted user with id:", id)
+  }
+
+  // Facility management functions
+  const getFacilitiesByCustomer = (customerId: number) => {
+    if (!isClient) return []
+    initializeCustomerData(customerId)
+    return customerData[customerId].facilities
   }
 
   const addFacility = (facility: any, customerId: number) => {
     if (!isClient) return
-    console.log("Adding facility:", facility, "for customer:", customerId)
+    initializeCustomerData(customerId)
+
+    const newFacility = {
+      ...facility,
+      id: Date.now().toString(),
+      customerId,
+      status: "operational",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+
+    customerData[customerId].facilities.push(newFacility)
+    console.log("Added facility:", newFacility)
   }
 
   const updateFacility = (id: string, facility: any) => {
-    if (!isClient) return
-    console.log("Updating facility:", id, facility)
+    if (!isClient || !selectedCustomer) return
+
+    const customerId = Number.parseInt(selectedCustomer.id.toString())
+    initializeCustomerData(customerId)
+
+    const facilityIndex = customerData[customerId].facilities.findIndex((f: any) => f.id === id)
+    if (facilityIndex !== -1) {
+      customerData[customerId].facilities[facilityIndex] = {
+        ...customerData[customerId].facilities[facilityIndex],
+        ...facility,
+        updatedAt: new Date().toISOString(),
+      }
+      console.log("Updated facility:", customerData[customerId].facilities[facilityIndex])
+    }
   }
 
   const deleteFacility = (id: string) => {
-    if (!isClient) return
-    console.log("Deleting facility:", id)
+    if (!isClient || !selectedCustomer) return
+
+    const customerId = Number.parseInt(selectedCustomer.id.toString())
+    initializeCustomerData(customerId)
+
+    customerData[customerId].facilities = customerData[customerId].facilities.filter((f: any) => f.id !== id)
+    console.log("Deleted facility with id:", id)
+  }
+
+  // NFC Tag management functions
+  const getNfcTagsByCustomer = async (customerId: number) => {
+    if (!isClient) return []
+    initializeCustomerData(customerId)
+    return customerData[customerId].nfcTags
   }
 
   const addNfcTag = async (tag: any, customerId: number) => {
     if (!isClient) return null
-    console.log("Adding NFC tag:", tag, "for customer:", customerId)
-    return { ...tag, id: Date.now().toString() }
+    initializeCustomerData(customerId)
+
+    const newTag = {
+      ...tag,
+      id: Date.now().toString(),
+      customerId,
+      status: "active",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+
+    customerData[customerId].nfcTags.push(newTag)
+    console.log("Added NFC tag:", newTag)
+    return newTag
   }
 
   const updateNfcTag = async (id: string, tag: any) => {
-    if (!isClient) return null
-    console.log("Updating NFC tag:", id, tag)
-    return { ...tag, id }
+    if (!isClient || !selectedCustomer) return null
+
+    const customerId = Number.parseInt(selectedCustomer.id.toString())
+    initializeCustomerData(customerId)
+
+    const tagIndex = customerData[customerId].nfcTags.findIndex((t: any) => t.id === id)
+    if (tagIndex !== -1) {
+      customerData[customerId].nfcTags[tagIndex] = {
+        ...customerData[customerId].nfcTags[tagIndex],
+        ...tag,
+        updatedAt: new Date().toISOString(),
+      }
+      console.log("Updated NFC tag:", customerData[customerId].nfcTags[tagIndex])
+      return customerData[customerId].nfcTags[tagIndex]
+    }
+    return null
   }
 
   const deleteNfcTag = async (id: string) => {
-    if (!isClient) return false
-    console.log("Deleting NFC tag:", id)
+    if (!isClient || !selectedCustomer) return false
+
+    const customerId = Number.parseInt(selectedCustomer.id.toString())
+    initializeCustomerData(customerId)
+
+    customerData[customerId].nfcTags = customerData[customerId].nfcTags.filter((t: any) => t.id !== id)
+    console.log("Deleted NFC tag with id:", id)
     return true
   }
 
+  // Plotkaart management functions
   const getPlotkaartByCustomer = (customerId: number) => {
     if (!isClient) return null
-    return {
-      id: customerId,
-      floors: [],
-      lastUpdated: "2024-01-15 14:30",
-      updatedBy: "System",
-    }
+    initializeCustomerData(customerId)
+    return customerData[customerId].plotkaart
   }
 
   const updatePlotkaartForCustomer = (customerId: number, floors: any[]) => {
     if (!isClient) return
-    console.log("Updating plotkaart for customer:", customerId, floors)
+    initializeCustomerData(customerId)
+
+    customerData[customerId].plotkaart = {
+      ...customerData[customerId].plotkaart,
+      floors,
+      lastUpdated: new Date().toISOString(),
+      updatedBy: "Current User",
+    }
+
+    console.log("Updated plotkaart for customer:", customerId, floors)
   }
 
   const value: DataContextType = {

@@ -1,30 +1,49 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building, AlertCircle } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Building2, Plus, Users } from "lucide-react"
+import Link from "next/link"
 
 export function NoCustomerSelected() {
   return (
-    <div className="container p-6 flex items-center justify-center min-h-[60vh]">
-      <Card className="w-full max-w-md text-center">
-        <CardHeader>
-          <div className="flex justify-center mb-4">
-            <div className="rounded-full bg-muted p-3">
-              <Building className="h-8 w-8 text-muted-foreground" />
-            </div>
+    <div className="container mx-auto p-6">
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
+            <Building2 className="h-6 w-6" />
           </div>
-          <CardTitle className="flex items-center justify-center gap-2">
-            <AlertCircle className="h-5 w-5 text-orange-500" />
-            Geen klant geselecteerd
-          </CardTitle>
+          <CardTitle>Geen klant geselecteerd</CardTitle>
+          <CardDescription>
+            Selecteer een klant om toegang te krijgen tot het BHV systeem, of voeg een nieuwe klant toe.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground mb-4">
-            Selecteer eerst een klant in de navigatie om toegang te krijgen tot de BHV functies.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Elke klant heeft zijn eigen instellingen, gebruikers en BHV360 plotkaarten.
-          </p>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Link href="/klanten">
+              <Button className="w-full" size="lg">
+                <Plus className="mr-2 h-4 w-4" />
+                Nieuwe Klant Toevoegen
+              </Button>
+            </Link>
+            <Link href="/klanten">
+              <Button variant="outline" className="w-full bg-transparent" size="lg">
+                <Users className="mr-2 h-4 w-4" />
+                Klanten Beheren
+              </Button>
+            </Link>
+          </div>
+
+          <div className="mt-6 p-4 bg-muted rounded-lg">
+            <h3 className="font-medium mb-2">Wat kun je doen met klanten?</h3>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• Klantgegevens beheren en bijwerken</li>
+              <li>• Gebruikers per klant toevoegen en beheren</li>
+              <li>• Voorzieningen en NFC tags koppelen</li>
+              <li>• Plotkaarten maken en bewerken</li>
+              <li>• Incidenten en rapportages bekijken</li>
+            </ul>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -12,23 +12,11 @@ export function CustomerSelector() {
   const { customers, selectedCustomer, setSelectedCustomer } = useCustomer()
   const [open, setOpen] = useState(false)
 
-  // Mock data voor demo - GEEN provincie referenties
-  const mockCustomersWithStats = customers.map((customer) => ({
-    ...customer,
-    type: customer.name.includes("BHV360")
-      ? "Demo"
-      : customer.name.includes("TechCorp")
-        ? "Technologie"
-        : "Zorginstelling",
-    buildings: customer.name.includes("BHV360") ? 3 : customer.name.includes("TechCorp") ? 2 : 5,
-    users: customer.name.includes("BHV360") ? 25 : customer.name.includes("TechCorp") ? 15 : 45,
-  }))
-
-  if (mockCustomersWithStats.length === 0) {
+  if (customers.length === 0) {
     return (
-      <div className="flex items-center space-x-2 px-3 py-2 text-sm text-red-500">
+      <div className="flex items-center space-x-2 px-3 py-2 text-sm text-muted-foreground">
         <Building2 className="h-4 w-4" />
-        <span>Geen klanten beschikbaar</span>
+        <span>Geen klanten - voeg er een toe via Klantenbeheer</span>
       </div>
     )
   }
@@ -37,21 +25,26 @@ export function CustomerSelector() {
     <div className="w-full max-w-sm">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between bg-transparent"
+          >
             <div className="flex items-center space-x-2">
               <Building2 className="h-4 w-4" />
-              <span className="truncate">{selectedCustomer ? selectedCustomer.name : "Selecteer organisatie..."}</span>
+              <span className="truncate">{selectedCustomer ? selectedCustomer.name : "Selecteer klant..."}</span>
             </div>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0">
           <Command>
-            <CommandInput placeholder="Zoek organisatie..." />
+            <CommandInput placeholder="Zoek klant..." />
             <CommandList>
-              <CommandEmpty>Geen organisaties gevonden.</CommandEmpty>
+              <CommandEmpty>Geen klanten gevonden.</CommandEmpty>
               <CommandGroup>
-                {mockCustomersWithStats.map((customer) => (
+                {customers.map((customer) => (
                   <CommandItem
                     key={customer.id}
                     value={customer.name}
@@ -68,7 +61,8 @@ export function CustomerSelector() {
                         />
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {customer.type} • {customer.buildings} gebouw(en) • {customer.users} gebruikers
+                        {customer.contactPerson && `${customer.contactPerson} • `}
+                        {customer.buildings} gebouw(en) • {customer.users} gebruikers
                       </div>
                     </div>
                   </CommandItem>
