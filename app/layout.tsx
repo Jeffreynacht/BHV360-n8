@@ -13,16 +13,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "BHV360 - Professional Safety Management",
   description: "Complete BHV and safety management solution for organizations",
-  keywords: "BHV, safety, emergency, management, plotkaart, evacuation",
-  authors: [{ name: "BHV360 Team" }],
     generator: 'v0.dev'
-}
-
-export function generateViewport() {
-  return {
-    width: "device-width",
-    initialScale: 1,
-  }
 }
 
 export default function RootLayout({
@@ -36,12 +27,10 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <CustomerProvider>
-              <DataProvider>
-                {children}
-                <Toaster />
-              </DataProvider>
+              <DataProvider>{children}</DataProvider>
             </CustomerProvider>
           </AuthProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 interface User {
   id: string
@@ -15,7 +16,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
   isLoading: boolean
-  isAuthenticated: boolean
+  error: string | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -23,45 +24,54 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
+  // Check for existing session on mount
   useEffect(() => {
-    // Check for existing session
-    const savedUser = localStorage.getItem("bhv360_user")
-    if (savedUser) {
+    const checkAuth = () => {
       try {
-        setUser(JSON.parse(savedUser))
+        const storedUser = localStorage.getItem("bhv360_user")
+        if (storedUser) {
+          setUser(JSON.parse(storedUser))
+        }
       } catch (error) {
-        console.error("Error parsing saved user:", error)
+        console.error("Error checking auth:", error)
         localStorage.removeItem("bhv360_user")
+      } finally {
+        setIsLoading(false)
       }
     }
-    setIsLoading(false)
+
+    checkAuth()
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
+    setError(null)
 
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Check credentials
+      // Hardcoded credentials for Jeffrey
       if (email === "jef.nachtegaal@gmail.com" && password === "Jefnacht01") {
         const userData: User = {
           id: "1",
           email: "jef.nachtegaal@gmail.com",
           name: "Jeffrey Nachtegaal",
-          role: "super_admin",
+          role: "super-admin",
         }
 
         setUser(userData)
         localStorage.setItem("bhv360_user", JSON.stringify(userData))
-        return true
-      }
 
-      return false
-    } catch (error) {
-      console.error("Login error:", error)
+        // Redirect to main dashboard, not AED page
+        router.push("/dashboard")
+        return true
+      } else {
+        setError("Ongeldige inloggegevens")
+        return false
+      }
+    } catch (err) {
+      setError("Er is een fout opgetreden bij het inloggen")
       return false
     } finally {
       setIsLoading(false)
@@ -71,6 +81,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null)
     localStorage.removeItem("bhv360_user")
+    localStorage.removeItem("bhv360_selected_customer")
+    router.push("/")
   }
 
   const value: AuthContextType = {
@@ -78,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     logout,
     isLoading,
-    isAuthenticated: !!user,
+    error,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

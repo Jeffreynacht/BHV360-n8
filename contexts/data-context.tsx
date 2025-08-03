@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-import { useCustomers } from "@/components/customer-context"
+import { useCustomer } from "@/components/customer-context"
 
 interface DataContextType {
   // Users
@@ -52,7 +52,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
   const [users, setUsers] = useState<any[]>([])
-  const { selectedCustomer, refreshCustomers } = useCustomers()
+  const { selectedCustomer, refreshCustomers } = useCustomer()
 
   useEffect(() => {
     setIsClient(true)
@@ -272,15 +272,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }
 
   const refreshData = async () => {
+    setIsLoading(true)
+    setError(null)
     try {
-      setIsLoading(true)
-      setError(null)
-
       // Refresh all data sources
       await refreshCustomers()
-      await new Promise((resolve) => setTimeout(resolve, 500)) // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate API call
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      setError("Failed to refresh data")
     } finally {
       setIsLoading(false)
     }

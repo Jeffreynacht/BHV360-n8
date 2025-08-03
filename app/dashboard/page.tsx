@@ -1,192 +1,110 @@
 "use client"
 
 import { useAuth } from "@/contexts/auth-context"
-import { useCustomer } from "@/components/customer-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Shield, AlertTriangle, Users, MapPin, FileText, Calendar, Activity } from "lucide-react"
+import { Users, Building2, AlertTriangle, Shield, TrendingUp, CheckCircle } from "lucide-react"
 import Link from "next/link"
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const { selectedCustomer } = useCustomer()
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="mb-4">Je bent niet ingelogd.</p>
-            <Link href="/login">
-              <Button>Ga naar login</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Toegang geweigerd</h2>
+          <p className="text-gray-600 mb-4">Je moet ingelogd zijn om deze pagina te bekijken.</p>
+          <Link href="/login">
+            <Button>Inloggen</Button>
+          </Link>
+        </div>
       </div>
     )
   }
 
-  const quickActions = [
-    {
-      title: "Plotkaart Bekijken",
-      description: "Bekijk de interactieve veiligheidsplattegrond",
-      icon: MapPin,
-      href: "/plotkaart",
-      color: "bg-blue-500",
-    },
-    {
-      title: "BHV Personeel",
-      description: "Beheer BHV medewerkers en certificeringen",
-      icon: Users,
-      href: "/gebruikers",
-      color: "bg-green-500",
-    },
-    {
-      title: "Incidenten",
-      description: "Bekijk en beheer veiligheidsincidenten",
-      icon: AlertTriangle,
-      href: "/incidenten",
-      color: "bg-orange-500",
-    },
-    {
-      title: "Rapportages",
-      description: "Genereer veiligheidsrapporten",
-      icon: FileText,
-      href: "/beheer/rapportages",
-      color: "bg-purple-500",
-    },
-  ]
-
-  const stats = [
-    {
-      title: "Actieve BHV'ers",
-      value: selectedCustomer ? "12" : "0",
-      icon: Shield,
-      color: "text-green-600",
-    },
-    {
-      title: "Open Incidenten",
-      value: "3",
-      icon: AlertTriangle,
-      color: "text-orange-600",
-    },
-    {
-      title: "Locaties",
-      value: selectedCustomer ? selectedCustomer.buildings.toString() : "0",
-      icon: MapPin,
-      color: "text-blue-600",
-    },
-    {
-      title: "Certificeringen",
-      value: "24",
-      icon: FileText,
-      color: "text-purple-600",
-    },
-  ]
-
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">
-          Welkom terug, {user.name}
-          {selectedCustomer && ` - ${selectedCustomer.name}`}
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Welkom terug, {user.name}</p>
+        </div>
+        <Badge variant="outline" className="text-sm">
+          {user.role === "super-admin" ? "Super Admin" : user.role}
+        </Badge>
       </div>
 
-      {/* Customer Selection Notice */}
-      {!selectedCustomer && (
-        <Card className="mb-6 border-orange-200 bg-orange-50">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-orange-600" />
-              <p className="text-orange-800">Selecteer een klant in de sidebar om specifieke data te bekijken.</p>
-            </div>
+      {/* Quick Stats */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Totaal Klanten</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">Geen klanten toegevoegd</p>
           </CardContent>
         </Card>
-      )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => {
-          const IconComponent = stat.icon
-          return (
-            <Card key={stat.title}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                    <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                  </div>
-                  <IconComponent className={`h-8 w-8 ${stat.color}`} />
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Actieve Gebruikers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">1</div>
+            <p className="text-xs text-muted-foreground">Jij bent de enige gebruiker</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Open Incidenten</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">Geen actieve incidenten</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">BHV Status</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">Actief</div>
+            <p className="text-xs text-muted-foreground">Systeem operationeel</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Quick Actions */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Snelle Acties</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {quickActions.map((action) => {
-            const IconComponent = action.icon
-            return (
-              <Link key={action.title} href={action.href}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-full ${action.color} text-white`}>
-                        <IconComponent className="h-5 w-5" />
-                      </div>
-                      <CardTitle className="text-lg">{action.title}</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription>{action.description}</CardDescription>
-                  </CardContent>
-                </Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Klanten Beheer
+            </CardTitle>
+            <CardDescription>Voeg nieuwe klanten toe en beheer bestaande accounts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Link href="/klanten">
+                <Button className="w-full bg-transparent" variant="outline">
+                  Alle Klanten
+                </Button>
               </Link>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Recente Activiteit
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div>
-                  <p className="text-sm font-medium">BHV training voltooid</p>
-                  <p className="text-xs text-gray-500">2 uur geleden</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <div>
-                  <p className="text-sm font-medium">Incident gemeld - Verdieping 2</p>
-                  <p className="text-xs text-gray-500">4 uur geleden</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div>
-                  <p className="text-sm font-medium">Plotkaart bijgewerkt</p>
-                  <p className="text-xs text-gray-500">1 dag geleden</p>
-                </div>
-              </div>
+              <Link href="/whitelabel-klanten">
+                <Button className="w-full bg-transparent" variant="outline">
+                  Whitelabel Klanten
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
@@ -194,43 +112,109 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Aankomende Taken
+              <Users className="h-5 w-5" />
+              Gebruikers
             </CardTitle>
+            <CardDescription>Beheer gebruikersaccounts en permissies</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div>
-                  <p className="text-sm font-medium">BHV certificering verloopt</p>
-                  <p className="text-xs text-gray-500">Over 2 weken</p>
-                </div>
-                <Badge variant="outline" className="text-yellow-700 border-yellow-300">
-                  Urgent
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div>
-                  <p className="text-sm font-medium">Maandelijkse veiligheidsinspectie</p>
-                  <p className="text-xs text-gray-500">Over 5 dagen</p>
-                </div>
-                <Badge variant="outline" className="text-blue-700 border-blue-300">
-                  Gepland
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                <div>
-                  <p className="text-sm font-medium">Team meeting BHV</p>
-                  <p className="text-xs text-gray-500">Volgende week</p>
-                </div>
-                <Badge variant="outline" className="text-green-700 border-green-300">
-                  Meeting
-                </Badge>
-              </div>
-            </div>
+            <Link href="/beheer/gebruikers">
+              <Button className="w-full">Gebruikers Beheren</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Rapportages
+            </CardTitle>
+            <CardDescription>Bekijk uitgebreide analyses en statistieken</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/beheer/rapportages">
+              <Button className="w-full bg-transparent" variant="outline">
+                Rapportages Bekijken
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
+
+      {/* System Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Systeem Status</CardTitle>
+          <CardDescription>Overzicht van de huidige systeemstatus</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-sm">Database Verbinding</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-sm">API Services</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-sm">Notificaties</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-sm">Backup Systeem</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Getting Started */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Aan de slag</CardTitle>
+          <CardDescription>Volg deze stappen om je BHV360 platform in te richten</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white text-xs font-bold">
+                1
+              </div>
+              <div>
+                <p className="font-medium">Voeg je eerste klant toe</p>
+                <p className="text-sm text-muted-foreground">
+                  Begin met het toevoegen van een organisatie aan het platform
+                </p>
+              </div>
+              <Link href="/klanten" className="ml-auto">
+                <Button size="sm">Start</Button>
+              </Link>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-300 text-gray-600 text-xs font-bold">
+                2
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">Configureer gebruikers</p>
+                <p className="text-sm text-muted-foreground">Stel gebruikersrollen en permissies in</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-300 text-gray-600 text-xs font-bold">
+                3
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">Test het systeem</p>
+                <p className="text-sm text-muted-foreground">Voer een testrun uit om alles te controleren</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
