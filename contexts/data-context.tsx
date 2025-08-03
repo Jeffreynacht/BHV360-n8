@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-import { useCustomer } from "@/components/customer-context"
+import { useCustomers } from "@/components/customer-context"
 
 interface DataContextType {
   // Users
@@ -31,6 +31,13 @@ interface DataContextType {
   isLoading: boolean
   setIsLoading: (loading: boolean) => void
 
+  // Error state
+  error: string | null
+  setError: (error: string | null) => void
+
+  // Refresh data function
+  refreshData: () => Promise<void>
+
   // Users array for compatibility
   users: any[]
 }
@@ -42,9 +49,10 @@ const customerData: { [customerId: number]: any } = {}
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
   const [users, setUsers] = useState<any[]>([])
-  const { selectedCustomer } = useCustomer()
+  const { selectedCustomer, refreshCustomers } = useCustomers()
 
   useEffect(() => {
     setIsClient(true)
@@ -263,6 +271,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     console.log("Updated plotkaart for customer:", customerId, floors)
   }
 
+  const refreshData = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      // Refresh all data sources
+      await refreshCustomers()
+      await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate API call
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Initial data load
+  useEffect(() => {
+    refreshData()
+  }, [])
+
   const value: DataContextType = {
     getUsersByCustomer,
     addUser,
@@ -280,6 +308,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     updatePlotkaartForCustomer,
     isLoading,
     setIsLoading,
+    error,
+    setError,
+    refreshData,
     users,
   }
 
@@ -289,28 +320,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 export function useData() {
   const context = useContext(DataContext)
   if (context === undefined) {
-    // Return safe defaults during SSR
-    if (typeof window === "undefined") {
-      return {
-        getUsersByCustomer: () => [],
-        addUser: () => {},
-        updateUser: () => {},
-        deleteUser: () => {},
-        getFacilitiesByCustomer: () => [],
-        addFacility: () => {},
-        updateFacility: () => {},
-        deleteFacility: () => {},
-        getNfcTagsByCustomer: async () => [],
-        addNfcTag: async () => null,
-        updateNfcTag: async () => null,
-        deleteNfcTag: async () => false,
-        getPlotkaartByCustomer: () => null,
-        updatePlotkaartForCustomer: () => {},
-        isLoading: false,
-        setIsLoading: () => {},
-        users: [],
-      }
-    }
     throw new Error("useData must be used within a DataProvider")
   }
   return context

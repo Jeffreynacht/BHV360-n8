@@ -1,49 +1,46 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 
-// In-memory storage for demo purposes - in production this would be a database
+// In-memory storage for testing (replace with database in production)
 const customers: any[] = []
 let nextId = 1
 
 export async function GET() {
   try {
-    // Return empty array initially - customers will be added through the UI
-    return NextResponse.json(customers)
+    return NextResponse.json({
+      success: true,
+      customers: customers,
+      count: customers.length,
+    })
   } catch (error) {
-    console.error("Error in customers API:", error)
-    return NextResponse.json({ error: "Failed to fetch customers" }, { status: 500 })
+    console.error("Error fetching customers:", error)
+    return NextResponse.json({ success: false, error: "Failed to fetch customers" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const customerData = await request.json()
-
-    // Validate required fields
-    if (!customerData.name || !customerData.name.trim()) {
-      return NextResponse.json({ error: "Customer name is required" }, { status: 400 })
-    }
+    const body = await request.json()
 
     const newCustomer = {
-      id: nextId++,
-      name: customerData.name.trim(),
-      contactPerson: customerData.contactPerson?.trim() || "",
-      email: customerData.email?.trim() || "",
-      phone: customerData.phone?.trim() || "",
-      address: customerData.address?.trim() || "",
-      active: true,
-      buildings: customerData.buildings || 1,
-      users: customerData.users || 1,
-      status: "active",
-      createdAt: new Date().toISOString().split("T")[0], // Format: YYYY-MM-DD
-      updatedAt: new Date().toISOString().split("T")[0],
+      id: nextId.toString(),
+      name: body.name,
+      contactPerson: body.contactPerson || "",
+      email: body.email || "",
+      phone: body.phone || "",
+      address: body.address || "",
+      createdAt: new Date().toISOString(),
+      isActive: true,
+      modules: body.modules || ["basic"],
+      userCount: body.userCount || 1,
+      lastActivity: new Date().toISOString(),
     }
 
     customers.push(newCustomer)
+    nextId++
 
-    console.log("Created new customer:", newCustomer)
-    return NextResponse.json(newCustomer)
+    return NextResponse.json(newCustomer, { status: 201 })
   } catch (error) {
     console.error("Error creating customer:", error)
-    return NextResponse.json({ error: "Failed to create customer" }, { status: 500 })
+    return NextResponse.json({ success: false, error: "Failed to create customer" }, { status: 500 })
   }
 }

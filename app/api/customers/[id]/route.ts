@@ -1,54 +1,59 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 
-// In-memory storage - same as in route.ts
+// In-memory storage for testing (replace with database in production)
 const customers: any[] = []
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const customerId = Number.parseInt(params.id)
-    const customerData = await request.json()
+    const customer = customers.find((c) => c.id === params.id)
 
-    const customerIndex = customers.findIndex((c) => c.id === customerId)
-
-    if (customerIndex === -1) {
-      return NextResponse.json({ error: "Customer not found" }, { status: 404 })
+    if (!customer) {
+      return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 })
     }
 
-    // Update customer
-    const updatedCustomer = {
-      ...customers[customerIndex],
-      ...customerData,
-      id: customerId, // Ensure ID doesn't change
-      updatedAt: new Date().toISOString().split("T")[0],
-    }
-
-    customers[customerIndex] = updatedCustomer
-
-    console.log("Updated customer:", updatedCustomer)
-    return NextResponse.json(updatedCustomer)
+    return NextResponse.json(customer)
   } catch (error) {
-    console.error("Error updating customer:", error)
-    return NextResponse.json({ error: "Failed to update customer" }, { status: 500 })
+    console.error("Error fetching customer:", error)
+    return NextResponse.json({ success: false, error: "Failed to fetch customer" }, { status: 500 })
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const customerId = Number.parseInt(params.id)
-
-    const customerIndex = customers.findIndex((c) => c.id === customerId)
+    const body = await request.json()
+    const customerIndex = customers.findIndex((c) => c.id === params.id)
 
     if (customerIndex === -1) {
-      return NextResponse.json({ error: "Customer not found" }, { status: 404 })
+      return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 })
     }
 
-    // Remove customer
-    const deletedCustomer = customers.splice(customerIndex, 1)[0]
+    customers[customerIndex] = {
+      ...customers[customerIndex],
+      ...body,
+      id: params.id, // Ensure ID doesn't change
+      updatedAt: new Date().toISOString(),
+    }
 
-    console.log("Deleted customer:", deletedCustomer)
-    return NextResponse.json({ success: true, deletedCustomer })
+    return NextResponse.json(customers[customerIndex])
+  } catch (error) {
+    console.error("Error updating customer:", error)
+    return NextResponse.json({ success: false, error: "Failed to update customer" }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const customerIndex = customers.findIndex((c) => c.id === params.id)
+
+    if (customerIndex === -1) {
+      return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 })
+    }
+
+    customers.splice(customerIndex, 1)
+
+    return NextResponse.json({ success: true, message: "Customer deleted" })
   } catch (error) {
     console.error("Error deleting customer:", error)
-    return NextResponse.json({ error: "Failed to delete customer" }, { status: 500 })
+    return NextResponse.json({ success: false, error: "Failed to delete customer" }, { status: 500 })
   }
 }
