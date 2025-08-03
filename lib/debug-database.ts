@@ -1,279 +1,204 @@
 import { neon } from "@neondatabase/serverless"
 
-interface DatabaseCheck {
-  step: string
-  success: boolean
+export interface DebugCheck {
+  name: string
+  status: "success" | "error" | "warning"
   message: string
   details?: any
-  error?: string
+  timestamp: Date
 }
 
-interface DatabaseDebugResult {
-  success: boolean
-  checks: DatabaseCheck[]
-  summary: string
-  connectionTime?: number
+export interface EnvironmentResult {
+  checks: DebugCheck[]
+  recommendations: string[]
 }
 
-export async function debugDatabaseConnection(): Promise<DatabaseDebugResult> {
-  const checks: DatabaseCheck[] = []
-  const startTime = Date.now()
+export interface DatabaseResult {
+  status: "healthy" | "warning" | "critical"
+  connectionInfo: any
+  checks: DebugCheck[]
+}
 
-  try {
-    // Step 1: Check environment variable
+export class DatabaseDebugService {
+  async checkEnvironmentVariables(): Promise<EnvironmentResult> {
+    const checks: DebugCheck[] = []
+    const recommendations: string[] = []
+
+    // Check for required environment variables
+    const requiredVars = [
+      "DATABASE_URL",
+      "POSTGRES_URL",
+      "POSTGRES_PRISMA_URL",
+      "POSTGRES_URL_NON_POOLING",
+      "POSTGRES_USER",
+      "POSTGRES_PASSWORD",
+      "POSTGRES_DATABASE",
+      "POSTGRES_HOST",
+    ]
+
+    const presentVars = requiredVars.filter((varName) => process.env[varName])
+    const missingVars = requiredVars.filter((varName) => !process.env[varName])
+
     checks.push({
-      step: "Environment Variable Check",
-      success: !!process.env.DATABASE_URL,
-      message: process.env.DATABASE_URL ? "DATABASE_URL is configured" : "DATABASE_URL is missing",
+      name: "Environment Variables Check",
+      status: missingVars.length === 0 ? "success" : "warning",
+      message: `${presentVars.length}/${requiredVars.length} required variables present`,
       details: {
-        hasUrl: !!process.env.DATABASE_URL,
-        urlLength: process.env.DATABASE_URL?.length || 0,
+        present: presentVars,
+        missing: missingVars,
+        total: requiredVars.length,
       },
+      timestamp: new Date(),
     })
 
-    if (!process.env.DATABASE_URL) {
-      return {
-        success: false,
-        checks,
-        summary: "Database URL not configured",
-      }
+    if (missingVars.length > 0) {
+      recommendations.push(`Missing environment variables: ${missingVars.join(", ")}`)
     }
 
-    // Step 2: Initialize connection
-    let sql
-    try {
-      sql = neon(process.env.DATABASE_URL)
-      checks.push({
-        step: "Connection Initialization",
-        success: true,
-        message: "Database connection initialized successfully",
-      })
-    } catch (error) {
-      checks.push({
-        step: "Connection Initialization",
-        success: false,
-        message: "Failed to initialize database connection",
-        error: error instanceof Error ? error.message : "Unknown error",
-      })
-      return {
-        success: false,
-        checks,
-        summary: "Failed to initialize database connection",
-      }
-    }
-
-    // Step 3: Test basic query
-    try {
-      const result = await sql`SELECT 1 as test`
-      checks.push({
-        step: "Basic Query Test",
-        success: true,
-        message: "Basic query executed successfully",
-        details: { result: result[0] },
-      })
-    } catch (error) {
-      checks.push({
-        step: "Basic Query Test",
-        success: false,
-        message: "Basic query failed",
-        error: error instanceof Error ? error.message : "Unknown error",
-      })
-      return {
-        success: false,
-        checks,
-        summary: "Basic database query failed",
-        connectionTime: Date.now() - startTime,
-      }
-    }
-
-    // Step 4: Check database version
-    try {
-      const versionResult = await sql`SELECT version()`
-      checks.push({
-        step: "Database Version Check",
-        success: true,
-        message: "Database version retrieved successfully",
-        details: { version: versionResult[0]?.version },
-      })
-    } catch (error) {
-      checks.push({
-        step: "Database Version Check",
-        success: false,
-        message: "Failed to get database version",
-        error: error instanceof Error ? error.message : "Unknown error",
-      })
-    }
-
-    // Step 5: Check for existing tables
-    try {
-      const tablesResult = await sql`
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public'
-        ORDER BY table_name
-      `
-
-      checks.push({
-        step: "Tables Check",
-        success: true,
-        message: `Found ${tablesResult.length} tables in database`,
-        details: {
-          tableCount: tablesResult.length,
-          tables: tablesResult.map((t) => t.table_name),
-        },
-      })
-    } catch (error) {
-      checks.push({
-        step: "Tables Check",
-        success: false,
-        message: "Failed to check database tables",
-        error: error instanceof Error ? error.message : "Unknown error",
-      })
-    }
-
-    // Step 6: Test customers table specifically
-    try {
-      const customersResult = await sql`
-        SELECT COUNT(*) as count 
-        FROM customers 
-        LIMIT 1
-      `
-
-      checks.push({
-        step: "Customers Table Check",
-        success: true,
-        message: `Customers table exists with ${customersResult[0]?.count || 0} records`,
-        details: { recordCount: customersResult[0]?.count || 0 },
-      })
-    } catch (error) {
-      // Try to create the customers table if it doesn't exist
+    // Check DATABASE_URL format
+    const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL
+    if (dbUrl) {
       try {
-        await sql`
-          CREATE TABLE IF NOT EXISTS customers (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            email VARCHAR(255) UNIQUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-          )
+        const url = new URL(dbUrl)
+        checks.push({
+          name: "Database URL Format",
+          status: "success",
+          message: "Database URL is properly formatted",
+          details: {
+            protocol: url.protocol,
+            hostname: url.hostname,
+            port: url.port || "5432",
+            database: url.pathname.slice(1),
+          },
+          timestamp: new Date(),
+        })
+      } catch (error) {
+        checks.push({
+          name: "Database URL Format",
+          status: "error",
+          message: "Invalid database URL format",
+          details: { error: error.message },
+          timestamp: new Date(),
+        })
+        recommendations.push("Fix the DATABASE_URL format")
+      }
+    } else {
+      checks.push({
+        name: "Database URL Format",
+        status: "error",
+        message: "No database URL found",
+        details: {},
+        timestamp: new Date(),
+      })
+      recommendations.push("Set DATABASE_URL or POSTGRES_URL environment variable")
+    }
+
+    return { checks, recommendations }
+  }
+
+  async testDatabaseConnection(): Promise<DatabaseResult> {
+    const checks: DebugCheck[] = []
+    let status: "healthy" | "warning" | "critical" = "healthy"
+    let connectionInfo = {}
+
+    const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL
+
+    if (!dbUrl) {
+      checks.push({
+        name: "Database Connection",
+        status: "error",
+        message: "No database connection available",
+        details: { error: "Missing database URL" },
+        timestamp: new Date(),
+      })
+      return { status: "critical", connectionInfo: {}, checks }
+    }
+
+    // Test basic connection
+    try {
+      const sql = neon(dbUrl)
+      const startTime = Date.now()
+      const result = await sql`SELECT 1 as test, NOW() as current_time, version() as db_version`
+      const endTime = Date.now()
+      const responseTime = endTime - startTime
+
+      connectionInfo = {
+        responseTime: `${responseTime}ms`,
+        currentTime: result[0]?.current_time,
+        version: result[0]?.db_version,
+        testQuery: "SELECT 1 as test, NOW() as current_time, version() as db_version",
+      }
+
+      checks.push({
+        name: "Basic Connection Test",
+        status: responseTime < 1000 ? "success" : "warning",
+        message: `Connection successful in ${responseTime}ms`,
+        details: {
+          responseTime,
+          dbVersion: result[0]?.db_version,
+          currentTime: result[0]?.current_time,
+        },
+        timestamp: new Date(),
+      })
+
+      if (responseTime > 1000) {
+        status = "warning"
+      }
+    } catch (error) {
+      checks.push({
+        name: "Basic Connection Test",
+        status: "error",
+        message: `Connection failed: ${error.message}`,
+        details: { error: error.message },
+        timestamp: new Date(),
+      })
+      status = "critical"
+    }
+
+    // Test table access
+    if (status !== "critical") {
+      try {
+        const sql = neon(dbUrl)
+        const tables = await sql`
+          SELECT table_name 
+          FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          LIMIT 5
         `
 
         checks.push({
-          step: "Customers Table Check",
-          success: true,
-          message: "Customers table created successfully",
-          details: { action: "table_created" },
+          name: "Table Access Test",
+          status: "success",
+          message: `Found ${tables.length} tables in public schema`,
+          details: {
+            tableCount: tables.length,
+            sampleTables: tables.map((t) => t.table_name),
+          },
+          timestamp: new Date(),
         })
-      } catch (createError) {
+      } catch (error) {
         checks.push({
-          step: "Customers Table Check",
-          success: false,
-          message: "Failed to access or create customers table",
-          error: createError instanceof Error ? createError.message : "Unknown error",
+          name: "Table Access Test",
+          status: "warning",
+          message: `Table access limited: ${error.message}`,
+          details: { error: error.message },
+          timestamp: new Date(),
         })
+        if (status === "healthy") status = "warning"
       }
     }
 
-    const connectionTime = Date.now() - startTime
-    const allSuccessful = checks.every((check) => check.success)
-
-    return {
-      success: allSuccessful,
-      checks,
-      summary: allSuccessful ? `Database connection successful (${connectionTime}ms)` : "Some database checks failed",
-      connectionTime,
-    }
-  } catch (error) {
-    checks.push({
-      step: "Unexpected Error",
-      success: false,
-      message: "An unexpected error occurred during database debugging",
-      error: error instanceof Error ? error.message : "Unknown error",
-    })
-
-    return {
-      success: false,
-      checks,
-      summary: "Database debugging failed with unexpected error",
-      connectionTime: Date.now() - startTime,
-    }
+    return { status, connectionInfo, checks }
   }
 }
 
-export function debugEnvironmentVariables() {
-  console.log("🔍 Environment Variables Check:")
-  console.log("DATABASE_URL exists:", !!process.env.DATABASE_URL)
-  console.log("DATABASE_URL starts with postgresql:", process.env.DATABASE_URL?.startsWith("postgresql://"))
-  console.log("NEXT_PUBLIC_APP_URL:", process.env.NEXT_PUBLIC_APP_URL)
-  console.log("NODE_ENV:", process.env.NODE_ENV)
-  console.log("VERCEL_ENV:", process.env.VERCEL_ENV)
-  console.log("VERCEL_URL:", process.env.VERCEL_URL)
+export const databaseDebugService = new DatabaseDebugService()
 
-  return {
-    DATABASE_URL_exists: !!process.env.DATABASE_URL,
-    DATABASE_URL_valid: process.env.DATABASE_URL?.startsWith("postgresql://"),
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NODE_ENV: process.env.NODE_ENV,
-    VERCEL_ENV: process.env.VERCEL_ENV,
-    VERCEL_URL: process.env.VERCEL_URL,
-  }
+// Named exports for compatibility
+export async function debugEnvironmentVariables(): Promise<EnvironmentResult> {
+  return databaseDebugService.checkEnvironmentVariables()
 }
 
-export async function testDatabaseOperations() {
-  try {
-    if (!process.env.DATABASE_URL) {
-      throw new Error("DATABASE_URL not configured")
-    }
-
-    const sql = neon(process.env.DATABASE_URL)
-
-    // Test INSERT
-    const insertResult = await sql`
-      INSERT INTO customers (name, email) 
-      VALUES ('Test Customer', 'test@example.com')
-      ON CONFLICT (email) DO UPDATE SET 
-        name = EXCLUDED.name,
-        updated_at = CURRENT_TIMESTAMP
-      RETURNING id, name, email
-    `
-
-    // Test SELECT
-    const selectResult = await sql`
-      SELECT id, name, email, created_at 
-      FROM customers 
-      WHERE email = 'test@example.com'
-      LIMIT 1
-    `
-
-    // Test UPDATE
-    const updateResult = await sql`
-      UPDATE customers 
-      SET name = 'Updated Test Customer', updated_at = CURRENT_TIMESTAMP
-      WHERE email = 'test@example.com'
-      RETURNING id, name
-    `
-
-    // Test DELETE (cleanup)
-    const deleteResult = await sql`
-      DELETE FROM customers 
-      WHERE email = 'test@example.com'
-      RETURNING id
-    `
-
-    return {
-      success: true,
-      operations: {
-        insert: { success: true, result: insertResult[0] },
-        select: { success: true, result: selectResult[0] },
-        update: { success: true, result: updateResult[0] },
-        delete: { success: true, result: deleteResult[0] },
-      },
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-      operations: {},
-    }
-  }
+export async function debugDatabaseConnection(): Promise<DatabaseResult> {
+  return databaseDebugService.testDatabaseConnection()
 }
