@@ -5,9 +5,10 @@ import { createContext, useContext, useState, useEffect } from "react"
 
 interface User {
   id: string
-  email: string
   name: string
+  email: string
   role: string
+  organization?: string
 }
 
 interface AuthContextType {
@@ -25,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check for existing session
-    const savedUser = localStorage.getItem("bhv360-user")
+    const savedUser = localStorage.getItem("bhv360_user")
     if (savedUser) {
       setUser(JSON.parse(savedUser))
     }
@@ -33,32 +34,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true)
-
-    // Demo login credentials
+    // Demo authentication logic
     const demoUsers = [
-      { id: "1", email: "jan@demobedrijf.nl", password: "demo123", name: "Jan Jansen", role: "admin" },
-      { id: "2", email: "marie@demobedrijf.nl", password: "demo123", name: "Marie Bakker", role: "employee" },
-      { id: "3", email: "admin@bhv360.nl", password: "admin123", name: "BHV360 Admin", role: "super-admin" },
+      {
+        id: "1",
+        email: "admin@bhv360.nl",
+        password: "admin123",
+        name: "Jeffrey Nachtegaal",
+        role: "super-admin",
+        organization: "BHV360",
+      },
+      {
+        id: "2",
+        email: "jan@demobedrijf.nl",
+        password: "demo123",
+        name: "Jan de Vries",
+        role: "organization-admin",
+        organization: "Demo Bedrijf B.V.",
+      },
+      {
+        id: "3",
+        email: "marie@demobedrijf.nl",
+        password: "demo123",
+        name: "Marie Janssen",
+        role: "bhv-coordinator",
+        organization: "Demo Bedrijf B.V.",
+      },
     ]
 
     const foundUser = demoUsers.find((u) => u.email === email && u.password === password)
 
     if (foundUser) {
-      const user = { id: foundUser.id, email: foundUser.email, name: foundUser.name, role: foundUser.role }
-      setUser(user)
-      localStorage.setItem("bhv360-user", JSON.stringify(user))
-      setIsLoading(false)
+      const userData = {
+        id: foundUser.id,
+        name: foundUser.name,
+        email: foundUser.email,
+        role: foundUser.role,
+        organization: foundUser.organization,
+      }
+      setUser(userData)
+      localStorage.setItem("bhv360_user", JSON.stringify(userData))
       return true
     }
 
-    setIsLoading(false)
     return false
   }
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem("bhv360-user")
+    localStorage.removeItem("bhv360_user")
   }
 
   return <AuthContext.Provider value={{ user, login, logout, isLoading }}>{children}</AuthContext.Provider>

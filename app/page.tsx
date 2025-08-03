@@ -39,6 +39,7 @@ export default function LandingPage() {
       description: "Complete BHV organisatie en coördinatie met real-time status updates",
       color: "text-red-600",
       demo: "Bekijk live BHV status dashboard",
+      demoUrl: "/demo/bhv-status",
     },
     {
       icon: MapPin,
@@ -46,6 +47,7 @@ export default function LandingPage() {
       description: "Digitale veiligheidsplattegronden met drag & drop editor",
       color: "text-blue-600",
       demo: "Probeer de plotkaart editor",
+      demoUrl: "/demo/plotkaart-editor",
     },
     {
       icon: AlertTriangle,
@@ -53,6 +55,7 @@ export default function LandingPage() {
       description: "Snelle registratie en automatische escalatie van incidenten",
       color: "text-orange-600",
       demo: "Simuleer een noodmelding",
+      demoUrl: "/demo/incident-simulator",
     },
     {
       icon: Users,
@@ -60,6 +63,7 @@ export default function LandingPage() {
       description: "Geavanceerd rollenbeleid en certificering tracking",
       color: "text-green-600",
       demo: "Bekijk gebruikersrollen",
+      demoUrl: "/demo/gebruikers-demo",
     },
     {
       icon: Building2,
@@ -67,6 +71,7 @@ export default function LandingPage() {
       description: "Centraal beheer van meerdere gebouwen en vestigingen",
       color: "text-purple-600",
       demo: "Schakel tussen locaties",
+      demoUrl: "/demo/multi-locatie",
     },
     {
       icon: Heart,
@@ -74,6 +79,7 @@ export default function LandingPage() {
       description: "Automatische tracking van voorraad en onderhoudsschema's",
       color: "text-pink-600",
       demo: "Bekijk voorraad status",
+      demoUrl: "/demo/ehbo-monitoring",
     },
   ]
 
@@ -182,7 +188,7 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href="#demo">
+              <Link href="/demo/overview">
                 <Button variant="outline">Live Demo</Button>
               </Link>
               <Link href="/login">
@@ -212,7 +218,7 @@ export default function LandingPage() {
               monitoring, intelligente rapportages en naadloze integratie in één krachtige oplossing.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link href="#demo">
+              <Link href="/demo/overview">
                 <Button size="lg" className="text-lg px-8 py-4">
                   <Video className="mr-2 h-5 w-5" />
                   Bekijk Live Demo
@@ -288,9 +294,11 @@ export default function LandingPage() {
                   </CardHeader>
                   <CardContent className="pt-0">
                     <CardDescription className="text-base mb-4 leading-relaxed">{feature.description}</CardDescription>
-                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 p-0">
-                      {feature.demo} <ArrowRight className="ml-1 h-4 w-4" />
-                    </Button>
+                    <Link href={feature.demoUrl}>
+                      <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 p-0">
+                        {feature.demo} <ArrowRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               )
@@ -365,9 +373,11 @@ export default function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
-                    {plan.price === "Op maat" ? "Contact Opnemen" : "Start Gratis Trial"}
-                  </Button>
+                  <Link href={plan.price === "Op maat" ? "/contact" : "/login"}>
+                    <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
+                      {plan.price === "Op maat" ? "Contact Opnemen" : "Start Gratis Trial"}
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             ))}
@@ -389,7 +399,7 @@ export default function LandingPage() {
                 Start Gratis Trial
               </Button>
             </Link>
-            <Link href="#demo">
+            <Link href="/demo/overview">
               <Button
                 size="lg"
                 variant="outline"
@@ -426,7 +436,7 @@ export default function LandingPage() {
               <h3 className="font-semibold mb-4 text-lg">Platform</h3>
               <ul className="space-y-3 text-gray-400">
                 <li>
-                  <Link href="#demo" className="hover:text-white transition-colors">
+                  <Link href="/demo/overview" className="hover:text-white transition-colors">
                     Live Demo
                   </Link>
                 </li>
@@ -441,7 +451,7 @@ export default function LandingPage() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/api-docs" className="hover:text-white transition-colors">
+                  <Link href="/help" className="hover:text-white transition-colors">
                     API Documentatie
                   </Link>
                 </li>
@@ -461,12 +471,12 @@ export default function LandingPage() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/training" className="hover:text-white transition-colors">
+                  <Link href="/help" className="hover:text-white transition-colors">
                     Training
                   </Link>
                 </li>
                 <li>
-                  <Link href="/status" className="hover:text-white transition-colors">
+                  <Link href="/debug" className="hover:text-white transition-colors">
                     Status Pagina
                   </Link>
                 </li>
@@ -476,13 +486,13 @@ export default function LandingPage() {
           <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 mb-4 md:mb-0">&copy; 2024 BHV360. Alle rechten voorbehouden.</p>
             <div className="flex space-x-6 text-gray-400">
-              <Link href="/privacy" className="hover:text-white transition-colors">
+              <Link href="/help" className="hover:text-white transition-colors">
                 Privacy
               </Link>
-              <Link href="/terms" className="hover:text-white transition-colors">
+              <Link href="/help" className="hover:text-white transition-colors">
                 Voorwaarden
               </Link>
-              <Link href="/cookies" className="hover:text-white transition-colors">
+              <Link href="/help" className="hover:text-white transition-colors">
                 Cookies
               </Link>
             </div>
