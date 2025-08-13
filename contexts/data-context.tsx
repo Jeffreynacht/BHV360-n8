@@ -1,10 +1,9 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
 // Types
-interface Customer {
+export interface Customer {
   id: string
   name: string
   address: string
@@ -13,84 +12,85 @@ interface Customer {
   phone: string
   buildings: number
   employees: number
-  status: "active" | "inactive"
+  status: "active" | "inactive" | "trial"
   createdAt: string
 }
 
-interface BhvMember {
+export interface BhvMember {
   id: string
   customerId: string
   name: string
   email: string
   phone: string
-  role: "coordinator" | "ehbo" | "evacuation" | "fire_warden"
-  certificateExpiry: string
+  role: "coordinator" | "ehbo" | "evacuation-leader" | "fire-warden"
+  certificationDate: string
+  certificationExpiry: string
   status: "active" | "inactive" | "expired"
-  lastTraining?: string
   avatar?: string
 }
 
-interface Incident {
+export interface Incident {
   id: string
   customerId: string
   title: string
   description: string
   type: "fire" | "medical" | "evacuation" | "security" | "other"
   severity: "low" | "medium" | "high" | "critical"
-  status: "open" | "in_progress" | "resolved" | "closed"
+  status: "open" | "in-progress" | "resolved" | "closed"
   reportedBy: string
   assignedTo?: string
-  location: string
   createdAt: string
   updatedAt: string
-  resolvedAt?: string
+  location?: string
 }
 
-interface NfcTag {
+export interface NfcTag {
   id: string
   customerId: string
   tagId: string
   name: string
-  type: "fire_extinguisher" | "ehbo_post" | "aed" | "evacuation_point" | "emergency_exit" | "other"
+  type: "fire-extinguisher" | "aed" | "first-aid" | "emergency-exit" | "assembly-point" | "other"
   location: string
-  description: string
-  batteryLevel: number
+  floor: string
   status: "active" | "inactive" | "error"
-  lastSeen: string
+  batteryLevel?: number
+  lastSeen?: string
   lastScanned?: string
-  createdAt: string
+  assignedEquipment?: string
 }
 
 interface DataContextType {
   // Customers
   customers: Customer[]
-  selectedCustomer: Customer | null
-  setSelectedCustomer: (customer: Customer | null) => void
-  getCustomerById: (id: string) => Customer | null
-  addCustomer: (customer: Omit<Customer, "id" | "createdAt">) => Promise<void>
-  updateCustomer: (id: string, updates: Partial<Customer>) => Promise<void>
-  deleteCustomer: (id: string) => Promise<void>
+  getCustomers: () => Promise<Customer[]>
+  getCustomerById: (id: string) => Promise<Customer | null>
+  createCustomer: (customer: Omit<Customer, "id" | "createdAt">) => Promise<Customer>
+  updateCustomer: (id: string, updates: Partial<Customer>) => Promise<Customer>
+  deleteCustomer: (id: string) => Promise<boolean>
 
   // BHV Members
   bhvMembers: BhvMember[]
-  getBhvMembersByCustomer: (customerId: string) => BhvMember[]
-  addBhvMember: (member: Omit<BhvMember, "id">) => Promise<void>
-  updateBhvMember: (id: string, updates: Partial<BhvMember>) => Promise<void>
-  deleteBhvMember: (id: string) => Promise<void>
+  getBhvMembersByCustomer: (customerId: string) => Promise<BhvMember[]>
+  getBhvMemberById: (id: string) => Promise<BhvMember | null>
+  createBhvMember: (member: Omit<BhvMember, "id">) => Promise<BhvMember>
+  updateBhvMember: (id: string, updates: Partial<BhvMember>) => Promise<BhvMember>
+  deleteBhvMember: (id: string) => Promise<boolean>
 
   // Incidents
   incidents: Incident[]
-  getIncidentsByCustomer: (customerId: string) => Incident[]
-  addIncident: (incident: Omit<Incident, "id" | "createdAt" | "updatedAt">) => Promise<void>
-  updateIncident: (id: string, updates: Partial<Incident>) => Promise<void>
-  deleteIncident: (id: string) => Promise<void>
+  getIncidentsByCustomer: (customerId: string) => Promise<Incident[]>
+  getIncidentById: (id: string) => Promise<Incident | null>
+  createIncident: (incident: Omit<Incident, "id" | "createdAt" | "updatedAt">) => Promise<Incident>
+  updateIncident: (id: string, updates: Partial<Incident>) => Promise<Incident>
+  deleteIncident: (id: string) => Promise<boolean>
 
   // NFC Tags
   nfcTags: NfcTag[]
-  getNfcTagsByCustomer: (customerId: string) => NfcTag[]
-  addNfcTag: (tag: Omit<NfcTag, "id" | "createdAt">) => Promise<void>
-  updateNfcTag: (id: string, updates: Partial<NfcTag>) => Promise<void>
-  deleteNfcTag: (id: string) => Promise<void>
+  getNfcTagsByCustomer: (customerId: string) => Promise<NfcTag[]>
+  getNfcTagById: (id: string) => Promise<NfcTag | null>
+  createNfcTag: (tag: Omit<NfcTag, "id">) => Promise<NfcTag>
+  updateNfcTag: (id: string, updates: Partial<NfcTag>) => Promise<NfcTag>
+  deleteNfcTag: (id: string) => Promise<boolean>
   scanNfcTag: (tagId: string) => Promise<NfcTag | null>
 
   // Loading states
@@ -101,9 +101,9 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined)
 
 // Demo data
-const demoCustomers: Customer[] = [
+const DEMO_CUSTOMERS: Customer[] = [
   {
-    id: "1",
+    id: "demo-bedrijf-bv",
     name: "Demo Bedrijf BV",
     address: "Hoofdstraat 123, 1000 AB Amsterdam",
     contactPerson: "Jan Janssen",
@@ -115,7 +115,7 @@ const demoCustomers: Customer[] = [
     createdAt: "2024-01-15T10:00:00Z",
   },
   {
-    id: "2",
+    id: "acme-corp",
     name: "Acme Corporation",
     address: "Industrieweg 456, 3000 CD Rotterdam",
     contactPerson: "Sarah de Wit",
@@ -127,9 +127,9 @@ const demoCustomers: Customer[] = [
     createdAt: "2024-02-01T14:30:00Z",
   },
   {
-    id: "3",
+    id: "zorgcentrum-boomgaard",
     name: "Zorgcentrum De Boomgaard",
-    address: "Parkweg 789, 3500 EF Utrecht",
+    address: "Zorgstraat 789, 3500 EF Utrecht",
     contactPerson: "Dr. Peter van der Berg",
     email: "p.vandenberg@boomgaard.nl",
     phone: "+31 30 555 1234",
@@ -140,456 +140,384 @@ const demoCustomers: Customer[] = [
   },
 ]
 
-const demoBhvMembers: BhvMember[] = [
+const DEMO_BHV_MEMBERS: BhvMember[] = [
   {
-    id: "1",
-    customerId: "1",
+    id: "bhv-001",
+    customerId: "demo-bedrijf-bv",
     name: "Piet Pietersen",
     email: "piet@demobedrijf.nl",
     phone: "+31 6 1234 5678",
     role: "coordinator",
-    certificateExpiry: "2025-06-15",
+    certificationDate: "2023-03-15",
+    certificationExpiry: "2025-03-15",
     status: "active",
-    lastTraining: "2024-03-15",
     avatar: "/placeholder-user.jpg",
   },
   {
-    id: "2",
-    customerId: "1",
+    id: "bhv-002",
+    customerId: "demo-bedrijf-bv",
     name: "Marie de Vries",
     email: "marie@demobedrijf.nl",
     phone: "+31 6 2345 6789",
     role: "ehbo",
-    certificateExpiry: "2025-08-20",
+    certificationDate: "2023-06-01",
+    certificationExpiry: "2025-06-01",
     status: "active",
-    lastTraining: "2024-02-10",
     avatar: "/placeholder-user.jpg",
   },
   {
-    id: "3",
-    customerId: "1",
+    id: "bhv-003",
+    customerId: "demo-bedrijf-bv",
     name: "Kees van der Berg",
     email: "kees@demobedrijf.nl",
     phone: "+31 6 3456 7890",
-    role: "evacuation",
-    certificateExpiry: "2025-04-30",
+    role: "evacuation-leader",
+    certificationDate: "2023-09-10",
+    certificationExpiry: "2025-09-10",
     status: "active",
-    lastTraining: "2024-01-25",
     avatar: "/placeholder-user.jpg",
   },
 ]
 
-const demoIncidents: Incident[] = [
+const DEMO_INCIDENTS: Incident[] = [
   {
-    id: "1",
-    customerId: "1",
+    id: "incident-001",
+    customerId: "demo-bedrijf-bv",
     title: "Kleine brand in keuken",
     description: "Magnetron oververhit, kleine rookontwikkeling. Snel geblust met brandblusser.",
     type: "fire",
     severity: "medium",
     status: "resolved",
-    reportedBy: "Marie de Vries",
+    reportedBy: "Jan Janssen",
     assignedTo: "Piet Pietersen",
     location: "Keuken, 2e verdieping",
-    createdAt: "2024-03-10T14:30:00Z",
-    updatedAt: "2024-03-10T15:15:00Z",
-    resolvedAt: "2024-03-10T15:15:00Z",
+    createdAt: "2024-01-10T14:30:00Z",
+    updatedAt: "2024-01-10T15:45:00Z",
   },
   {
-    id: "2",
-    customerId: "1",
+    id: "incident-002",
+    customerId: "demo-bedrijf-bv",
     title: "Medische noodsituatie",
-    description: "Medewerker gevallen van trap, ambulance gebeld. Eerste hulp verleend.",
+    description: "Medewerker gevallen van trap, mogelijk enkelblessure.",
     type: "medical",
     severity: "high",
     status: "closed",
-    reportedBy: "Kees van der Berg",
+    reportedBy: "Marie de Vries",
     assignedTo: "Marie de Vries",
-    location: "Trappenhuis hoofdgebouw",
-    createdAt: "2024-03-05T11:20:00Z",
-    updatedAt: "2024-03-05T12:45:00Z",
-    resolvedAt: "2024-03-05T12:45:00Z",
+    location: "Hoofdtrap, begane grond",
+    createdAt: "2024-01-05T11:15:00Z",
+    updatedAt: "2024-01-05T12:30:00Z",
   },
 ]
 
-const demoNfcTags: NfcTag[] = [
+const DEMO_NFC_TAGS: NfcTag[] = [
   {
-    id: "1",
-    customerId: "1",
-    tagId: "NFC-001",
+    id: "nfc-001",
+    customerId: "demo-bedrijf-bv",
+    tagId: "NFC-BRANDBLUSSER-001",
     name: "Brandblusser Hoofdingang",
-    type: "fire_extinguisher",
+    type: "fire-extinguisher",
     location: "Hoofdingang, begane grond",
-    description: "6kg poederblusser bij de hoofdingang",
+    floor: "Begane grond",
+    status: "active",
     batteryLevel: 85,
-    status: "active",
-    lastSeen: "2024-03-15T10:30:00Z",
-    lastScanned: "2024-03-14T16:45:00Z",
-    createdAt: "2024-01-15T10:00:00Z",
+    lastSeen: "2024-01-15T10:30:00Z",
+    lastScanned: "2024-01-14T16:45:00Z",
+    assignedEquipment: "Brandblusser 6kg ABC poeder",
   },
   {
-    id: "2",
-    customerId: "1",
-    tagId: "NFC-002",
+    id: "nfc-002",
+    customerId: "demo-bedrijf-bv",
+    tagId: "NFC-EHBO-002",
     name: "EHBO-post Verdieping 1",
-    type: "ehbo_post",
-    location: "Gang verdieping 1",
-    description: "Volledige EHBO-post met AED",
-    batteryLevel: 92,
+    type: "first-aid",
+    location: "Gang oost, 1e verdieping",
+    floor: "1e verdieping",
     status: "active",
-    lastSeen: "2024-03-15T09:15:00Z",
-    lastScanned: "2024-03-13T14:20:00Z",
-    createdAt: "2024-01-15T10:00:00Z",
+    batteryLevel: 92,
+    lastSeen: "2024-01-15T09:15:00Z",
+    lastScanned: "2024-01-13T14:20:00Z",
+    assignedEquipment: "EHBO-koffer groot",
   },
   {
-    id: "3",
-    customerId: "1",
-    tagId: "NFC-003",
+    id: "nfc-003",
+    customerId: "demo-bedrijf-bv",
+    tagId: "NFC-AED-003",
     name: "AED Receptie",
     type: "aed",
     location: "Receptie, begane grond",
-    description: "Automatische Externe Defibrillator",
-    batteryLevel: 78,
+    floor: "Begane grond",
     status: "active",
-    lastSeen: "2024-03-15T08:45:00Z",
-    lastScanned: "2024-03-12T11:30:00Z",
-    createdAt: "2024-01-15T10:00:00Z",
+    batteryLevel: 78,
+    lastSeen: "2024-01-15T08:45:00Z",
+    lastScanned: "2024-01-12T10:30:00Z",
+    assignedEquipment: "AED Philips HeartStart",
   },
 ]
 
-export function DataProvider({ children }: { children: React.ReactNode }) {
+export function DataProvider({ children }: { children: ReactNode }) {
   const [customers, setCustomers] = useState<Customer[]>([])
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [bhvMembers, setBhvMembers] = useState<BhvMember[]>([])
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [nfcTags, setNfcTags] = useState<NfcTag[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Initialize data from localStorage or use demo data
+  // Initialize data from localStorage or demo data
   useEffect(() => {
-    try {
-      const storedCustomers = localStorage.getItem("bhv360-customers")
-      const storedBhvMembers = localStorage.getItem("bhv360-bhv-members")
-      const storedIncidents = localStorage.getItem("bhv360-incidents")
-      const storedNfcTags = localStorage.getItem("bhv360-nfc-tags")
-      const storedSelectedCustomer = localStorage.getItem("bhv360-selected-customer")
+    const initializeData = () => {
+      try {
+        if (typeof window !== "undefined") {
+          // Load customers
+          const savedCustomers = localStorage.getItem("bhv360-customers")
+          setCustomers(savedCustomers ? JSON.parse(savedCustomers) : DEMO_CUSTOMERS)
 
-      setCustomers(storedCustomers ? JSON.parse(storedCustomers) : demoCustomers)
-      setBhvMembers(storedBhvMembers ? JSON.parse(storedBhvMembers) : demoBhvMembers)
-      setIncidents(storedIncidents ? JSON.parse(storedIncidents) : demoIncidents)
-      setNfcTags(storedNfcTags ? JSON.parse(storedNfcTags) : demoNfcTags)
+          // Load BHV members
+          const savedBhvMembers = localStorage.getItem("bhv360-bhv-members")
+          setBhvMembers(savedBhvMembers ? JSON.parse(savedBhvMembers) : DEMO_BHV_MEMBERS)
 
-      if (storedSelectedCustomer) {
-        const customer = JSON.parse(storedSelectedCustomer)
-        setSelectedCustomer(customer)
+          // Load incidents
+          const savedIncidents = localStorage.getItem("bhv360-incidents")
+          setIncidents(savedIncidents ? JSON.parse(savedIncidents) : DEMO_INCIDENTS)
+
+          // Load NFC tags
+          const savedNfcTags = localStorage.getItem("bhv360-nfc-tags")
+          setNfcTags(savedNfcTags ? JSON.parse(savedNfcTags) : DEMO_NFC_TAGS)
+        }
+      } catch (error) {
+        console.error("Error loading data from localStorage:", error)
+        // Use demo data as fallback
+        setCustomers(DEMO_CUSTOMERS)
+        setBhvMembers(DEMO_BHV_MEMBERS)
+        setIncidents(DEMO_INCIDENTS)
+        setNfcTags(DEMO_NFC_TAGS)
       }
-    } catch (error) {
-      console.error("Error loading data from localStorage:", error)
-      setCustomers(demoCustomers)
-      setBhvMembers(demoBhvMembers)
-      setIncidents(demoIncidents)
-      setNfcTags(demoNfcTags)
     }
+
+    initializeData()
   }, [])
 
   // Save to localStorage whenever data changes
   useEffect(() => {
-    localStorage.setItem("bhv360-customers", JSON.stringify(customers))
+    if (typeof window !== "undefined" && customers.length > 0) {
+      localStorage.setItem("bhv360-customers", JSON.stringify(customers))
+    }
   }, [customers])
 
   useEffect(() => {
-    localStorage.setItem("bhv360-bhv-members", JSON.stringify(bhvMembers))
+    if (typeof window !== "undefined" && bhvMembers.length > 0) {
+      localStorage.setItem("bhv360-bhv-members", JSON.stringify(bhvMembers))
+    }
   }, [bhvMembers])
 
   useEffect(() => {
-    localStorage.setItem("bhv360-incidents", JSON.stringify(incidents))
+    if (typeof window !== "undefined" && incidents.length > 0) {
+      localStorage.setItem("bhv360-incidents", JSON.stringify(incidents))
+    }
   }, [incidents])
 
   useEffect(() => {
-    localStorage.setItem("bhv360-nfc-tags", JSON.stringify(nfcTags))
+    if (typeof window !== "undefined" && nfcTags.length > 0) {
+      localStorage.setItem("bhv360-nfc-tags", JSON.stringify(nfcTags))
+    }
   }, [nfcTags])
 
-  useEffect(() => {
-    if (selectedCustomer) {
-      localStorage.setItem("bhv360-selected-customer", JSON.stringify(selectedCustomer))
-    } else {
-      localStorage.removeItem("bhv360-selected-customer")
-    }
-  }, [selectedCustomer])
+  // Utility function to simulate async operations
+  const simulateAsync = <T,>(data: T): Promise<T> => {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(data), 100 + Math.random() * 200)
+    })
+  }
 
   // Customer functions
-  const getCustomerById = (id: string): Customer | null => {
-    return customers.find((customer) => customer.id === id) || null
-  }
-
-  const addCustomer = async (customerData: Omit<Customer, "id" | "createdAt">): Promise<void> => {
+  const getCustomers = async (): Promise<Customer[]> => {
     setIsLoading(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500)) // Simulate API call
-      const newCustomer: Customer = {
-        ...customerData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-      }
-      setCustomers((prev) => [...prev, newCustomer])
-    } catch (err) {
-      setError("Fout bij toevoegen klant")
-      throw err
+      const result = await simulateAsync(customers)
+      return result
     } finally {
       setIsLoading(false)
     }
   }
 
-  const updateCustomer = async (id: string, updates: Partial<Customer>): Promise<void> => {
-    setIsLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      setCustomers((prev) => prev.map((customer) => (customer.id === id ? { ...customer, ...updates } : customer)))
-      if (selectedCustomer?.id === id) {
-        setSelectedCustomer((prev) => (prev ? { ...prev, ...updates } : null))
-      }
-    } catch (err) {
-      setError("Fout bij bijwerken klant")
-      throw err
-    } finally {
-      setIsLoading(false)
-    }
+  const getCustomerById = async (id: string): Promise<Customer | null> => {
+    const customer = customers.find((c) => c.id === id)
+    return simulateAsync(customer || null)
   }
 
-  const deleteCustomer = async (id: string): Promise<void> => {
-    setIsLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      setCustomers((prev) => prev.filter((customer) => customer.id !== id))
-      if (selectedCustomer?.id === id) {
-        setSelectedCustomer(null)
-      }
-      // Also remove related data
-      setBhvMembers((prev) => prev.filter((member) => member.customerId !== id))
-      setIncidents((prev) => prev.filter((incident) => incident.customerId !== id))
-      setNfcTags((prev) => prev.filter((tag) => tag.customerId !== id))
-    } catch (err) {
-      setError("Fout bij verwijderen klant")
-      throw err
-    } finally {
-      setIsLoading(false)
+  const createCustomer = async (customerData: Omit<Customer, "id" | "createdAt">): Promise<Customer> => {
+    const newCustomer: Customer = {
+      ...customerData,
+      id: `customer-${Date.now()}`,
+      createdAt: new Date().toISOString(),
     }
+    setCustomers((prev) => [...prev, newCustomer])
+    return simulateAsync(newCustomer)
+  }
+
+  const updateCustomer = async (id: string, updates: Partial<Customer>): Promise<Customer> => {
+    const updatedCustomers = customers.map((c) => (c.id === id ? { ...c, ...updates } : c))
+    setCustomers(updatedCustomers)
+    const updatedCustomer = updatedCustomers.find((c) => c.id === id)!
+    return simulateAsync(updatedCustomer)
+  }
+
+  const deleteCustomer = async (id: string): Promise<boolean> => {
+    setCustomers((prev) => prev.filter((c) => c.id !== id))
+    return simulateAsync(true)
   }
 
   // BHV Member functions
-  const getBhvMembersByCustomer = (customerId: string): BhvMember[] => {
-    return bhvMembers.filter((member) => member.customerId === customerId)
+  const getBhvMembersByCustomer = async (customerId: string): Promise<BhvMember[]> => {
+    const customerMembers = bhvMembers.filter((m) => m.customerId === customerId)
+    return simulateAsync(customerMembers)
   }
 
-  const addBhvMember = async (memberData: Omit<BhvMember, "id">): Promise<void> => {
-    setIsLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      const newMember: BhvMember = {
-        ...memberData,
-        id: Date.now().toString(),
-      }
-      setBhvMembers((prev) => [...prev, newMember])
-    } catch (err) {
-      setError("Fout bij toevoegen BHV-lid")
-      throw err
-    } finally {
-      setIsLoading(false)
-    }
+  const getBhvMemberById = async (id: string): Promise<BhvMember | null> => {
+    const member = bhvMembers.find((m) => m.id === id)
+    return simulateAsync(member || null)
   }
 
-  const updateBhvMember = async (id: string, updates: Partial<BhvMember>): Promise<void> => {
-    setIsLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      setBhvMembers((prev) => prev.map((member) => (member.id === id ? { ...member, ...updates } : member)))
-    } catch (err) {
-      setError("Fout bij bijwerken BHV-lid")
-      throw err
-    } finally {
-      setIsLoading(false)
+  const createBhvMember = async (memberData: Omit<BhvMember, "id">): Promise<BhvMember> => {
+    const newMember: BhvMember = {
+      ...memberData,
+      id: `bhv-${Date.now()}`,
     }
+    setBhvMembers((prev) => [...prev, newMember])
+    return simulateAsync(newMember)
   }
 
-  const deleteBhvMember = async (id: string): Promise<void> => {
-    setIsLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      setBhvMembers((prev) => prev.filter((member) => member.id !== id))
-    } catch (err) {
-      setError("Fout bij verwijderen BHV-lid")
-      throw err
-    } finally {
-      setIsLoading(false)
-    }
+  const updateBhvMember = async (id: string, updates: Partial<BhvMember>): Promise<BhvMember> => {
+    const updatedMembers = bhvMembers.map((m) => (m.id === id ? { ...m, ...updates } : m))
+    setBhvMembers(updatedMembers)
+    const updatedMember = updatedMembers.find((m) => m.id === id)!
+    return simulateAsync(updatedMember)
+  }
+
+  const deleteBhvMember = async (id: string): Promise<boolean> => {
+    setBhvMembers((prev) => prev.filter((m) => m.id !== id))
+    return simulateAsync(true)
   }
 
   // Incident functions
-  const getIncidentsByCustomer = (customerId: string): Incident[] => {
-    return incidents.filter((incident) => incident.customerId === customerId)
+  const getIncidentsByCustomer = async (customerId: string): Promise<Incident[]> => {
+    const customerIncidents = incidents.filter((i) => i.customerId === customerId)
+    return simulateAsync(customerIncidents)
   }
 
-  const addIncident = async (incidentData: Omit<Incident, "id" | "createdAt" | "updatedAt">): Promise<void> => {
-    setIsLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      const now = new Date().toISOString()
-      const newIncident: Incident = {
-        ...incidentData,
-        id: Date.now().toString(),
-        createdAt: now,
-        updatedAt: now,
-      }
-      setIncidents((prev) => [...prev, newIncident])
-    } catch (err) {
-      setError("Fout bij toevoegen incident")
-      throw err
-    } finally {
-      setIsLoading(false)
-    }
+  const getIncidentById = async (id: string): Promise<Incident | null> => {
+    const incident = incidents.find((i) => i.id === id)
+    return simulateAsync(incident || null)
   }
 
-  const updateIncident = async (id: string, updates: Partial<Incident>): Promise<void> => {
-    setIsLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      const updatedAt = new Date().toISOString()
-      setIncidents((prev) =>
-        prev.map((incident) =>
-          incident.id === id
-            ? {
-                ...incident,
-                ...updates,
-                updatedAt,
-                resolvedAt:
-                  updates.status === "resolved" || updates.status === "closed" ? updatedAt : incident.resolvedAt,
-              }
-            : incident,
-        ),
-      )
-    } catch (err) {
-      setError("Fout bij bijwerken incident")
-      throw err
-    } finally {
-      setIsLoading(false)
+  const createIncident = async (incidentData: Omit<Incident, "id" | "createdAt" | "updatedAt">): Promise<Incident> => {
+    const now = new Date().toISOString()
+    const newIncident: Incident = {
+      ...incidentData,
+      id: `incident-${Date.now()}`,
+      createdAt: now,
+      updatedAt: now,
     }
+    setIncidents((prev) => [...prev, newIncident])
+    return simulateAsync(newIncident)
   }
 
-  const deleteIncident = async (id: string): Promise<void> => {
-    setIsLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      setIncidents((prev) => prev.filter((incident) => incident.id !== id))
-    } catch (err) {
-      setError("Fout bij verwijderen incident")
-      throw err
-    } finally {
-      setIsLoading(false)
-    }
+  const updateIncident = async (id: string, updates: Partial<Incident>): Promise<Incident> => {
+    const updatedIncidents = incidents.map((i) =>
+      i.id === id ? { ...i, ...updates, updatedAt: new Date().toISOString() } : i,
+    )
+    setIncidents(updatedIncidents)
+    const updatedIncident = updatedIncidents.find((i) => i.id === id)!
+    return simulateAsync(updatedIncident)
+  }
+
+  const deleteIncident = async (id: string): Promise<boolean> => {
+    setIncidents((prev) => prev.filter((i) => i.id !== id))
+    return simulateAsync(true)
   }
 
   // NFC Tag functions
-  const getNfcTagsByCustomer = (customerId: string): NfcTag[] => {
-    return nfcTags.filter((tag) => tag.customerId === customerId)
+  const getNfcTagsByCustomer = async (customerId: string): Promise<NfcTag[]> => {
+    const customerTags = nfcTags.filter((t) => t.customerId === customerId)
+    return simulateAsync(customerTags)
   }
 
-  const addNfcTag = async (tagData: Omit<NfcTag, "id" | "createdAt">): Promise<void> => {
-    setIsLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      const newTag: NfcTag = {
-        ...tagData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-      }
-      setNfcTags((prev) => [...prev, newTag])
-    } catch (err) {
-      setError("Fout bij toevoegen NFC-tag")
-      throw err
-    } finally {
-      setIsLoading(false)
-    }
+  const getNfcTagById = async (id: string): Promise<NfcTag | null> => {
+    const tag = nfcTags.find((t) => t.id === id)
+    return simulateAsync(tag || null)
   }
 
-  const updateNfcTag = async (id: string, updates: Partial<NfcTag>): Promise<void> => {
-    setIsLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      setNfcTags((prev) => prev.map((tag) => (tag.id === id ? { ...tag, ...updates } : tag)))
-    } catch (err) {
-      setError("Fout bij bijwerken NFC-tag")
-      throw err
-    } finally {
-      setIsLoading(false)
+  const createNfcTag = async (tagData: Omit<NfcTag, "id">): Promise<NfcTag> => {
+    const newTag: NfcTag = {
+      ...tagData,
+      id: `nfc-${Date.now()}`,
     }
+    setNfcTags((prev) => [...prev, newTag])
+    return simulateAsync(newTag)
   }
 
-  const deleteNfcTag = async (id: string): Promise<void> => {
-    setIsLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      setNfcTags((prev) => prev.filter((tag) => tag.id !== id))
-    } catch (err) {
-      setError("Fout bij verwijderen NFC-tag")
-      throw err
-    } finally {
-      setIsLoading(false)
-    }
+  const updateNfcTag = async (id: string, updates: Partial<NfcTag>): Promise<NfcTag> => {
+    const updatedTags = nfcTags.map((t) => (t.id === id ? { ...t, ...updates } : t))
+    setNfcTags(updatedTags)
+    const updatedTag = updatedTags.find((t) => t.id === id)!
+    return simulateAsync(updatedTag)
+  }
+
+  const deleteNfcTag = async (id: string): Promise<boolean> => {
+    setNfcTags((prev) => prev.filter((t) => t.id !== id))
+    return simulateAsync(true)
   }
 
   const scanNfcTag = async (tagId: string): Promise<NfcTag | null> => {
-    setIsLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate scan time
-      const tag = nfcTags.find((t) => t.tagId === tagId)
-      if (tag) {
-        const now = new Date().toISOString()
-        await updateNfcTag(tag.id, { lastScanned: now, lastSeen: now })
-        return { ...tag, lastScanned: now, lastSeen: now }
+    const tag = nfcTags.find((t) => t.tagId === tagId)
+    if (tag) {
+      const updatedTag = {
+        ...tag,
+        lastScanned: new Date().toISOString(),
       }
-      return null
-    } catch (err) {
-      setError("Fout bij scannen NFC-tag")
-      throw err
-    } finally {
-      setIsLoading(false)
+      await updateNfcTag(tag.id, { lastScanned: updatedTag.lastScanned })
+      return simulateAsync(updatedTag)
     }
+    return simulateAsync(null)
   }
 
   const value: DataContextType = {
-    // Customers
+    // Data
     customers,
-    selectedCustomer,
-    setSelectedCustomer,
+    bhvMembers,
+    incidents,
+    nfcTags,
+
+    // Customer functions
+    getCustomers,
     getCustomerById,
-    addCustomer,
+    createCustomer,
     updateCustomer,
     deleteCustomer,
 
-    // BHV Members
-    bhvMembers,
+    // BHV Member functions
     getBhvMembersByCustomer,
-    addBhvMember,
+    getBhvMemberById,
+    createBhvMember,
     updateBhvMember,
     deleteBhvMember,
 
-    // Incidents
-    incidents,
+    // Incident functions
     getIncidentsByCustomer,
-    addIncident,
+    getIncidentById,
+    createIncident,
     updateIncident,
     deleteIncident,
 
-    // NFC Tags
-    nfcTags,
+    // NFC Tag functions
     getNfcTagsByCustomer,
-    addNfcTag,
+    getNfcTagById,
+    createNfcTag,
     updateNfcTag,
     deleteNfcTag,
     scanNfcTag,
 
-    // Loading states
+    // State
     isLoading,
     error,
   }
@@ -600,7 +528,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 export function useData() {
   const context = useContext(DataContext)
   if (context === undefined) {
-    throw new Error("useData moet gebruikt worden binnen een DataProvider")
+    throw new Error("useData must be used within a DataProvider")
   }
   return context
 }

@@ -1,102 +1,65 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { verifyAuth } from "@/lib/auth"
 
-// Routes that require authentication
-const protectedRoutes = [
-  "/dashboard",
-  "/beheer",
-  "/bhv",
-  "/incidenten",
-  "/plotkaart",
-  "/klanten",
-  "/gebruikers",
-  "/instellingen",
-  "/notificaties",
-  "/help-dashboard",
-  "/super-admin",
-  "/customer-admin",
-  "/partner",
-]
+// Routes die geen authenticatie vereisen
+const publicRoutes = ["/", "/login", "/api/auth/login", "/api/auth/logout", "/api/auth/status"]
 
-// Routes that should redirect to dashboard if already authenticated
-const authRoutes = ["/login"]
+// Routes die altijd toegankelijk zijn (ook voor debugging)
+const alwaysAccessibleRoutes = ["/debug", "/debug-auth", "/debug-deployment", "/simple-test", "/api/debug"]
 
-// Public routes that don't require authentication
-const publicRoutes = [
-  "/",
-  "/api/auth/login",
-  "/api/auth/logout",
-  "/api/auth/status",
-  "/gratis-bhv-software",
-  "/mobile-app",
-  "/geavanceerde-functies",
-  "/smart-scheduling",
-  "/skills-assessment",
-  "/white-label",
-]
-
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  console.log("Middleware checking path:", pathname)
+  console.log(`🔍 Middleware checking: ${pathname}`)
 
-  // Allow all API routes except auth routes to pass through
-  if (pathname.startsWith("/api/") && !pathname.startsWith("/api/auth/")) {
+  // Sta publieke routes altijd toe
+  if (publicRoutes.some((route) => pathname === route || pathname.startsWith(route))) {
+    console.log(`✅ Public route allowed: ${pathname}`)
     return NextResponse.next()
   }
 
-  // Allow static files and Next.js internals
+  // Sta debug routes altijd toe
+  if (alwaysAccessibleRoutes.some((route) => pathname.startsWith(route))) {
+    console.log(`🔧 Debug route allowed: ${pathname}`)
+    return NextResponse.next()
+  }
+
+  // Sta static assets toe
   if (
-    pathname.startsWith("/_next/") ||
-    pathname.startsWith("/favicon.ico") ||
-    pathname.startsWith("/images/") ||
-    pathname.startsWith("/placeholder") ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/images") ||
     pathname.includes(".")
   ) {
     return NextResponse.next()
   }
 
-  // Check if route is public
-  if (publicRoutes.some((route) => pathname === route || pathname.startsWith(route + "/"))) {
-    console.log("Public route, allowing access")
-    return NextResponse.next()
+  // Check voor authentication token
+  const token =
+    request.cookies.get("bhv360-token")?.value || request.headers.get("authorization")?.replace("Bearer ", "")
+
+  if (!token) {
+    console.log(`❌ No token found, redirecting to login: ${pathname}`)
+    const loginUrl = new URL("/login", request.url)
+    loginUrl.searchParams.set("from", pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
-  // Check authentication for protected routes
-  const isProtectedRoute = protectedRoutes.some((route) => pathname === route || pathname.startsWith(route + "/"))
-
-  if (isProtectedRoute) {
-    console.log("Protected route, checking authentication")
-    const isAuthenticated = await verifyAuth(request)
-
-    if (!isAuthenticated) {
-      console.log("Not authenticated, redirecting to login")
+  // Verificeer token (basis verificatie)
+  try {
+    const decoded = JSON.parse(Buffer.from(token, "base64").toString())
+    if (decoded.exp && decoded.exp < Date.now()) {
+      console.log(`❌ Token expired, redirecting to login: ${pathname}`)
       const loginUrl = new URL("/login", request.url)
-      loginUrl.searchParams.set("from", pathname)
       return NextResponse.redirect(loginUrl)
     }
-
-    console.log("Authenticated, allowing access")
-    return NextResponse.next()
+    console.log(`✅ Valid token, allowing access: ${pathname}`)
+  } catch (error) {
+    console.log(`❌ Invalid token, redirecting to login: ${pathname}`)
+    const loginUrl = new URL("/login", request.url)
+    return NextResponse.redirect(loginUrl)
   }
 
-  // Handle auth routes (redirect to dashboard if already authenticated)
-  if (authRoutes.includes(pathname)) {
-    console.log("Auth route, checking if already authenticated")
-    const isAuthenticated = await verifyAuth(request)
-
-    if (isAuthenticated) {
-      console.log("Already authenticated, redirecting to dashboard")
-      return NextResponse.redirect(new URL("/dashboard", request.url))
-    }
-
-    console.log("Not authenticated, allowing access to auth route")
-    return NextResponse.next()
-  }
-
-  // Default: allow access
-  console.log("Default: allowing access")
   return NextResponse.next()
 }
 
@@ -104,11 +67,11 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
+     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder files
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 }

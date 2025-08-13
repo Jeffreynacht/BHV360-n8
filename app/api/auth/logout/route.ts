@@ -1,16 +1,18 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    const response = NextResponse.json({ success: true }, { status: 200 })
+    const response = NextResponse.json({
+      success: true,
+      message: "Succesvol uitgelogd",
+    })
 
-    // Clear the auth cookie
-    response.cookies.set("auth-token", "", {
+    // Verwijder authentication cookie
+    response.cookies.set("bhv360-token", "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 0,
-      path: "/",
+      maxAge: 0, // Verwijder cookie
     })
 
     return response
