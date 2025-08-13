@@ -1,748 +1,348 @@
-import type React from "react"
-import { Flame, ShieldCheck, Heart, Phone, Zap, Droplets, Eye, Volume2 } from "lucide-react"
-
-type IconType =
-  | "fire-extinguisher"
-  | "fire-hose"
-  | "sprinkler"
-  | "fire-door"
-  | "bmc"
-  | "mobile-fire-extinguisher"
-  | "fire-curtain"
-  | "fire-suppression-nozzle"
-  | "fire-blanket"
-  | "class-b-extinguisher"
-  | "fire-alarm-horn"
-  | "fire-blanket-usage"
-  | "emergency-phone"
-  | "fire-hydrant"
-  | "emergency-exit-green"
-  | "direction-arrow-red"
-  | "direction-arrow-simple"
-  | "safety-vest"
-  | "fire-equipment"
-  | "water-valve"
-  | "electrical-hazard"
-  | "gas-valve"
-  | "public-address"
-  | "emergency-stop"
-  | "emergency-torch"
-  | "evacuation-arrow-green"
-  | "exit-up-arrow"
-  | "assembly-point-people"
-  | "accessible-exit"
-  | "emergency-call-button"
-  | "medical-stretcher"
-  | "medical-cross"
-  | "eye-wash-station"
-  | "medical-transport"
-  | "first-aid-provider"
-  | "aed-heart"
-  | "emergency-shower"
-  | "bhv-helmet"
-  | "safety-gloves"
-  | "safety-harness"
-  | "no-elevator"
-  | "no-open-flames"
-  | "no-forklifts"
-  | "evacuation-chair"
-  | "emergency-exit"
-  | "assembly-point"
-  | "first-aid"
-  | "aed"
-  | "emergency-button"
-  | "evacuation-route"
-  | "fire-alarm"
-  | "drag-mattress"
-  | "dry-riser"
-  | "a-first-aid"
-  | "auto-gas"
-  | "mobile-extinguisher"
-  | "smoke-screens"
-  | "bhv-kit"
-  | "yellow-first-aid"
-  | "red-bhv-bag"
+import {
+  Flame,
+  Heart,
+  Cross,
+  ShieldCheck,
+  Users,
+  Bell,
+  Droplets,
+  Wheelchair,
+  Zap,
+  Eye,
+  Phone,
+  DoorOpen,
+  Sprinkler,
+  Shield,
+  Shower,
+  Fuel,
+  Droplet,
+  Cpu,
+  Wind,
+  Battery,
+  Oxygen,
+  Bandage,
+  FlaskConical,
+  HardHat,
+  Radio,
+  Volume2,
+  Lightbulb,
+  Archive,
+  Codesandbox,
+  Waves,
+  Key,
+  Gauge,
+  Separator,
+  StopCircle,
+  MoreHorizontal,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface SafetyIconProps {
-  type: IconType
+  type: string
   size?: number
   className?: string
 }
 
-export const SafetyIcon: React.FC<SafetyIconProps> = ({ type, size = 32, className }) => {
+export function SafetyIcon({ type, size = 24, className }: SafetyIconProps) {
+  const iconProps = {
+    size,
+    className: cn("text-current", className),
+  }
+
   switch (type) {
-    case "fire-extinguisher":
-      return (
-        <img
-          src="/images/fire-extinguisher-symbol.png"
-          alt="Brandblusser"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "fire-hose":
-      return (
-        <img
-          src="/images/fire-hose-symbol.png"
-          alt="Brandslanghaspel"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "fire-alarm":
-      return (
-        <img
-          src="/images/fire-alarm-symbol.png"
-          alt="Handmelder"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
+    // Fire Fighting Equipment
+    case "fire_extinguisher":
+      return <Flame {...iconProps} className={cn(iconProps.className, "text-red-600")} />
+    case "fire_hose":
+      return <Droplets {...iconProps} className={cn(iconProps.className, "text-blue-600")} />
+    case "fire_blanket":
+      return <Shield {...iconProps} className={cn(iconProps.className, "text-red-500")} />
     case "sprinkler":
-      return (
-        <img
-          src="/images/sprinkler-symbol.png"
-          alt="Sprinklerinstallatie"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "fire-door":
-      return (
-        <img
-          src="/images/fire-door-symbol.png"
-          alt="Brandwerende deur"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "bmc":
-      return (
-        <img
-          src="/images/bmc-symbol.png"
-          alt="Brand Meld Centrale"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "mobile-fire-extinguisher":
-      return (
-        <img
-          src="/images/mobile-fire-extinguisher.png"
-          alt="Verrijdbare brandblusser"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "fire-curtain":
-      return (
-        <img
-          src="/images/fire-curtain.png"
-          alt="Brandscherm"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "fire-suppression-nozzle":
-      return (
-        <img
-          src="/images/fire-suppression-nozzle.png"
-          alt="Blusinstallatie mondstuk"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "fire-blanket":
-      return (
-        <img
-          src="/images/fire-blanket.png"
-          alt="Blusdeken"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "class-b-extinguisher":
-      return (
-        <img
-          src="/images/class-b-extinguisher.png"
-          alt="Klasse B brandblusser"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "fire-alarm-horn":
-      return (
-        <img
-          src="/images/fire-alarm-horn.png"
-          alt="Brandalarmsirene"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "fire-blanket-usage":
-      return (
-        <img
-          src="/images/fire-blanket-usage.png"
-          alt="Blusdeken gebruik"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "emergency-phone":
-      return (
-        <img
-          src="/images/emergency-phone.png"
-          alt="Noodtelefoon"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "fire-hydrant":
-      return (
-        <img
-          src="/images/fire-hydrant.png"
-          alt="Brandkraan"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "emergency-exit-green":
-      return (
-        <img
-          src="/images/emergency-exit-green.png"
-          alt="Nooduitgang (groen)"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "direction-arrow-red":
-      return (
-        <img
-          src="/images/direction-arrow-red.png"
-          alt="Richtingspijl (rood)"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "direction-arrow-simple":
-      return (
-        <img
-          src="/images/direction-arrow-simple.png"
-          alt="Richtingspijl (eenvoudig)"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "safety-vest":
-      return (
-        <img
-          src="/images/safety-vest.png"
-          alt="Veiligheidsvest"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "fire-equipment":
-      return (
-        <img
-          src="/images/fire-equipment.png"
-          alt="Brandweermateriaal"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "water-valve":
-      return (
-        <img
-          src="/images/water-valve.png"
-          alt="Waterafsluiter"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "electrical-hazard":
-      return (
-        <img
-          src="/images/electrical-hazard.png"
-          alt="Elektrisch gevaar"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "gas-valve":
-      return (
-        <img
-          src="/images/gas-valve.png"
-          alt="Gasafsluiter"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "public-address":
-      return (
-        <img
-          src="/images/public-address.png"
-          alt="Omroepinstallatie"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "emergency-stop":
-      return (
-        <img
-          src="/images/emergency-stop.png"
-          alt="Noodstop"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "emergency-torch":
-      return (
-        <img
-          src="/images/emergency-torch.png"
-          alt="Noodverlichting"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "evacuation-arrow-green":
-      return (
-        <img
-          src="/images/evacuation-arrow-green.png"
-          alt="Evacuatiepijl (groen)"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "exit-up-arrow":
-      return (
-        <img
-          src="/images/exit-up-arrow.png"
-          alt="Uitgang omhoog"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "assembly-point-people":
-      return (
-        <img
-          src="/images/assembly-point-people.png"
-          alt="Verzamelpunt personen"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "accessible-exit":
-      return (
-        <img
-          src="/images/accessible-exit.png"
-          alt="Toegankelijke uitgang"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "emergency-call-button":
-      return (
-        <img
-          src="/images/emergency-call-button.png"
-          alt="Noodoproepknop"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "medical-stretcher":
-      return (
-        <img
-          src="/images/medical-stretcher.png"
-          alt="Brancard"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "medical-cross":
-      return (
-        <img
-          src="/images/medical-cross.png"
-          alt="Medisch kruis"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "eye-wash-station":
-      return (
-        <img
-          src="/images/eye-wash-station.png"
-          alt="Oogdouche"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "medical-transport":
-      return (
-        <img
-          src="/images/medical-transport.png"
-          alt="Medisch transport"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "first-aid-provider":
-      return (
-        <img
-          src="/images/first-aid-provider.png"
-          alt="EHBO-verlener"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "aed-heart":
-      return (
-        <img
-          src="/images/aed-heart.png"
-          alt="AED (hart)"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "emergency-shower":
-      return (
-        <img
-          src="/images/emergency-shower.png"
-          alt="Nooddouche"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "bhv-helmet":
-      return (
-        <img
-          src="/images/bhv-helmet.png"
-          alt="BHV-helm"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "safety-gloves":
-      return (
-        <img
-          src="/images/safety-gloves.png"
-          alt="Veiligheidshandschoenen"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "safety-harness":
-      return (
-        <img
-          src="/images/safety-harness.png"
-          alt="Veiligheidsharnas"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "no-elevator":
-      return (
-        <img
-          src="/images/no-elevator.png"
-          alt="Lift verboden"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "no-open-flames":
-      return (
-        <img
-          src="/images/no-open-flames.png"
-          alt="Open vuur verboden"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    case "no-forklifts":
-      return (
-        <img
-          src="/images/no-forklifts.png"
-          alt="Heftrucks verboden"
-          width={size}
-          height={size}
-          className={className}
-          style={{ objectFit: "contain" }}
-        />
-      )
-    // Keep all the existing SVG cases for other icons
-    case "evacuation-chair":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <path fill="#4CAF50" d="M8,8h8v8H8z" />
-          <circle fill="#FFF" cx="12" cy="6" r="2" />
-          <path fill="#FFF" d="M10,8v8 M14,8v8" />
-          <path fill="#FFF" d="M8,12h8" />
-          <circle fill="#333" cx="8" cy="18" r="2" />
-          <circle fill="#333" cx="16" cy="18" r="2" />
-        </svg>
-      )
-    case "emergency-exit":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <rect fill="#4CAF50" x="2" y="4" width="20" height="16" rx="1" />
-          <path fill="#FFF" d="M16,12l-4,4v-2H7v-4h5V8L16,12z" />
-          <path fill="#FFF" d="M16,7v10" />
-        </svg>
-      )
-    case "assembly-point":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <circle fill="#4CAF50" cx="12" cy="12" r="10" />
-          <path
-            fill="#FFF"
-            d="M12,6c-3.3,0-6,2.7-6,6s2.7,6,6,6s6-2.7,6-6S15.3,6,12,6z M12,16c-2.2,0-4-1.8-4-4s1.8-4,4-4s4,1.8,4,4S14.2,16,12,16z"
-          />
-          <circle fill="#FFF" cx="12" cy="12" r="1" />
-          <path fill="#FFF" d="M12,7v2 M12,15v2 M7,12h2 M15,12h2" />
-        </svg>
-      )
-    case "first-aid":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <rect fill="#FFF" x="4" y="6" width="16" height="12" rx="1" stroke="#FF4136" strokeWidth="2" />
-          <path fill="#FF4136" d="M10,9h4v2h2v2h-2v2h-4v-2H8v-2h2z" />
-        </svg>
-      )
+      return <Sprinkler {...iconProps} className={cn(iconProps.className, "text-blue-500")} />
+    case "fire_pump":
+      return <Gauge {...iconProps} className={cn(iconProps.className, "text-red-700")} />
+    case "dry_riser":
+    case "wet_riser":
+      return <Droplets {...iconProps} className={cn(iconProps.className, "text-blue-700")} />
+    case "fire_hydrant":
+      return <Droplet {...iconProps} className={cn(iconProps.className, "text-blue-800")} />
+    case "foam_inlet":
+      return <Waves {...iconProps} className={cn(iconProps.className, "text-blue-400")} />
+    case "fire_extinguisher_cabinet":
+      return <Archive {...iconProps} className={cn(iconProps.className, "text-red-600")} />
+    case "hose_reel":
+      return <Codesandbox {...iconProps} className={cn(iconProps.className, "text-blue-600")} />
+
+    // Medical Equipment
     case "aed":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <rect fill="#FF4136" x="4" y="6" width="16" height="12" rx="1" />
-          <path fill="#FFF" d="M7,9h10v6H7z" />
-          <text x="8" y="14" fontSize="4" fill="#FF4136" fontWeight="bold">
-            AED
-          </text>
-          <path fill="#FF4136" d="M12,10v4 M10,12h4" />
-        </svg>
-      )
-    case "emergency-button":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <circle fill="#FF4136" cx="12" cy="12" r="8" />
-          <circle fill="#FFF" cx="12" cy="12" r="6" />
-          <circle fill="#FF4136" cx="12" cy="12" r="4" />
-        </svg>
-      )
-    case "evacuation-route":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <rect fill="#4CAF50" x="2" y="6" width="20" height="12" rx="1" />
-          <path fill="#FFF" d="M5,12h12l-4-4v8z" />
-        </svg>
-      )
-    case "drag-mattress":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <rect fill="#6699CC" x="2" y="8" width="20" height="10" rx="1" />
-          <path fill="#FFF" d="M4,10h16v6H4z" />
-          <path fill="#333" d="M7,8V6 M17,8V6" />
-          <path fill="#333" d="M7,18v2 M17,18v2" />
-          <path fill="#333" d="M12,10c0,0-2,2-2,4s2,4,2,4" />
-        </svg>
-      )
-    case "dry-riser":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <rect fill="#FF4136" x="6" y="2" width="12" height="20" rx="1" />
-          <circle fill="#FFF" cx="12" cy="8" r="2" />
-          <circle fill="#FFF" cx="12" cy="16" r="2" />
-          <path fill="#333" d="M12,8v8" />
-          <path fill="#333" d="M9,12h6" />
-        </svg>
-      )
-    case "a-first-aid":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <rect fill="#FFF" x="3" y="5" width="18" height="14" rx="1" />
-          <path fill="#FF4136" d="M3,6h18v2H3z" />
-          <path fill="#333" d="M10,9h4v2h2v4h-2v2h-4v-2H8v-4h2z" />
-          <text x="5" y="10" fontSize="4" fill="#333" fontWeight="bold">
-            A
-          </text>
-        </svg>
-      )
-    case "auto-gas":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <circle fill="#6699CC" cx="12" cy="12" r="10" />
-          <path
-            fill="#FFF"
-            d="M12,6c-3.3,0-6,2.7-6,6s2.7,6,6,6s6-2.7,6-6S15.3,6,12,6z M12,16c-2.2,0-4-1.8-4-4s1.8-4,4-4s4,1.8,4,4S14.2,16,12,16z"
-          />
-          <path fill="#333" d="M8,8l8,8 M16,8l-8,8" />
-        </svg>
-      )
-    case "mobile-extinguisher":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <rect fill="#FF4136" x="6" y="4" width="12" height="14" rx="1" />
-          <circle fill="#333" cx="8" cy="19" r="2" />
-          <circle fill="#333" cx="16" cy="19" r="2" />
-          <path fill="#FFF" d="M9,8h6v6H9z" />
-          <path fill="#333" d="M12,2v2" />
-        </svg>
-      )
-    case "smoke-screens":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <rect fill="#CCC" x="2" y="6" width="20" height="12" rx="1" />
-          <path fill="#333" d="M4,10c2,0,2,2,4,2s2-2,4-2s2,2,4,2s2-2,4-2" />
-          <path fill="#333" d="M4,14c2,0,2,2,4,2s2-2,4-2s2,2,4-2s2-2,4-2" />
-          <path fill="#333" d="M2,6V4h20v2" />
-        </svg>
-      )
-    case "bhv-kit":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <rect fill="#FF851B" x="4" y="6" width="16" height="12" rx="1" />
-          <path fill="#FFF" d="M7,9h10v6H7z" />
-          <text x="8" y="14" fontSize="4" fill="#333" fontWeight="bold">
-            BHV
-          </text>
-          <path fill="#333" d="M10,6V4h4v2" />
-        </svg>
-      )
-    case "yellow-first-aid":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <path fill="#FFDC00" d="M4,8v8l8,4l8-4V8l-8-4L4,8z" />
-          <path fill="#FF4136" d="M10,10h4v1h1v2h-1v1h-4v-1H9v-2h1z" />
-          <path fill="#333" d="M12,4v4 M12,16v4" />
-        </svg>
-      )
-    case "red-bhv-bag":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <path fill="#FF4136" d="M6,8v10h12V8H6z" />
-          <path fill="#333" d="M8,8V6c0-1.1,0.9-2,2-2h4c1.1,0,2,0.9,2,2v2" />
-          <path fill="#FFF" d="M9,12h6v2H9z" />
-          <text x="9" y="11" fontSize="3" fill="#FFF" fontWeight="bold">
-            BHV
-          </text>
-        </svg>
-      )
+      return <Heart {...iconProps} className={cn(iconProps.className, "text-pink-600")} />
+    case "first_aid":
+      return <Cross {...iconProps} className={cn(iconProps.className, "text-green-600")} />
+    case "defibrillator_cabinet":
+      return <Heart {...iconProps} className={cn(iconProps.className, "text-pink-700")} />
+    case "oxygen_supply":
+      return <Oxygen {...iconProps} className={cn(iconProps.className, "text-blue-500")} />
+    case "burn_kit":
+      return <Bandage {...iconProps} className={cn(iconProps.className, "text-orange-600")} />
+    case "emergency_stretcher":
+      return <Separator {...iconProps} className={cn(iconProps.className, "text-green-700")} />
+    case "eye_wash_station":
+      return <Eye {...iconProps} className={cn(iconProps.className, "text-blue-500")} />
+    case "emergency_shower":
+      return <Shower {...iconProps} className={cn(iconProps.className, "text-blue-600")} />
+
+    // Evacuation & Safety
+    case "emergency_exit":
+      return <ShieldCheck {...iconProps} className={cn(iconProps.className, "text-green-600")} />
+    case "assembly_point":
+    case "muster_point":
+      return <Users {...iconProps} className={cn(iconProps.className, "text-green-700")} />
+    case "evacuation_chair":
+      return <Wheelchair {...iconProps} className={cn(iconProps.className, "text-blue-600")} />
+    case "fire_door":
+      return <DoorOpen {...iconProps} className={cn(iconProps.className, "text-orange-600")} />
+    case "evacuation_lift":
+      return <ShieldCheck {...iconProps} className={cn(iconProps.className, "text-green-500")} />
+    case "refuge_area":
+    case "disabled_refuge":
+      return <Shield {...iconProps} className={cn(iconProps.className, "text-green-500")} />
+
+    // Alarm Systems
+    case "fire_alarm":
+    case "manual_call_point":
+    case "break_glass_alarm":
+      return <Bell {...iconProps} className={cn(iconProps.className, "text-red-600")} />
+    case "smoke_detector":
+      return <Eye {...iconProps} className={cn(iconProps.className, "text-gray-600")} />
+    case "emergency_phone":
+      return <Phone {...iconProps} className={cn(iconProps.className, "text-blue-600")} />
+    case "fire_command_center":
+      return <Cpu {...iconProps} className={cn(iconProps.className, "text-red-700")} />
+    case "public_address_speaker":
+      return <Volume2 {...iconProps} className={cn(iconProps.className, "text-purple-600")} />
+    case "emergency_beacon":
+      return <Lightbulb {...iconProps} className={cn(iconProps.className, "text-yellow-600")} />
+
+    // Lighting & Power
+    case "emergency_lighting":
+      return <Zap {...iconProps} className={cn(iconProps.className, "text-yellow-600")} />
+    case "emergency_generator":
+      return <Battery {...iconProps} className={cn(iconProps.className, "text-green-600")} />
+    case "electrical_panel":
+      return <Cpu {...iconProps} className={cn(iconProps.className, "text-yellow-700")} />
+
+    // Utilities & Controls
+    case "gas_shut_off":
+      return <Fuel {...iconProps} className={cn(iconProps.className, "text-orange-600")} />
+    case "water_shut_off":
+      return <Droplet {...iconProps} className={cn(iconProps.className, "text-blue-600")} />
+    case "ventilation_control":
+      return <Wind {...iconProps} className={cn(iconProps.className, "text-gray-600")} />
+    case "emergency_stop_button":
+      return <StopCircle {...iconProps} className={cn(iconProps.className, "text-red-700")} />
+
+    // BHV & Management
+    case "fire_warden_point":
+      return <HardHat {...iconProps} className={cn(iconProps.className, "text-orange-600")} />
+    case "emergency_key_box":
+      return <Key {...iconProps} className={cn(iconProps.className, "text-gray-600")} />
+    case "safety_equipment_cabinet":
+      return <Archive {...iconProps} className={cn(iconProps.className, "text-blue-600")} />
+
+    // Chemical & Spill
+    case "spill_kit":
+      return <FlaskConical {...iconProps} className={cn(iconProps.className, "text-purple-600")} />
+
+    // Communication
+    case "emergency_radio":
+      return <Radio {...iconProps} className={cn(iconProps.className, "text-blue-600")} />
+
+    // Structural
+    case "fire_rated_door":
+      return <DoorOpen {...iconProps} className={cn(iconProps.className, "text-orange-700")} />
+    case "smoke_barrier":
+      return <Separator {...iconProps} className={cn(iconProps.className, "text-gray-700")} />
+    case "fire_damper":
+      return <Wind {...iconProps} className={cn(iconProps.className, "text-gray-600")} />
+
+    // Default
+    case "other":
     default:
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} className={className}>
-          <circle fill="#CCC" cx="12" cy="12" r="10" />
-          <text x="8" y="16" fontSize="12" fill="#333">
-            ?
-          </text>
-        </svg>
-      )
+      return <MoreHorizontal {...iconProps} className={cn(iconProps.className, "text-gray-500")} />
   }
 }
 
-export const SafetyIconsComponent = () => {
-  const icons = [
-    { icon: Flame, label: "Brand", color: "text-red-500" },
-    { icon: ShieldCheck, label: "Veilig", color: "text-green-500" },
-    { icon: Heart, label: "AED", color: "text-pink-500" },
-    { icon: Phone, label: "Nood", color: "text-indigo-500" },
-    { icon: Zap, label: "Elektra", color: "text-yellow-500" },
-    { icon: Droplets, label: "Water", color: "text-blue-500" },
-    { icon: Eye, label: "Detectie", color: "text-gray-500" },
-    { icon: Volume2, label: "Alarm", color: "text-orange-500" },
+// Helper function to get safety element categories
+export const getSafetyElementCategories = () => {
+  return [
+    {
+      id: "fire_fighting",
+      name: "Blusmiddelen",
+      elements: [
+        "fire_extinguisher",
+        "fire_hose",
+        "fire_blanket",
+        "sprinkler",
+        "fire_pump",
+        "dry_riser",
+        "wet_riser",
+        "fire_hydrant",
+        "foam_inlet",
+        "fire_extinguisher_cabinet",
+        "hose_reel",
+      ],
+    },
+    {
+      id: "medical",
+      name: "Medische Hulpmiddelen",
+      elements: [
+        "aed",
+        "first_aid",
+        "defibrillator_cabinet",
+        "oxygen_supply",
+        "burn_kit",
+        "emergency_stretcher",
+        "eye_wash_station",
+        "emergency_shower",
+      ],
+    },
+    {
+      id: "evacuation",
+      name: "Evacuatie",
+      elements: [
+        "emergency_exit",
+        "assembly_point",
+        "muster_point",
+        "evacuation_chair",
+        "fire_door",
+        "evacuation_lift",
+        "refuge_area",
+        "disabled_refuge",
+      ],
+    },
+    {
+      id: "alarm",
+      name: "Alarmsystemen",
+      elements: [
+        "fire_alarm",
+        "manual_call_point",
+        "break_glass_alarm",
+        "smoke_detector",
+        "emergency_phone",
+        "fire_command_center",
+        "public_address_speaker",
+        "emergency_beacon",
+      ],
+    },
+    {
+      id: "power_lighting",
+      name: "Stroom & Verlichting",
+      elements: ["emergency_lighting", "emergency_generator", "electrical_panel"],
+    },
+    {
+      id: "utilities",
+      name: "Voorzieningen",
+      elements: ["gas_shut_off", "water_shut_off", "ventilation_control", "emergency_stop_button"],
+    },
+    {
+      id: "management",
+      name: "BHV & Beheer",
+      elements: ["fire_warden_point", "emergency_key_box", "safety_equipment_cabinet"],
+    },
+    {
+      id: "chemical",
+      name: "Chemisch",
+      elements: ["spill_kit"],
+    },
+    {
+      id: "communication",
+      name: "Communicatie",
+      elements: ["emergency_radio"],
+    },
+    {
+      id: "structural",
+      name: "Bouwkundig",
+      elements: ["fire_rated_door", "smoke_barrier", "fire_damper"],
+    },
   ]
+}
 
-  return (
-    <div className="grid grid-cols-4 gap-2 p-4">
-      {icons.map(({ icon: Icon, label, color }, index) => (
-        <div key={index} className="flex flex-col items-center p-2 border rounded">
-          <Icon className={`h-6 w-6 ${color} mb-1`} />
-          <span className="text-xs">{label}</span>
-        </div>
-      ))}
-    </div>
-  )
+// Helper function to get element name in Dutch
+export const getSafetyElementName = (type: string): string => {
+  const names: Record<string, string> = {
+    // Fire Fighting Equipment
+    fire_extinguisher: "Brandblusser",
+    fire_hose: "Brandslanghaspel",
+    fire_blanket: "Blusdeken",
+    sprinkler: "Sprinklerinstallatie",
+    fire_pump: "Brandweerpomp",
+    dry_riser: "Droge Stijgleiding",
+    wet_riser: "Natte Stijgleiding",
+    fire_hydrant: "Brandkraan",
+    foam_inlet: "Schuim Inlaat",
+    fire_extinguisher_cabinet: "Blusser Kast",
+    hose_reel: "Slanghaspel",
+
+    // Medical Equipment
+    aed: "AED",
+    first_aid: "EHBO-post",
+    defibrillator_cabinet: "AED Kast",
+    oxygen_supply: "Zuurstofvoorraad",
+    burn_kit: "Brandwondenset",
+    emergency_stretcher: "Noodstretcher",
+    eye_wash_station: "Oogdouche",
+    emergency_shower: "Nooddouche",
+
+    // Evacuation & Safety
+    emergency_exit: "Nooduitgang",
+    assembly_point: "Verzamelplaats",
+    muster_point: "Verzamelplaats",
+    evacuation_chair: "Evacuatiestoel",
+    fire_door: "Brandwerende Deur",
+    evacuation_lift: "Evacuatielift",
+    refuge_area: "Wachtruimte",
+    disabled_refuge: "Wachtruimte Mindervaliden",
+
+    // Alarm Systems
+    fire_alarm: "Handmelder",
+    manual_call_point: "Handmelder",
+    break_glass_alarm: "Glasbreukmelder",
+    smoke_detector: "Rookmelder",
+    emergency_phone: "Noodtelefoon",
+    fire_command_center: "Brandmeldcentrale",
+    public_address_speaker: "Omroepluidspreker",
+    emergency_beacon: "Noodbaken",
+
+    // Lighting & Power
+    emergency_lighting: "Noodverlichting",
+    emergency_generator: "Noodstroomgenerator",
+    electrical_panel: "Elektriciteitspaneel",
+
+    // Utilities & Controls
+    gas_shut_off: "Gasafsluiter",
+    water_shut_off: "Waterafsluiter",
+    ventilation_control: "Ventilatieregeling",
+    emergency_stop_button: "Noodstop",
+
+    // BHV & Management
+    fire_warden_point: "BHV-post",
+    emergency_key_box: "Noodsleutelkast",
+    safety_equipment_cabinet: "Veiligheidsuitrusting",
+
+    // Chemical & Spill
+    spill_kit: "Absorptieset",
+
+    // Communication
+    emergency_radio: "Noodradio",
+
+    // Structural
+    fire_rated_door: "Brandwerende Deur",
+    smoke_barrier: "Rookscherm",
+    fire_damper: "Brandklep",
+
+    // Default
+    other: "Overig",
+  }
+
+  return names[type] || "Onbekend"
 }

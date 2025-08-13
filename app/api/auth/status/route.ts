@@ -1,28 +1,44 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getUser } from "@/lib/auth"
+import { cookies } from "next/headers"
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getUser(request)
-    const token = request.cookies.get("auth-token")?.value
+    const cookieStore = cookies()
+    const sessionCookie = cookieStore.get("bhv360-session")
+
+    if (!sessionCookie) {
+      return NextResponse.json({
+        authenticated: false,
+        user: null,
+      })
+    }
+
+    // In a real app, you would validate the session token
+    // For now, we'll return a mock user if session exists
+    const mockUser = {
+      id: 1,
+      customer_id: 1,
+      name: "Demo User",
+      email: "demo@example.com",
+      role: "admin",
+      department: "IT",
+      bhv_roles: ["bhv_coordinator"],
+      active: true,
+    }
 
     return NextResponse.json({
-      isAuthenticated: !!user,
-      user: user,
-      hasToken: !!token,
-      tokenPreview: token ? `${token.substring(0, 20)}...` : null,
-      timestamp: new Date().toISOString(),
-      environment: {
-        NODE_ENV: process.env.NODE_ENV,
-        hasAuthPassword: !!process.env.AUTH_PASSWORD,
-        hasJwtSecret: !!process.env.JWT_SECRET,
-      },
+      authenticated: true,
+      user: mockUser,
     })
   } catch (error) {
-    return NextResponse.json({
-      error: error instanceof Error ? error.message : "Unknown error",
-      isAuthenticated: false,
-      timestamp: new Date().toISOString(),
-    })
+    console.error("Auth status check failed:", error)
+    return NextResponse.json(
+      {
+        authenticated: false,
+        user: null,
+        error: "Failed to check authentication status",
+      },
+      { status: 500 },
+    )
   }
 }

@@ -1,120 +1,75 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// Demo gebruikers voor productie
-const DEMO_USERS = [
-  {
-    id: "1",
-    email: "jeffrey@bhv360.nl",
-    name: "Jeffrey Nacht",
-    role: "super-admin",
-    passwordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // jeffrey123
-    avatar: "/placeholder-user.jpg",
-  },
-  {
-    id: "2",
-    email: "admin",
-    name: "Admin User",
-    role: "partner-admin",
-    passwordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // bhv360secure
-    avatar: "/placeholder-user.jpg",
-  },
-  {
-    id: "3",
-    email: "jan@demobedrijf.nl",
-    name: "Jan Janssen",
-    role: "customer-admin",
-    customerId: "demo-bedrijf-bv",
-    passwordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // demo123
-    avatar: "/placeholder-user.jpg",
-  },
-  {
-    id: "4",
-    email: "piet@demobedrijf.nl",
-    name: "Piet Pietersen",
-    role: "bhv-coordinator",
-    customerId: "demo-bedrijf-bv",
-    passwordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // piet123
-    avatar: "/placeholder-user.jpg",
-  },
-  {
-    id: "5",
-    email: "marie@demobedrijf.nl",
-    name: "Marie de Vries",
-    role: "employee",
-    customerId: "demo-bedrijf-bv",
-    passwordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // marie123
-    avatar: "/placeholder-user.jpg",
-  },
-  {
-    id: "6",
-    email: "demo",
-    name: "Demo User",
-    role: "customer-admin",
-    customerId: "demo-bedrijf-bv",
-    passwordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // demo123
-    avatar: "/placeholder-user.jpg",
-  },
-]
-
-// Eenvoudige wachtwoord verificatie voor demo
-const DEMO_PASSWORDS: Record<string, string> = {
-  "jeffrey@bhv360.nl": "jeffrey123",
-  admin: "bhv360secure",
-  "jan@demobedrijf.nl": "demo123",
-  "piet@demobedrijf.nl": "piet123",
-  "marie@demobedrijf.nl": "marie123",
-  demo: "demo123",
-}
-
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Email en wachtwoord zijn verplicht" }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Email and password are required",
+        },
+        { status: 400 },
+      )
     }
 
-    // Zoek gebruiker
-    const user = DEMO_USERS.find((u) => u.email === email)
+    // Demo credentials - in a real app, you would validate against your database
+    const demoCredentials = [
+      { email: "jan@demobedrijf.nl", password: "demo123", name: "Jan de Vries", role: "admin" },
+      { email: "marie@demobedrijf.nl", password: "demo123", name: "Marie Janssen", role: "bhv_coordinator" },
+      { email: "piet@demobedrijf.nl", password: "demo123", name: "Piet van der Berg", role: "bhv_medewerker" },
+      { email: "lisa@demobedrijf.nl", password: "demo123", name: "Lisa de Jong", role: "employee" },
+      { email: "tom@demobedrijf.nl", password: "demo123", name: "Tom Bakker", role: "ehbo" },
+    ]
+
+    const user = demoCredentials.find((cred) => cred.email === email && cred.password === password)
+
     if (!user) {
-      return NextResponse.json({ error: "Ongeldige inloggegevens" }, { status: 401 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid email or password",
+        },
+        { status: 401 },
+      )
     }
 
-    // Verificeer wachtwoord (eenvoudig voor demo)
-    const expectedPassword = DEMO_PASSWORDS[email]
-    if (password !== expectedPassword) {
-      return NextResponse.json({ error: "Ongeldige inloggegevens" }, { status: 401 })
-    }
-
-    // Verwijder wachtwoord uit response
-    const { passwordHash, ...userWithoutPassword } = user
-
-    // Maak JWT token (optioneel voor productie)
-    const token = Buffer.from(
-      JSON.stringify({
-        userId: user.id,
-        email: user.email,
-        exp: Date.now() + 24 * 60 * 60 * 1000, // 24 uur
-      }),
-    ).toString("base64")
+    // Create session
+    const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     const response = NextResponse.json({
       success: true,
-      user: userWithoutPassword,
-      token,
+      user: {
+        id: 1,
+        customer_id: 1,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: "Demo Department",
+        bhv_roles: user.role === "bhv_coordinator" ? ["bhv_coordinator"] : [],
+        active: true,
+      },
     })
 
-    // Set HTTP-only cookie voor productie
-    response.cookies.set("bhv360-token", token, {
+    // Set session cookie
+    response.cookies.set("bhv360-session", sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 24 * 60 * 60, // 24 uur
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
     })
 
     return response
   } catch (error) {
-    console.error("Login error:", error)
-    return NextResponse.json({ error: "Er is een fout opgetreden bij het inloggen" }, { status: 500 })
+    console.error("Login failed:", error)
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Login failed due to server error",
+      },
+      { status: 500 },
+    )
   }
 }

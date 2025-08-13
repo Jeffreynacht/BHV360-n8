@@ -1,177 +1,120 @@
 import { NextResponse } from "next/server"
+import { neon } from "@neondatabase/serverless"
 
 export async function GET() {
   try {
-    // First check if we have database configuration
-    const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL
+    console.log("🔍 Starting database test...")
 
-    if (!databaseUrl) {
-      return NextResponse.json({
-        connection: false,
-        customers: [],
-        users: [],
-        facilities: [],
-        error: "Database URL not configured. Please set DATABASE_URL or POSTGRES_URL environment variable.",
+    // Initialize response structure
+    const response = {
+      connection: {
+        success: false,
+        message: "",
         timestamp: new Date().toISOString(),
-      })
-    }
-
-    // Try to import and use the database
-    let sql
-    try {
-      const { sql: neonSql } = await import("@/lib/neon-database")
-      sql = neonSql
-    } catch (importError) {
-      console.error("Failed to import database:", importError)
-      return NextResponse.json({
-        connection: false,
-        customers: [],
-        users: [],
-        facilities: [],
-        error: "Database module not available. Please check Neon configuration.",
-        timestamp: new Date().toISOString(),
-      })
-    }
-
-    // Test basic connection
-    let connectionTest
-    try {
-      connectionTest = await sql`SELECT NOW() as current_time`
-    } catch (connectionError) {
-      console.error("Database connection failed:", connectionError)
-      return NextResponse.json({
-        connection: false,
-        customers: [],
-        users: [],
-        facilities: [],
-        error: `Database connection failed: ${connectionError instanceof Error ? connectionError.message : "Unknown error"}`,
-        timestamp: new Date().toISOString(),
-      })
-    }
-
-    // Try to get data from tables (with fallback if tables don't exist)
-    let customers = []
-    let users = []
-    let facilities = []
-
-    try {
-      customers = await sql`
-        SELECT id, name, contact_person, email, buildings, users, status 
-        FROM customers 
-        WHERE active = true 
-        ORDER BY name
-        LIMIT 10
-      `
-    } catch (error) {
-      console.log("Customers table not found or empty:", error)
-      // Create some demo data if table doesn't exist
-      customers = [
-        {
-          id: 1,
-          name: "Demo Bedrijf BV",
-          contact_person: "Jan de Vries",
-          email: "jan@demobedrijf.nl",
-          buildings: 2,
-          users: 15,
-          status: "active",
-        },
-        {
-          id: 2,
-          name: "Test Organisatie",
-          contact_person: "Marie Janssen",
-          email: "marie@testorg.nl",
-          buildings: 1,
-          users: 8,
-          status: "active",
-        },
-      ]
-    }
-
-    try {
-      users = await sql`
-        SELECT id, name, email, role, department 
-        FROM users 
-        WHERE active = true 
-        ORDER BY name
-        LIMIT 10
-      `
-    } catch (error) {
-      console.log("Users table not found or empty:", error)
-      users = [
-        {
-          id: 1,
-          name: "Admin User",
-          email: "admin@bhv360.nl",
-          role: "admin",
-          department: "IT",
-        },
-        {
-          id: 2,
-          name: "BHV Coordinator",
-          email: "bhv@bhv360.nl",
-          role: "bhv_coordinator",
-          department: "Safety",
-        },
-      ]
-    }
-
-    try {
-      facilities = await sql`
-        SELECT id, name, type, building, floor, status 
-        FROM facilities 
-        ORDER BY name
-        LIMIT 10
-      `
-    } catch (error) {
-      console.log("Facilities table not found or empty:", error)
-      facilities = [
-        {
-          id: 1,
-          name: "Brandblusser A1",
-          type: "fire_extinguisher",
-          building: "Hoofdgebouw",
-          floor: "Begane grond",
-          status: "active",
-        },
-        {
-          id: 2,
-          name: "AED Receptie",
-          type: "aed",
-          building: "Hoofdgebouw",
-          floor: "Begane grond",
-          status: "active",
-        },
-      ]
-    }
-
-    return NextResponse.json({
-      connection: true,
-      timestamp: connectionTest[0]?.current_time || new Date().toISOString(),
-      customers,
-      users,
-      facilities,
-      database_url_configured: !!databaseUrl,
-      tables_status: {
-        customers: customers.length > 0 ? "found" : "demo_data",
-        users: users.length > 0 ? "found" : "demo_data",
-        facilities: facilities.length > 0 ? "found" : "demo_data",
       },
-    })
-  } catch (error) {
-    console.error("Database test error:", error)
+      schema: {
+        exists: false,
+        tables: [] as string[],
+        message: "",
+      },
+      data: {
+        customers: 0,
+        users: 0,
+        message: "",
+      },
+    }
 
-    // Return a safe error response
+    // Check if DATABASE_URL exists
+    if (!process.env.DATABASE_URL) {
+      console.log("❌ No DATABASE_URL found")
+      response.connection.message = "DATABASE_URL environment variable not set"
+      return NextResponse.json(response, { status: 500 })
+    }
+
+    console.log("🔗 DATABASE_URL found, attempting connection...")
+
+    // Test database connection
+    const sql = neon(process.env.DATABASE_URL)
+
+    try {
+      // Simple connection test
+      const connectionTest = await sql`SELECT 1 as test`
+      console.log("✅ Database connection successful")
+
+      response.connection.success = true
+      response.connection.message = "Connected successfully"
+
+      // Check for tables
+      try {
+        const tables = await sql`
+          SELECT table_name 
+          FROM information_schema.tables 
+          WHERE table_schema = 'public'
+          ORDER BY table_name
+        `
+
+        response.schema.tables = tables.map((row: any) => row.table_name)
+        response.schema.exists = response.schema.tables.length > 0
+        response.schema.message = response.schema.exists
+          ? `Found ${response.schema.tables.length} tables`
+          : "No tables found - run schema setup"
+
+        console.log(`📊 Found ${response.schema.tables.length} tables:`, response.schema.tables)
+
+        // Try to get data counts if tables exist
+        if (response.schema.exists) {
+          try {
+            // Check for customers table
+            if (response.schema.tables.includes("customers")) {
+              const customerCount = await sql`SELECT COUNT(*) as count FROM customers`
+              response.data.customers = Number.parseInt(customerCount[0]?.count || "0")
+            }
+
+            // Check for users table
+            if (response.schema.tables.includes("users")) {
+              const userCount = await sql`SELECT COUNT(*) as count FROM users`
+              response.data.users = Number.parseInt(userCount[0]?.count || "0")
+            }
+
+            response.data.message = `${response.data.customers} customers, ${response.data.users} users`
+            console.log("📈 Data counts retrieved successfully")
+          } catch (dataError) {
+            console.log("⚠️ Could not retrieve data counts:", dataError)
+            response.data.message = "Tables exist but data query failed"
+          }
+        } else {
+          response.data.message = "No data - tables not created yet"
+        }
+      } catch (schemaError) {
+        console.log("⚠️ Could not check schema:", schemaError)
+        response.schema.message = "Could not check database schema"
+      }
+    } catch (connectionError) {
+      console.log("❌ Database connection failed:", connectionError)
+      response.connection.message = `Connection failed: ${connectionError instanceof Error ? connectionError.message : "Unknown error"}`
+    }
+
+    console.log("📋 Final response:", response)
+    return NextResponse.json(response)
+  } catch (error) {
+    console.error("💥 Unexpected error in database test:", error)
+
     return NextResponse.json(
       {
-        connection: false,
-        customers: [],
-        users: [],
-        facilities: [],
-        error: error instanceof Error ? error.message : "Unknown database error",
-        timestamp: new Date().toISOString(),
-        debug_info: {
-          error_type: error instanceof Error ? error.constructor.name : typeof error,
-          has_database_url: !!(process.env.DATABASE_URL || process.env.POSTGRES_URL),
+        connection: {
+          success: false,
+          message: `Unexpected error: ${error instanceof Error ? error.message : "Unknown error"}`,
+          timestamp: new Date().toISOString(),
+        },
+        schema: {
+          exists: false,
+          tables: [],
+          message: "Could not check schema due to connection error",
+        },
+        data: {
+          customers: 0,
+          users: 0,
+          message: "No data available",
         },
       },
       { status: 500 },

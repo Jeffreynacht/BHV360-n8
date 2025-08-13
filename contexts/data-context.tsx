@@ -1,97 +1,146 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, type ReactNode } from "react"
+import { useAuth } from "./auth-context"
 
 // Types
-export interface Customer {
+interface PlotkaartElement {
+  id: string
+  type:
+    | "fire_extinguisher"
+    | "aed"
+    | "first_aid"
+    | "emergency_exit"
+    | "assembly_point"
+    | "fire_alarm"
+    | "fire_hose"
+    | "evacuation_chair"
+    | "emergency_lighting"
+    | "smoke_detector"
+    | "emergency_phone"
+    | "fire_door"
+    | "sprinkler"
+    | "fire_blanket"
+    | "eye_wash_station"
+    | "emergency_shower"
+    | "gas_shut_off"
+    | "water_shut_off"
+    | "electrical_panel"
+    | "fire_pump"
+    | "ventilation_control"
+    | "emergency_generator"
+    | "fire_command_center"
+    | "evacuation_lift"
+    | "refuge_area"
+    | "fire_warden_point"
+    | "muster_point"
+    | "disabled_refuge"
+    | "emergency_stretcher"
+    | "defibrillator_cabinet"
+    | "oxygen_supply"
+    | "burn_kit"
+    | "spill_kit"
+    | "safety_equipment_cabinet"
+    | "emergency_radio"
+    | "public_address_speaker"
+    | "emergency_beacon"
+    | "fire_rated_door"
+    | "smoke_barrier"
+    | "fire_damper"
+    | "emergency_stop_button"
+    | "manual_call_point"
+    | "break_glass_alarm"
+    | "emergency_key_box"
+    | "fire_extinguisher_cabinet"
+    | "hose_reel"
+    | "dry_riser"
+    | "wet_riser"
+    | "fire_hydrant"
+    | "foam_inlet"
+    | "other"
+  x: number
+  y: number
+  name: string
+  description?: string
+  icon?: string
+  status?: "operational" | "maintenance" | "defect" | "unknown"
+  lastInspection?: string
+  nextInspection?: string
+  serialNumber?: string
+  manufacturer?: string
+  installationDate?: string
+  notes?: string
+}
+
+interface FloorData {
+  id: string
+  name: string
+  level: number
+  elements: PlotkaartElement[]
+  backgroundImage?: string
+  dimensions?: {
+    width: number
+    height: number
+  }
+  scale?: number
+}
+
+interface PlotkaartData {
+  id: string
+  customerId: string
+  floors: FloorData[]
+  lastUpdated: string
+  updatedBy: string
+  version: number
+  buildingName?: string
+  address?: string
+  emergencyContacts?: {
+    fire: string
+    medical: string
+    police: string
+    building: string
+  }
+}
+
+interface Customer {
   id: string
   name: string
   address: string
   contactPerson: string
   email: string
   phone: string
-  buildings: number
-  employees: number
-  status: "active" | "inactive" | "trial"
-  createdAt: string
+  isActive: boolean
 }
 
-export interface BhvMember {
+interface User {
   id: string
-  customerId: string
   name: string
   email: string
-  phone: string
-  role: "coordinator" | "ehbo" | "evacuation-leader" | "fire-warden"
-  certificationDate: string
-  certificationExpiry: string
-  status: "active" | "inactive" | "expired"
-  avatar?: string
-}
-
-export interface Incident {
-  id: string
-  customerId: string
-  title: string
-  description: string
-  type: "fire" | "medical" | "evacuation" | "security" | "other"
-  severity: "low" | "medium" | "high" | "critical"
-  status: "open" | "in-progress" | "resolved" | "closed"
-  reportedBy: string
-  assignedTo?: string
-  createdAt: string
-  updatedAt: string
-  location?: string
-}
-
-export interface NfcTag {
-  id: string
-  customerId: string
-  tagId: string
-  name: string
-  type: "fire-extinguisher" | "aed" | "first-aid" | "emergency-exit" | "assembly-point" | "other"
-  location: string
-  floor: string
-  status: "active" | "inactive" | "error"
-  batteryLevel?: number
-  lastSeen?: string
-  lastScanned?: string
-  assignedEquipment?: string
+  role: "super_admin" | "partner_admin" | "customer_admin" | "bhv_coordinator" | "employee"
+  customerId?: string
+  isActive: boolean
 }
 
 interface DataContextType {
-  // Customers
-  customers: Customer[]
+  // Plotkaart functions
+  getPlotkaartByCustomer: (customerId: string) => Promise<PlotkaartData | null>
+  updatePlotkaartForCustomer: (customerId: string, plotkaart: PlotkaartData) => Promise<boolean>
+  createPlotkaartForCustomer: (customerId: string, plotkaart: Omit<PlotkaartData, "id">) => Promise<string>
+  deletePlotkaartForCustomer: (customerId: string) => Promise<boolean>
+
+  // Customer functions
   getCustomers: () => Promise<Customer[]>
   getCustomerById: (id: string) => Promise<Customer | null>
-  createCustomer: (customer: Omit<Customer, "id" | "createdAt">) => Promise<Customer>
-  updateCustomer: (id: string, updates: Partial<Customer>) => Promise<Customer>
+  updateCustomer: (customer: Customer) => Promise<boolean>
+  createCustomer: (customer: Omit<Customer, "id">) => Promise<string>
   deleteCustomer: (id: string) => Promise<boolean>
 
-  // BHV Members
-  bhvMembers: BhvMember[]
-  getBhvMembersByCustomer: (customerId: string) => Promise<BhvMember[]>
-  getBhvMemberById: (id: string) => Promise<BhvMember | null>
-  createBhvMember: (member: Omit<BhvMember, "id">) => Promise<BhvMember>
-  updateBhvMember: (id: string, updates: Partial<BhvMember>) => Promise<BhvMember>
-  deleteBhvMember: (id: string) => Promise<boolean>
-
-  // Incidents
-  incidents: Incident[]
-  getIncidentsByCustomer: (customerId: string) => Promise<Incident[]>
-  getIncidentById: (id: string) => Promise<Incident | null>
-  createIncident: (incident: Omit<Incident, "id" | "createdAt" | "updatedAt">) => Promise<Incident>
-  updateIncident: (id: string, updates: Partial<Incident>) => Promise<Incident>
-  deleteIncident: (id: string) => Promise<boolean>
-
-  // NFC Tags
-  nfcTags: NfcTag[]
-  getNfcTagsByCustomer: (customerId: string) => Promise<NfcTag[]>
-  getNfcTagById: (id: string) => Promise<NfcTag | null>
-  createNfcTag: (tag: Omit<NfcTag, "id">) => Promise<NfcTag>
-  updateNfcTag: (id: string, updates: Partial<NfcTag>) => Promise<NfcTag>
-  deleteNfcTag: (id: string) => Promise<boolean>
-  scanNfcTag: (tagId: string) => Promise<NfcTag | null>
+  // User functions
+  getUsersByCustomer: (customerId: string) => Promise<User[]>
+  getUserById: (id: string) => Promise<User | null>
+  updateUser: (user: User) => Promise<boolean>
+  createUser: (user: Omit<User, "id">) => Promise<string>
+  deleteUser: (id: string) => Promise<boolean>
 
   // Loading states
   isLoading: boolean
@@ -105,26 +154,20 @@ const DEMO_CUSTOMERS: Customer[] = [
   {
     id: "demo-bedrijf-bv",
     name: "Demo Bedrijf BV",
-    address: "Hoofdstraat 123, 1000 AB Amsterdam",
+    address: "Hoofdstraat 123, 1234 AB Amsterdam",
     contactPerson: "Jan Janssen",
     email: "jan@demobedrijf.nl",
     phone: "+31 20 123 4567",
-    buildings: 3,
-    employees: 25,
-    status: "active",
-    createdAt: "2024-01-15T10:00:00Z",
+    isActive: true,
   },
   {
-    id: "acme-corp",
-    name: "Acme Corporation",
-    address: "Industrieweg 456, 3000 CD Rotterdam",
-    contactPerson: "Sarah de Wit",
-    email: "sarah@acme.nl",
+    id: "test-company-ltd",
+    name: "Test Company Ltd",
+    address: "Testlaan 456, 5678 CD Rotterdam",
+    contactPerson: "Piet Pietersen",
+    email: "piet@testcompany.nl",
     phone: "+31 10 987 6543",
-    buildings: 1,
-    employees: 12,
-    status: "active",
-    createdAt: "2024-02-01T14:30:00Z",
+    isActive: true,
   },
   {
     id: "zorgcentrum-boomgaard",
@@ -132,392 +175,979 @@ const DEMO_CUSTOMERS: Customer[] = [
     address: "Zorgstraat 789, 3500 EF Utrecht",
     contactPerson: "Dr. Peter van der Berg",
     email: "p.vandenberg@boomgaard.nl",
-    phone: "+31 30 555 1234",
-    buildings: 2,
-    employees: 45,
-    status: "active",
-    createdAt: "2024-01-20T09:15:00Z",
+    phone: "+31 30 555 7890",
+    isActive: true,
   },
 ]
 
-const DEMO_BHV_MEMBERS: BhvMember[] = [
+const DEMO_USERS: User[] = [
   {
-    id: "bhv-001",
+    id: "jan",
+    name: "Jan Janssen",
+    email: "jan@demobedrijf.nl",
+    role: "customer_admin",
     customerId: "demo-bedrijf-bv",
+    isActive: true,
+  },
+  {
+    id: "piet",
     name: "Piet Pietersen",
     email: "piet@demobedrijf.nl",
-    phone: "+31 6 1234 5678",
-    role: "coordinator",
-    certificationDate: "2023-03-15",
-    certificationExpiry: "2025-03-15",
-    status: "active",
-    avatar: "/placeholder-user.jpg",
+    role: "bhv_coordinator",
+    customerId: "demo-bedrijf-bv",
+    isActive: true,
   },
   {
-    id: "bhv-002",
-    customerId: "demo-bedrijf-bv",
+    id: "marie",
     name: "Marie de Vries",
     email: "marie@demobedrijf.nl",
-    phone: "+31 6 2345 6789",
-    role: "ehbo",
-    certificationDate: "2023-06-01",
-    certificationExpiry: "2025-06-01",
-    status: "active",
-    avatar: "/placeholder-user.jpg",
-  },
-  {
-    id: "bhv-003",
+    role: "employee",
     customerId: "demo-bedrijf-bv",
-    name: "Kees van der Berg",
-    email: "kees@demobedrijf.nl",
-    phone: "+31 6 3456 7890",
-    role: "evacuation-leader",
-    certificationDate: "2023-09-10",
-    certificationExpiry: "2025-09-10",
-    status: "active",
-    avatar: "/placeholder-user.jpg",
+    isActive: true,
   },
 ]
 
-const DEMO_INCIDENTS: Incident[] = [
-  {
-    id: "incident-001",
-    customerId: "demo-bedrijf-bv",
-    title: "Kleine brand in keuken",
-    description: "Magnetron oververhit, kleine rookontwikkeling. Snel geblust met brandblusser.",
-    type: "fire",
-    severity: "medium",
-    status: "resolved",
-    reportedBy: "Jan Janssen",
-    assignedTo: "Piet Pietersen",
-    location: "Keuken, 2e verdieping",
-    createdAt: "2024-01-10T14:30:00Z",
-    updatedAt: "2024-01-10T15:45:00Z",
+const DEMO_PLOTKAART: PlotkaartData = {
+  id: "plotkaart-demo-bedrijf",
+  customerId: "demo-bedrijf-bv",
+  lastUpdated: "2024-01-15T10:30:00Z",
+  updatedBy: "Jan Janssen",
+  version: 1,
+  buildingName: "Hoofdkantoor Demo Bedrijf BV",
+  address: "Hoofdstraat 123, 1234 AB Amsterdam",
+  emergencyContacts: {
+    fire: "112",
+    medical: "112",
+    police: "112",
+    building: "+31 20 123 4567",
   },
-  {
-    id: "incident-002",
-    customerId: "demo-bedrijf-bv",
-    title: "Medische noodsituatie",
-    description: "Medewerker gevallen van trap, mogelijk enkelblessure.",
-    type: "medical",
-    severity: "high",
-    status: "closed",
-    reportedBy: "Marie de Vries",
-    assignedTo: "Marie de Vries",
-    location: "Hoofdtrap, begane grond",
-    createdAt: "2024-01-05T11:15:00Z",
-    updatedAt: "2024-01-05T12:30:00Z",
-  },
-]
-
-const DEMO_NFC_TAGS: NfcTag[] = [
-  {
-    id: "nfc-001",
-    customerId: "demo-bedrijf-bv",
-    tagId: "NFC-BRANDBLUSSER-001",
-    name: "Brandblusser Hoofdingang",
-    type: "fire-extinguisher",
-    location: "Hoofdingang, begane grond",
-    floor: "Begane grond",
-    status: "active",
-    batteryLevel: 85,
-    lastSeen: "2024-01-15T10:30:00Z",
-    lastScanned: "2024-01-14T16:45:00Z",
-    assignedEquipment: "Brandblusser 6kg ABC poeder",
-  },
-  {
-    id: "nfc-002",
-    customerId: "demo-bedrijf-bv",
-    tagId: "NFC-EHBO-002",
-    name: "EHBO-post Verdieping 1",
-    type: "first-aid",
-    location: "Gang oost, 1e verdieping",
-    floor: "1e verdieping",
-    status: "active",
-    batteryLevel: 92,
-    lastSeen: "2024-01-15T09:15:00Z",
-    lastScanned: "2024-01-13T14:20:00Z",
-    assignedEquipment: "EHBO-koffer groot",
-  },
-  {
-    id: "nfc-003",
-    customerId: "demo-bedrijf-bv",
-    tagId: "NFC-AED-003",
-    name: "AED Receptie",
-    type: "aed",
-    location: "Receptie, begane grond",
-    floor: "Begane grond",
-    status: "active",
-    batteryLevel: 78,
-    lastSeen: "2024-01-15T08:45:00Z",
-    lastScanned: "2024-01-12T10:30:00Z",
-    assignedEquipment: "AED Philips HeartStart",
-  },
-]
+  floors: [
+    {
+      id: "floor-0",
+      name: "Begane Grond",
+      level: 0,
+      dimensions: { width: 800, height: 600 },
+      scale: 1.0,
+      elements: [
+        {
+          id: "elem-1",
+          type: "fire_extinguisher",
+          x: 150,
+          y: 200,
+          name: "Brandblusser BG-01",
+          description: "6kg poeder brandblusser bij hoofdingang",
+          status: "operational",
+          lastInspection: "2024-01-10",
+          nextInspection: "2024-07-10",
+          serialNumber: "FE-2023-001",
+          manufacturer: "Gloria",
+          installationDate: "2023-01-15",
+        },
+        {
+          id: "elem-2",
+          type: "aed",
+          x: 300,
+          y: 150,
+          name: "AED Receptie",
+          description: "Automatische externe defibrillator bij receptie",
+          status: "operational",
+          lastInspection: "2024-01-05",
+          nextInspection: "2024-02-05",
+          serialNumber: "AED-2023-001",
+          manufacturer: "Philips HeartStart",
+          installationDate: "2023-02-01",
+        },
+        {
+          id: "elem-3",
+          type: "emergency_exit",
+          x: 50,
+          y: 100,
+          name: "Nooduitgang Noord",
+          description: "Hoofdnooduitgang naar parkeerplaats",
+          status: "operational",
+          lastInspection: "2024-01-12",
+          nextInspection: "2024-04-12",
+        },
+        {
+          id: "elem-4",
+          type: "assembly_point",
+          x: 400,
+          y: 300,
+          name: "Verzamelplaats A",
+          description: "Primaire verzamelplaats op parkeerplaats",
+          status: "operational",
+        },
+        {
+          id: "elem-5",
+          type: "fire_alarm",
+          x: 250,
+          y: 120,
+          name: "Handmelder BG-01",
+          description: "Handmatige brandmelder bij receptie",
+          status: "operational",
+          lastInspection: "2024-01-08",
+          nextInspection: "2024-07-08",
+          serialNumber: "HM-2023-001",
+          manufacturer: "Bosch",
+        },
+        {
+          id: "elem-6",
+          type: "fire_hose",
+          x: 100,
+          y: 250,
+          name: "Brandslanghaspel BG-01",
+          description: "25m brandslanghaspel bij trap",
+          status: "operational",
+          lastInspection: "2024-01-10",
+          nextInspection: "2024-07-10",
+          serialNumber: "BH-2023-001",
+        },
+        {
+          id: "elem-7",
+          type: "emergency_lighting",
+          x: 200,
+          y: 80,
+          name: "Noodverlichting Gang",
+          description: "LED noodverlichting hoofdgang",
+          status: "operational",
+          lastInspection: "2024-01-15",
+          nextInspection: "2024-07-15",
+        },
+        {
+          id: "elem-8",
+          type: "smoke_detector",
+          x: 350,
+          y: 200,
+          name: "Rookmelder BG-01",
+          description: "Optische rookmelder receptieruimte",
+          status: "operational",
+          lastInspection: "2024-01-08",
+          nextInspection: "2024-07-08",
+          serialNumber: "RM-2023-001",
+        },
+        {
+          id: "elem-9",
+          type: "emergency_phone",
+          x: 180,
+          y: 180,
+          name: "Noodtelefoon Receptie",
+          description: "Directe lijn naar alarmcentrale",
+          status: "operational",
+          lastInspection: "2024-01-12",
+          nextInspection: "2024-04-12",
+        },
+        {
+          id: "elem-10",
+          type: "fire_door",
+          x: 120,
+          y: 300,
+          name: "Brandwerende Deur BD-01",
+          description: "30 minuten brandwerende deur naar trap",
+          status: "operational",
+          lastInspection: "2024-01-10",
+          nextInspection: "2024-07-10",
+        },
+        {
+          id: "elem-11",
+          type: "electrical_panel",
+          x: 450,
+          y: 250,
+          name: "Hoofdschakelaar",
+          description: "Hoofdelektriciteitspaneel gebouw",
+          status: "operational",
+          notes: "Alleen toegankelijk voor elektriciens",
+        },
+        {
+          id: "elem-12",
+          type: "water_shut_off",
+          x: 420,
+          y: 280,
+          name: "Hoofdwaterafsluiter",
+          description: "Hoofdafsluiter watertoevoer gebouw",
+          status: "operational",
+        },
+      ],
+    },
+    {
+      id: "floor-1",
+      name: "1e Verdieping",
+      level: 1,
+      dimensions: { width: 800, height: 600 },
+      scale: 1.0,
+      elements: [
+        {
+          id: "elem-13",
+          type: "first_aid",
+          x: 200,
+          y: 180,
+          name: "EHBO-post 1V-01",
+          description: "Volledige EHBO-uitrusting kantoorruimte",
+          status: "operational",
+          lastInspection: "2024-01-08",
+          nextInspection: "2024-04-08",
+          serialNumber: "EHBO-2023-001",
+        },
+        {
+          id: "elem-14",
+          type: "fire_extinguisher",
+          x: 350,
+          y: 120,
+          name: "Brandblusser 1V-01",
+          description: "6kg poeder brandblusser bij trap",
+          status: "operational",
+          lastInspection: "2024-01-10",
+          nextInspection: "2024-07-10",
+          serialNumber: "FE-2023-002",
+          manufacturer: "Gloria",
+        },
+        {
+          id: "elem-15",
+          type: "emergency_exit",
+          x: 100,
+          y: 250,
+          name: "Nooduitgang Trap",
+          description: "Nooduitgang via trappenhuis",
+          status: "operational",
+          lastInspection: "2024-01-12",
+          nextInspection: "2024-04-12",
+        },
+        {
+          id: "elem-16",
+          type: "evacuation_chair",
+          x: 150,
+          y: 220,
+          name: "Evacuatiestoel 1V-01",
+          description: "Evacuatiestoel voor mindervaliden",
+          status: "operational",
+          lastInspection: "2024-01-05",
+          nextInspection: "2024-07-05",
+          serialNumber: "ES-2023-001",
+          manufacturer: "Evac+Chair",
+        },
+        {
+          id: "elem-17",
+          type: "fire_alarm",
+          x: 280,
+          y: 100,
+          name: "Handmelder 1V-01",
+          description: "Handmatige brandmelder bij trap",
+          status: "operational",
+          lastInspection: "2024-01-08",
+          nextInspection: "2024-07-08",
+          serialNumber: "HM-2023-002",
+          manufacturer: "Bosch",
+        },
+        {
+          id: "elem-18",
+          type: "sprinkler",
+          x: 250,
+          y: 200,
+          name: "Sprinkler Zone 1V-A",
+          description: "Automatische sprinklerinstallatie kantoren",
+          status: "operational",
+          lastInspection: "2024-01-15",
+          nextInspection: "2024-07-15",
+        },
+        {
+          id: "elem-19",
+          type: "fire_blanket",
+          x: 320,
+          y: 180,
+          name: "Blusdeken Keuken",
+          description: "Blusdeken bij koffiehoek",
+          status: "operational",
+          lastInspection: "2024-01-10",
+          nextInspection: "2024-07-10",
+          serialNumber: "BD-2023-001",
+        },
+        {
+          id: "elem-20",
+          type: "emergency_lighting",
+          x: 180,
+          y: 80,
+          name: "Noodverlichting Gang 1V",
+          description: "LED noodverlichting gang 1e verdieping",
+          status: "operational",
+          lastInspection: "2024-01-15",
+          nextInspection: "2024-07-15",
+        },
+        {
+          id: "elem-21",
+          type: "smoke_detector",
+          x: 400,
+          y: 150,
+          name: "Rookmelder 1V-01",
+          description: "Optische rookmelder kantoorruimte",
+          status: "operational",
+          lastInspection: "2024-01-08",
+          nextInspection: "2024-07-08",
+          serialNumber: "RM-2023-002",
+        },
+        {
+          id: "elem-22",
+          type: "fire_warden_point",
+          x: 120,
+          y: 150,
+          name: "BHV-post 1V",
+          description: "BHV-coördinator post 1e verdieping",
+          status: "operational",
+        },
+        {
+          id: "elem-23",
+          type: "disabled_refuge",
+          x: 80,
+          y: 200,
+          name: "Wachtruimte Mindervaliden",
+          description: "Veilige wachtruimte voor mindervaliden",
+          status: "operational",
+        },
+        {
+          id: "elem-24",
+          type: "emergency_stretcher",
+          x: 380,
+          y: 220,
+          name: "Noodstretcher",
+          description: "Opvouwbare stretcher voor gewondentransport",
+          status: "operational",
+          lastInspection: "2024-01-05",
+          nextInspection: "2024-07-05",
+          serialNumber: "NS-2023-001",
+        },
+      ],
+    },
+    {
+      id: "floor-2",
+      name: "2e Verdieping",
+      level: 2,
+      dimensions: { width: 800, height: 600 },
+      scale: 1.0,
+      elements: [
+        {
+          id: "elem-25",
+          type: "defibrillator_cabinet",
+          x: 200,
+          y: 150,
+          name: "AED Kast 2V",
+          description: "Verwarmde AED kast met alarm",
+          status: "operational",
+          lastInspection: "2024-01-05",
+          nextInspection: "2024-02-05",
+          serialNumber: "AEDK-2023-001",
+        },
+        {
+          id: "elem-26",
+          type: "fire_extinguisher",
+          x: 350,
+          y: 180,
+          name: "Brandblusser 2V-01",
+          description: "6kg poeder brandblusser serverruimte",
+          status: "operational",
+          lastInspection: "2024-01-10",
+          nextInspection: "2024-07-10",
+          serialNumber: "FE-2023-003",
+          manufacturer: "Gloria",
+        },
+        {
+          id: "elem-27",
+          type: "gas_shut_off",
+          x: 400,
+          y: 200,
+          name: "Gasafsluiter 2V",
+          description: "Noodafsluiter gastoevoer 2e verdieping",
+          status: "operational",
+        },
+        {
+          id: "elem-28",
+          type: "fire_command_center",
+          x: 150,
+          y: 100,
+          name: "Brandmeldcentrale",
+          description: "Centrale brandmeldinstallatie",
+          status: "operational",
+          lastInspection: "2024-01-08",
+          nextInspection: "2024-07-08",
+          serialNumber: "BMC-2023-001",
+          manufacturer: "Bosch",
+        },
+        {
+          id: "elem-29",
+          type: "ventilation_control",
+          x: 300,
+          y: 120,
+          name: "Ventilatieregeling",
+          description: "Noodregeling ventilatiesysteem",
+          status: "operational",
+        },
+        {
+          id: "elem-30",
+          type: "emergency_generator",
+          x: 450,
+          y: 250,
+          name: "Noodstroomgenerator",
+          description: "Diesel noodstroomgenerator 50kW",
+          status: "operational",
+          lastInspection: "2024-01-12",
+          nextInspection: "2024-04-12",
+          serialNumber: "NG-2023-001",
+        },
+        {
+          id: "elem-31",
+          type: "oxygen_supply",
+          x: 250,
+          y: 220,
+          name: "Zuurstofvoorraad",
+          description: "Medische zuurstofflessen",
+          status: "operational",
+          lastInspection: "2024-01-08",
+          nextInspection: "2024-04-08",
+        },
+        {
+          id: "elem-32",
+          type: "burn_kit",
+          x: 180,
+          y: 200,
+          name: "Brandwondenset",
+          description: "Speciale EHBO-set voor brandwonden",
+          status: "operational",
+          lastInspection: "2024-01-08",
+          nextInspection: "2024-04-08",
+        },
+        {
+          id: "elem-33",
+          type: "spill_kit",
+          x: 320,
+          y: 250,
+          name: "Absorptieset",
+          description: "Set voor chemische morsen",
+          status: "operational",
+          lastInspection: "2024-01-10",
+          nextInspection: "2024-07-10",
+        },
+        {
+          id: "elem-34",
+          type: "safety_equipment_cabinet",
+          x: 120,
+          y: 180,
+          name: "Veiligheidsuitrusting",
+          description: "Kast met persoonlijke beschermingsmiddelen",
+          status: "operational",
+          lastInspection: "2024-01-10",
+          nextInspection: "2024-07-10",
+        },
+        {
+          id: "elem-35",
+          type: "emergency_radio",
+          x: 380,
+          y: 120,
+          name: "Noodradio",
+          description: "Draagbare noodcommunicatie",
+          status: "operational",
+          lastInspection: "2024-01-12",
+          nextInspection: "2024-04-12",
+        },
+        {
+          id: "elem-36",
+          type: "public_address_speaker",
+          x: 280,
+          y: 80,
+          name: "Omroepluidspreker",
+          description: "Luidspreker noodomroep systeem",
+          status: "operational",
+          lastInspection: "2024-01-08",
+          nextInspection: "2024-07-08",
+        },
+      ],
+    },
+    {
+      id: "floor-basement",
+      name: "Kelder",
+      level: -1,
+      dimensions: { width: 800, height: 600 },
+      scale: 1.0,
+      elements: [
+        {
+          id: "elem-37",
+          type: "fire_pump",
+          x: 200,
+          y: 200,
+          name: "Brandweerpomp",
+          description: "Hoofdpomp brandweerinstallatie",
+          status: "operational",
+          lastInspection: "2024-01-12",
+          nextInspection: "2024-04-12",
+          serialNumber: "BP-2023-001",
+        },
+        {
+          id: "elem-38",
+          type: "dry_riser",
+          x: 150,
+          y: 150,
+          name: "Droge Stijgleiding",
+          description: "Aansluitpunt brandweerslangen",
+          status: "operational",
+          lastInspection: "2024-01-10",
+          nextInspection: "2024-07-10",
+        },
+        {
+          id: "elem-39",
+          type: "wet_riser",
+          x: 250,
+          y: 150,
+          name: "Natte Stijgleiding",
+          description: "Permanente watertoevoer brandweerslangen",
+          status: "operational",
+          lastInspection: "2024-01-10",
+          nextInspection: "2024-07-10",
+        },
+        {
+          id: "elem-40",
+          type: "fire_hydrant",
+          x: 300,
+          y: 250,
+          name: "Brandkraan Kelder",
+          description: "Ondergrondse brandkraan",
+          status: "operational",
+          lastInspection: "2024-01-12",
+          nextInspection: "2024-07-12",
+        },
+        {
+          id: "elem-41",
+          type: "foam_inlet",
+          x: 350,
+          y: 200,
+          name: "Schuim Inlaat",
+          description: "Aansluitpunt brandweerschuim",
+          status: "operational",
+          lastInspection: "2024-01-12",
+          nextInspection: "2024-07-12",
+        },
+        {
+          id: "elem-42",
+          type: "emergency_key_box",
+          x: 100,
+          y: 100,
+          name: "Noodsleutelkast",
+          description: "Brandweersleutelkast toegang gebouw",
+          status: "operational",
+          lastInspection: "2024-01-08",
+          nextInspection: "2024-07-08",
+        },
+        {
+          id: "elem-43",
+          type: "fire_extinguisher_cabinet",
+          x: 180,
+          y: 300,
+          name: "Blusser Kast Kelder",
+          description: "Inbouwkast met 6kg poeder brandblusser",
+          status: "operational",
+          lastInspection: "2024-01-10",
+          nextInspection: "2024-07-10",
+        },
+        {
+          id: "elem-44",
+          type: "hose_reel",
+          x: 400,
+          y: 150,
+          name: "Slanghaspel Kelder",
+          description: "30m slanghaspel technische ruimte",
+          status: "operational",
+          lastInspection: "2024-01-10",
+          nextInspection: "2024-07-10",
+        },
+        {
+          id: "elem-45",
+          type: "emergency_beacon",
+          x: 120,
+          y: 250,
+          name: "Noodbaken",
+          description: "Automatisch noodbaken bij stroomuitval",
+          status: "operational",
+          lastInspection: "2024-01-15",
+          nextInspection: "2024-07-15",
+        },
+        {
+          id: "elem-46",
+          type: "smoke_barrier",
+          x: 280,
+          y: 300,
+          name: "Rookscherm",
+          description: "Automatisch rookscherm compartimentering",
+          status: "operational",
+          lastInspection: "2024-01-12",
+          nextInspection: "2024-07-12",
+        },
+      ],
+    },
+  ],
+}
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [bhvMembers, setBhvMembers] = useState<BhvMember[]>([])
-  const [incidents, setIncidents] = useState<Incident[]>([])
-  const [nfcTags, setNfcTags] = useState<NfcTag[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { user } = useAuth()
 
-  // Initialize data from localStorage or demo data
-  useEffect(() => {
-    const initializeData = () => {
-      try {
-        if (typeof window !== "undefined") {
-          // Load customers
-          const savedCustomers = localStorage.getItem("bhv360-customers")
-          setCustomers(savedCustomers ? JSON.parse(savedCustomers) : DEMO_CUSTOMERS)
+  // Plotkaart functions
+  const getPlotkaartByCustomer = async (customerId: string): Promise<PlotkaartData | null> => {
+    setIsLoading(true)
+    setError(null)
 
-          // Load BHV members
-          const savedBhvMembers = localStorage.getItem("bhv360-bhv-members")
-          setBhvMembers(savedBhvMembers ? JSON.parse(savedBhvMembers) : DEMO_BHV_MEMBERS)
+    try {
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 500))
 
-          // Load incidents
-          const savedIncidents = localStorage.getItem("bhv360-incidents")
-          setIncidents(savedIncidents ? JSON.parse(savedIncidents) : DEMO_INCIDENTS)
-
-          // Load NFC tags
-          const savedNfcTags = localStorage.getItem("bhv360-nfc-tags")
-          setNfcTags(savedNfcTags ? JSON.parse(savedNfcTags) : DEMO_NFC_TAGS)
-        }
-      } catch (error) {
-        console.error("Error loading data from localStorage:", error)
-        // Use demo data as fallback
-        setCustomers(DEMO_CUSTOMERS)
-        setBhvMembers(DEMO_BHV_MEMBERS)
-        setIncidents(DEMO_INCIDENTS)
-        setNfcTags(DEMO_NFC_TAGS)
+      // Check localStorage first
+      const stored = localStorage.getItem(`plotkaart-${customerId}`)
+      if (stored) {
+        const plotkaart = JSON.parse(stored)
+        setIsLoading(false)
+        return plotkaart
       }
+
+      // Return demo data for demo customer
+      if (customerId === "demo-bedrijf-bv") {
+        // Store in localStorage for persistence
+        localStorage.setItem(`plotkaart-${customerId}`, JSON.stringify(DEMO_PLOTKAART))
+        setIsLoading(false)
+        return DEMO_PLOTKAART
+      }
+
+      setIsLoading(false)
+      return null
+    } catch (err) {
+      setError("Fout bij ophalen plotkaart")
+      setIsLoading(false)
+      return null
     }
+  }
 
-    initializeData()
-  }, [])
+  const updatePlotkaartForCustomer = async (customerId: string, plotkaart: PlotkaartData): Promise<boolean> => {
+    setIsLoading(true)
+    setError(null)
 
-  // Save to localStorage whenever data changes
-  useEffect(() => {
-    if (typeof window !== "undefined" && customers.length > 0) {
-      localStorage.setItem("bhv360-customers", JSON.stringify(customers))
+    try {
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      // Update timestamp, user, and version
+      const updatedPlotkaart = {
+        ...plotkaart,
+        lastUpdated: new Date().toISOString(),
+        updatedBy: user?.name || "Onbekend",
+        version: plotkaart.version + 1,
+      }
+
+      // Store in localStorage
+      localStorage.setItem(`plotkaart-${customerId}`, JSON.stringify(updatedPlotkaart))
+
+      setIsLoading(false)
+      return true
+    } catch (err) {
+      setError("Fout bij bijwerken plotkaart")
+      setIsLoading(false)
+      return false
     }
-  }, [customers])
+  }
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && bhvMembers.length > 0) {
-      localStorage.setItem("bhv360-bhv-members", JSON.stringify(bhvMembers))
+  const createPlotkaartForCustomer = async (
+    customerId: string,
+    plotkaart: Omit<PlotkaartData, "id">,
+  ): Promise<string> => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      const newId = `plotkaart-${customerId}-${Date.now()}`
+      const newPlotkaart: PlotkaartData = {
+        ...plotkaart,
+        id: newId,
+        lastUpdated: new Date().toISOString(),
+        updatedBy: user?.name || "Onbekend",
+        version: 1,
+      }
+
+      // Store in localStorage
+      localStorage.setItem(`plotkaart-${customerId}`, JSON.stringify(newPlotkaart))
+
+      setIsLoading(false)
+      return newId
+    } catch (err) {
+      setError("Fout bij aanmaken plotkaart")
+      setIsLoading(false)
+      throw err
     }
-  }, [bhvMembers])
+  }
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && incidents.length > 0) {
-      localStorage.setItem("bhv360-incidents", JSON.stringify(incidents))
+  const deletePlotkaartForCustomer = async (customerId: string): Promise<boolean> => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      // Remove from localStorage
+      localStorage.removeItem(`plotkaart-${customerId}`)
+
+      setIsLoading(false)
+      return true
+    } catch (err) {
+      setError("Fout bij verwijderen plotkaart")
+      setIsLoading(false)
+      return false
     }
-  }, [incidents])
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && nfcTags.length > 0) {
-      localStorage.setItem("bhv360-nfc-tags", JSON.stringify(nfcTags))
-    }
-  }, [nfcTags])
-
-  // Utility function to simulate async operations
-  const simulateAsync = <T,>(data: T): Promise<T> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(data), 100 + Math.random() * 200)
-    })
   }
 
   // Customer functions
   const getCustomers = async (): Promise<Customer[]> => {
     setIsLoading(true)
+    setError(null)
+
     try {
-      const result = await simulateAsync(customers)
-      return result
-    } finally {
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      // Check localStorage first
+      const stored = localStorage.getItem("customers")
+      if (stored) {
+        const customers = JSON.parse(stored)
+        setIsLoading(false)
+        return customers
+      }
+
+      // Store demo data
+      localStorage.setItem("customers", JSON.stringify(DEMO_CUSTOMERS))
       setIsLoading(false)
+      return DEMO_CUSTOMERS
+    } catch (err) {
+      setError("Fout bij ophalen klanten")
+      setIsLoading(false)
+      return []
     }
   }
 
   const getCustomerById = async (id: string): Promise<Customer | null> => {
-    const customer = customers.find((c) => c.id === id)
-    return simulateAsync(customer || null)
+    const customers = await getCustomers()
+    return customers.find((c) => c.id === id) || null
   }
 
-  const createCustomer = async (customerData: Omit<Customer, "id" | "createdAt">): Promise<Customer> => {
-    const newCustomer: Customer = {
-      ...customerData,
-      id: `customer-${Date.now()}`,
-      createdAt: new Date().toISOString(),
+  const updateCustomer = async (customer: Customer): Promise<boolean> => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const customers = await getCustomers()
+      const updatedCustomers = customers.map((c) => (c.id === customer.id ? customer : c))
+      localStorage.setItem("customers", JSON.stringify(updatedCustomers))
+
+      setIsLoading(false)
+      return true
+    } catch (err) {
+      setError("Fout bij bijwerken klant")
+      setIsLoading(false)
+      return false
     }
-    setCustomers((prev) => [...prev, newCustomer])
-    return simulateAsync(newCustomer)
   }
 
-  const updateCustomer = async (id: string, updates: Partial<Customer>): Promise<Customer> => {
-    const updatedCustomers = customers.map((c) => (c.id === id ? { ...c, ...updates } : c))
-    setCustomers(updatedCustomers)
-    const updatedCustomer = updatedCustomers.find((c) => c.id === id)!
-    return simulateAsync(updatedCustomer)
+  const createCustomer = async (customer: Omit<Customer, "id">): Promise<string> => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const customers = await getCustomers()
+      const newId = `customer-${Date.now()}`
+      const newCustomer: Customer = { ...customer, id: newId }
+
+      const updatedCustomers = [...customers, newCustomer]
+      localStorage.setItem("customers", JSON.stringify(updatedCustomers))
+
+      setIsLoading(false)
+      return newId
+    } catch (err) {
+      setError("Fout bij aanmaken klant")
+      setIsLoading(false)
+      throw err
+    }
   }
 
   const deleteCustomer = async (id: string): Promise<boolean> => {
-    setCustomers((prev) => prev.filter((c) => c.id !== id))
-    return simulateAsync(true)
-  }
+    setIsLoading(true)
+    setError(null)
 
-  // BHV Member functions
-  const getBhvMembersByCustomer = async (customerId: string): Promise<BhvMember[]> => {
-    const customerMembers = bhvMembers.filter((m) => m.customerId === customerId)
-    return simulateAsync(customerMembers)
-  }
+    try {
+      const customers = await getCustomers()
+      const updatedCustomers = customers.filter((c) => c.id !== id)
+      localStorage.setItem("customers", JSON.stringify(updatedCustomers))
 
-  const getBhvMemberById = async (id: string): Promise<BhvMember | null> => {
-    const member = bhvMembers.find((m) => m.id === id)
-    return simulateAsync(member || null)
-  }
-
-  const createBhvMember = async (memberData: Omit<BhvMember, "id">): Promise<BhvMember> => {
-    const newMember: BhvMember = {
-      ...memberData,
-      id: `bhv-${Date.now()}`,
+      setIsLoading(false)
+      return true
+    } catch (err) {
+      setError("Fout bij verwijderen klant")
+      setIsLoading(false)
+      return false
     }
-    setBhvMembers((prev) => [...prev, newMember])
-    return simulateAsync(newMember)
   }
 
-  const updateBhvMember = async (id: string, updates: Partial<BhvMember>): Promise<BhvMember> => {
-    const updatedMembers = bhvMembers.map((m) => (m.id === id ? { ...m, ...updates } : m))
-    setBhvMembers(updatedMembers)
-    const updatedMember = updatedMembers.find((m) => m.id === id)!
-    return simulateAsync(updatedMember)
-  }
+  // User functions
+  const getUsersByCustomer = async (customerId: string): Promise<User[]> => {
+    setIsLoading(true)
+    setError(null)
 
-  const deleteBhvMember = async (id: string): Promise<boolean> => {
-    setBhvMembers((prev) => prev.filter((m) => m.id !== id))
-    return simulateAsync(true)
-  }
+    try {
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 300))
 
-  // Incident functions
-  const getIncidentsByCustomer = async (customerId: string): Promise<Incident[]> => {
-    const customerIncidents = incidents.filter((i) => i.customerId === customerId)
-    return simulateAsync(customerIncidents)
-  }
-
-  const getIncidentById = async (id: string): Promise<Incident | null> => {
-    const incident = incidents.find((i) => i.id === id)
-    return simulateAsync(incident || null)
-  }
-
-  const createIncident = async (incidentData: Omit<Incident, "id" | "createdAt" | "updatedAt">): Promise<Incident> => {
-    const now = new Date().toISOString()
-    const newIncident: Incident = {
-      ...incidentData,
-      id: `incident-${Date.now()}`,
-      createdAt: now,
-      updatedAt: now,
-    }
-    setIncidents((prev) => [...prev, newIncident])
-    return simulateAsync(newIncident)
-  }
-
-  const updateIncident = async (id: string, updates: Partial<Incident>): Promise<Incident> => {
-    const updatedIncidents = incidents.map((i) =>
-      i.id === id ? { ...i, ...updates, updatedAt: new Date().toISOString() } : i,
-    )
-    setIncidents(updatedIncidents)
-    const updatedIncident = updatedIncidents.find((i) => i.id === id)!
-    return simulateAsync(updatedIncident)
-  }
-
-  const deleteIncident = async (id: string): Promise<boolean> => {
-    setIncidents((prev) => prev.filter((i) => i.id !== id))
-    return simulateAsync(true)
-  }
-
-  // NFC Tag functions
-  const getNfcTagsByCustomer = async (customerId: string): Promise<NfcTag[]> => {
-    const customerTags = nfcTags.filter((t) => t.customerId === customerId)
-    return simulateAsync(customerTags)
-  }
-
-  const getNfcTagById = async (id: string): Promise<NfcTag | null> => {
-    const tag = nfcTags.find((t) => t.id === id)
-    return simulateAsync(tag || null)
-  }
-
-  const createNfcTag = async (tagData: Omit<NfcTag, "id">): Promise<NfcTag> => {
-    const newTag: NfcTag = {
-      ...tagData,
-      id: `nfc-${Date.now()}`,
-    }
-    setNfcTags((prev) => [...prev, newTag])
-    return simulateAsync(newTag)
-  }
-
-  const updateNfcTag = async (id: string, updates: Partial<NfcTag>): Promise<NfcTag> => {
-    const updatedTags = nfcTags.map((t) => (t.id === id ? { ...t, ...updates } : t))
-    setNfcTags(updatedTags)
-    const updatedTag = updatedTags.find((t) => t.id === id)!
-    return simulateAsync(updatedTag)
-  }
-
-  const deleteNfcTag = async (id: string): Promise<boolean> => {
-    setNfcTags((prev) => prev.filter((t) => t.id !== id))
-    return simulateAsync(true)
-  }
-
-  const scanNfcTag = async (tagId: string): Promise<NfcTag | null> => {
-    const tag = nfcTags.find((t) => t.tagId === tagId)
-    if (tag) {
-      const updatedTag = {
-        ...tag,
-        lastScanned: new Date().toISOString(),
+      // Check localStorage first
+      const stored = localStorage.getItem(`users-${customerId}`)
+      if (stored) {
+        const users = JSON.parse(stored)
+        setIsLoading(false)
+        return users
       }
-      await updateNfcTag(tag.id, { lastScanned: updatedTag.lastScanned })
-      return simulateAsync(updatedTag)
+
+      // Return demo users for demo customer
+      if (customerId === "demo-bedrijf-bv") {
+        const demoUsers = DEMO_USERS.filter((u) => u.customerId === customerId)
+        localStorage.setItem(`users-${customerId}`, JSON.stringify(demoUsers))
+        setIsLoading(false)
+        return demoUsers
+      }
+
+      setIsLoading(false)
+      return []
+    } catch (err) {
+      setError("Fout bij ophalen gebruikers")
+      setIsLoading(false)
+      return []
     }
-    return simulateAsync(null)
+  }
+
+  const getUserById = async (id: string): Promise<User | null> => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Check all customer user lists
+      const customers = await getCustomers()
+      for (const customer of customers) {
+        const users = await getUsersByCustomer(customer.id)
+        const user = users.find((u) => u.id === id)
+        if (user) {
+          setIsLoading(false)
+          return user
+        }
+      }
+
+      setIsLoading(false)
+      return null
+    } catch (err) {
+      setError("Fout bij ophalen gebruiker")
+      setIsLoading(false)
+      return null
+    }
+  }
+
+  const updateUser = async (user: User): Promise<boolean> => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      if (!user.customerId) {
+        setError("Gebruiker heeft geen klant ID")
+        setIsLoading(false)
+        return false
+      }
+
+      const users = await getUsersByCustomer(user.customerId)
+      const updatedUsers = users.map((u) => (u.id === user.id ? user : u))
+      localStorage.setItem(`users-${user.customerId}`, JSON.stringify(updatedUsers))
+
+      setIsLoading(false)
+      return true
+    } catch (err) {
+      setError("Fout bij bijwerken gebruiker")
+      setIsLoading(false)
+      return false
+    }
+  }
+
+  const createUser = async (user: Omit<User, "id">): Promise<string> => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      if (!user.customerId) {
+        setError("Gebruiker moet een klant ID hebben")
+        setIsLoading(false)
+        throw new Error("Customer ID required")
+      }
+
+      const users = await getUsersByCustomer(user.customerId)
+      const newId = `user-${Date.now()}`
+      const newUser: User = { ...user, id: newId }
+
+      const updatedUsers = [...users, newUser]
+      localStorage.setItem(`users-${user.customerId}`, JSON.stringify(updatedUsers))
+
+      setIsLoading(false)
+      return newId
+    } catch (err) {
+      setError("Fout bij aanmaken gebruiker")
+      setIsLoading(false)
+      throw err
+    }
+  }
+
+  const deleteUser = async (id: string): Promise<boolean> => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Find user first to get customer ID
+      const user = await getUserById(id)
+      if (!user || !user.customerId) {
+        setError("Gebruiker niet gevonden")
+        setIsLoading(false)
+        return false
+      }
+
+      const users = await getUsersByCustomer(user.customerId)
+      const updatedUsers = users.filter((u) => u.id !== id)
+      localStorage.setItem(`users-${user.customerId}`, JSON.stringify(updatedUsers))
+
+      setIsLoading(false)
+      return true
+    } catch (err) {
+      setError("Fout bij verwijderen gebruiker")
+      setIsLoading(false)
+      return false
+    }
   }
 
   const value: DataContextType = {
-    // Data
-    customers,
-    bhvMembers,
-    incidents,
-    nfcTags,
+    // Plotkaart functions
+    getPlotkaartByCustomer,
+    updatePlotkaartForCustomer,
+    createPlotkaartForCustomer,
+    deletePlotkaartForCustomer,
 
     // Customer functions
     getCustomers,
     getCustomerById,
-    createCustomer,
     updateCustomer,
+    createCustomer,
     deleteCustomer,
 
-    // BHV Member functions
-    getBhvMembersByCustomer,
-    getBhvMemberById,
-    createBhvMember,
-    updateBhvMember,
-    deleteBhvMember,
+    // User functions
+    getUsersByCustomer,
+    getUserById,
+    updateUser,
+    createUser,
+    deleteUser,
 
-    // Incident functions
-    getIncidentsByCustomer,
-    getIncidentById,
-    createIncident,
-    updateIncident,
-    deleteIncident,
-
-    // NFC Tag functions
-    getNfcTagsByCustomer,
-    getNfcTagById,
-    createNfcTag,
-    updateNfcTag,
-    deleteNfcTag,
-    scanNfcTag,
-
-    // State
+    // Loading states
     isLoading,
     error,
   }
@@ -532,3 +1162,6 @@ export function useData() {
   }
   return context
 }
+
+// Export types
+export type { PlotkaartElement, FloorData, PlotkaartData, Customer, User }

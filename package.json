@@ -1,5 +1,5 @@
 {
-  "name": "bhv360-plotkaart",
+  "name": "bhv-plotkaart-recreation",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,9 @@
     "start": "next start"
   },
   "dependencies": {
-    "@auth/core": "^0.34.2",
+    "@auth/core": "^0.18.6",
     "@aws-sdk/client-s3": "latest",
-    "@hookform/resolvers": "^3.9.1",
+    "@hookform/resolvers": "^3.3.2",
     "@neondatabase/serverless": "latest",
     "@netlify/functions": "latest",
     "@radix-ui/react-accordion": "latest",
@@ -24,7 +24,6 @@
     "@radix-ui/react-dialog": "latest",
     "@radix-ui/react-dropdown-menu": "latest",
     "@radix-ui/react-hover-card": "latest",
-    "@radix-ui/react-input-otp": "^1.0.4",
     "@radix-ui/react-label": "latest",
     "@radix-ui/react-menubar": "latest",
     "@radix-ui/react-navigation-menu": "latest",
@@ -39,18 +38,14 @@
     "@radix-ui/react-slot": "latest",
     "@radix-ui/react-switch": "latest",
     "@radix-ui/react-tabs": "latest",
+    "@radix-ui/react-textarea": "^1.0.4",
     "@radix-ui/react-toast": "latest",
     "@radix-ui/react-toggle": "latest",
     "@radix-ui/react-toggle-group": "latest",
     "@radix-ui/react-tooltip": "latest",
     "@supabase/supabase-js": "latest",
-    "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "latest",
     "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^22",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "autoprefixer": "^10.4.20",
     "bcryptjs": "^2.4.3",
     "chart.js": "latest",
     "child_process": "latest",
@@ -70,7 +65,6 @@
     "next-themes": "latest",
     "nodemailer": "^6.9.8",
     "path": "latest",
-    "postcss": "^8.5.0",
     "react": "^18",
     "react-chartjs-2": "latest",
     "react-day-picker": "latest",
@@ -81,20 +75,23 @@
     "recharts": "latest",
     "sonner": "latest",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5",
     "util": "latest",
     "vaul": "latest",
     "web-push": "latest",
-    "zod": "^3.24.1"
+    "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^22",
     "@types/nodemailer": "^6.4.14",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.4",
     "postcss": "^8.5",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5"
   }
 }
