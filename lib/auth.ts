@@ -1,7 +1,9 @@
 import type { NextRequest } from "next/server"
 import { SignJWT, jwtVerify } from "jose"
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "bhv360-super-secret-key-change-in-production")
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || "bhv360-super-secret-key-change-in-production",
+)
 
 export interface AuthUser {
   username: string
@@ -45,6 +47,7 @@ export async function getUser(request: NextRequest): Promise<AuthUser | null> {
       role: (payload.role as string) || "user",
     }
   } catch (error) {
+    console.error("Get user error:", error)
     return null
   }
 }
@@ -63,12 +66,22 @@ export async function createToken(user: AuthUser): Promise<string> {
 
 // Verify login credentials
 export function verifyCredentials(username: string, password: string): AuthUser | null {
-  // Default credentials - change these in production
+  // Production credentials - change these!
   const defaultPassword = process.env.AUTH_PASSWORD || process.env.NEXT_PUBLIC_DEFAULT_PASSWORD || "bhv360secure"
 
   const validCredentials = [
+    // Super admin
+    { username: "jeffrey@bhv360.nl", password: "jeffrey123", role: "super-admin" },
     { username: "admin", password: defaultPassword, role: "admin" },
+
+    // Demo accounts
+    { username: "jan@demobedrijf.nl", password: "demo123", role: "admin" },
+    { username: "piet@demobedrijf.nl", password: "piet123", role: "bhv-coordinator" },
+    { username: "marie@demobedrijf.nl", password: "marie123", role: "employee" },
+
+    // Generic accounts
     { username: "bhv", password: defaultPassword, role: "user" },
+    { username: "demo", password: "demo123", role: "user" },
   ]
 
   console.log("Verifying credentials for username:", username)
@@ -80,10 +93,10 @@ export function verifyCredentials(username: string, password: string): AuthUser 
   const user = validCredentials.find((cred) => cred.username === username && cred.password === password)
 
   if (user) {
-    console.log("Credentials verified for:", user.username)
+    console.log("Credentials verified for:", user.username, "with role:", user.role)
     return { username: user.username, role: user.role }
   }
 
-  console.log("Invalid credentials")
+  console.log("Invalid credentials for:", username)
   return null
 }

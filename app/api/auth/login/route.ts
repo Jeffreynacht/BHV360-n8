@@ -3,7 +3,10 @@ import { verifyCredentials, createToken } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
-    const { username, password } = await request.json()
+    const body = await request.json()
+    const { username, password } = body
+
+    console.log("Login attempt for:", username)
 
     if (!username || !password) {
       return NextResponse.json({ error: "Gebruikersnaam en wachtwoord zijn verplicht" }, { status: 400 })
@@ -12,13 +15,23 @@ export async function POST(request: NextRequest) {
     const user = verifyCredentials(username, password)
 
     if (!user) {
+      console.log("Invalid credentials for:", username)
       return NextResponse.json({ error: "Ongeldige inloggegevens" }, { status: 401 })
     }
+
+    console.log("User authenticated:", user.username)
 
     const token = await createToken(user)
 
     const response = NextResponse.json(
-      { success: true, user: { username: user.username, role: user.role } },
+      {
+        success: true,
+        user: {
+          username: user.username,
+          role: user.role,
+          email: user.username,
+        },
+      },
       { status: 200 },
     )
 
@@ -34,6 +47,6 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error) {
     console.error("Login error:", error)
-    return NextResponse.json({ error: "Er is een fout opgetreden" }, { status: 500 })
+    return NextResponse.json({ error: "Er is een fout opgetreden bij het inloggen" }, { status: 500 })
   }
 }

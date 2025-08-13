@@ -74,47 +74,111 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Controleer opgeslagen gebruikerssessie
-    const storedUser = localStorage.getItem("bhv360-user")
-    if (storedUser) {
+    const checkStoredAuth = () => {
       try {
-        const parsedUser = JSON.parse(storedUser)
-        setUser(parsedUser)
+        const storedUser = localStorage.getItem("bhv360-user")
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser)
+          setUser(parsedUser)
+        }
       } catch (error) {
-        console.error("Fout bij het parsen van opgeslagen gebruiker:", error)
+        console.error("Fout bij het laden van opgeslagen gebruiker:", error)
         localStorage.removeItem("bhv360-user")
+      } finally {
+        setIsLoading(false)
       }
     }
-    setIsLoading(false)
+
+    // Check if we're in the browser
+    if (typeof window !== "undefined") {
+      checkStoredAuth()
+    } else {
+      setIsLoading(false)
+    }
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
     setError(null)
 
-    // Simuleer API vertraging
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      // First try server-side authentication
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username: email, password }),
+      })
 
-    // Controleer inloggegevens
-    const foundUser = demoUsers.find((u) => u.email === email)
-    const correctPassword = demoPasswords[email]
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.user) {
+          const serverUser: User = {
+            id: data.user.username,
+            name: data.user.username,
+            email: data.user.username,
+            role: data.user.role === "admin" ? "admin" : "employee",
+            customerId: "1",
+          }
+          setUser(serverUser)
+          localStorage.setItem("bhv360-user", JSON.stringify(serverUser))
+          setIsLoading(false)
+          return true
+        }
+      }
 
-    if (foundUser && correctPassword === password) {
-      setUser(foundUser)
-      localStorage.setItem("bhv360-user", JSON.stringify(foundUser))
+      // Fallback to client-side demo authentication
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      const foundUser = demoUsers.find((u) => u.email === email)
+      const correctPassword = demoPasswords[email]
+
+      if (foundUser && correctPassword === password) {
+        setUser(foundUser)
+        localStorage.setItem("bhv360-user", JSON.stringify(foundUser))
+        setIsLoading(false)
+        return true
+      }
+
+      setError("Ongeldige inloggegevens")
       setIsLoading(false)
-      return true
-    }
+      return false
+    } catch (error) {
+      console.error("Login error:", error)
 
-    setError("Ongeldige inloggegevens")
-    setIsLoading(false)
-    return false
+      // Fallback to demo authentication on network error
+      const foundUser = demoUsers.find((u) => u.email === email)
+      const correctPassword = demoPasswords[email]
+
+      if (foundUser && correctPassword === password) {
+        setUser(foundUser)
+        localStorage.setItem("bhv360-user", JSON.stringify(foundUser))
+        setIsLoading(false)
+        return true
+      }
+
+      setError("Inloggen mislukt. Controleer je internetverbinding.")
+      setIsLoading(false)
+      return false
+    }
   }
 
   const logout = () => {
     setUser(null)
     setError(null)
-    localStorage.removeItem("bhv360-user")
-    localStorage.removeItem("bhv360-selected-customer")
+
+    // Clear all stored data
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("bhv360-user")
+      localStorage.removeItem("bhv360-selected-customer")
+    }
+
+    // Call server logout
+    fetch("/api/auth/logout", { method: "POST" }).catch(() => {
+      // Ignore errors on logout
+    })
+
     router.push("/")
   }
 
