@@ -11,9 +11,9 @@ import { DataProvider } from "@/contexts/data-context"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "BHV360 - Professional Safety Management",
-  description: "Complete BHV and safety management solution for organizations",
-    generator: 'v0.dev'
+  title: "BHV360 - Professioneel Veiligheidsmanagement",
+  description: "Complete BHV management platform voor bedrijfshulpverlening",
+    generator: 'v0.app'
 }
 
 export default function RootLayout({
@@ -27,10 +27,12 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <CustomerProvider>
-              <DataProvider>{children}</DataProvider>
+              <DataProvider>
+                {children}
+                <Toaster />
+              </DataProvider>
             </CustomerProvider>
           </AuthProvider>
-          <Toaster />
         </ThemeProvider>
       </body>
     </html>

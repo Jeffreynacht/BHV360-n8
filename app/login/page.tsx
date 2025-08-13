@@ -2,140 +2,129 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, Shield, Loader2 } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
+import { Loader2, Building2, Crown, Users, Shield, User } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
+
+const demoAccounts = [
+  {
+    email: "jeffrey@bhv360.nl",
+    password: "jeffrey123",
+    name: "Jeffrey van der Meer",
+    role: "Super Admin",
+    icon: Crown,
+    description: "Volledige toegang tot alle functies",
+  },
+  {
+    email: "jan@demobedrijf.nl",
+    password: "demo123",
+    name: "Jan Janssen",
+    role: "Admin",
+    icon: Users,
+    description: "Bedrijfsbeheer en gebruikersbeheer",
+  },
+  {
+    email: "piet@demobedrijf.nl",
+    password: "piet123",
+    name: "Piet Pietersen",
+    role: "BHV Coördinator",
+    icon: Shield,
+    description: "BHV teams en incidenten beheren",
+  },
+  {
+    email: "marie@demobedrijf.nl",
+    password: "marie123",
+    name: "Marie de Vries",
+    role: "Medewerker",
+    icon: User,
+    description: "Basis toegang tot BHV informatie",
+  },
+]
 
 export default function LoginPage() {
-  const { login, isLoading, error, user } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user) {
-      window.location.href = "/dashboard"
-    }
-  }, [user])
+  const [error, setError] = useState("")
+  const { login, isLoading } = useAuth()
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
+    setError("")
 
-    try {
-      await login(email, password)
-    } catch (error) {
-      console.error("Login error:", error)
-    } finally {
-      setIsSubmitting(false)
+    if (!email || !password) {
+      setError("Vul alle velden in")
+      return
+    }
+
+    const success = await login(email, password)
+    if (success) {
+      toast({
+        title: "Succesvol ingelogd",
+        description: "Welkom bij BHV360!",
+      })
+      router.push("/dashboard")
+    } else {
+      setError("Ongeldige inloggegevens")
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Laden...</span>
-        </div>
-      </div>
-    )
+  const handleDemoLogin = (demoEmail: string, demoPassword: string) => {
+    setEmail(demoEmail)
+    setPassword(demoPassword)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="flex items-center space-x-3">
-              <Image
-                src="/images/bhv360-logo.png"
-                alt="BHV360 Logo"
-                width={48}
-                height={48}
-                className="rounded-lg shadow-sm"
-              />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">BHV360</h1>
-                <p className="text-sm text-gray-600">Professional Safety Management</p>
-              </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="w-full max-w-4xl grid md:grid-cols-2 gap-8">
+        {/* Login Form */}
+        <Card className="w-full">
+          <CardHeader className="text-center">
+            <div className="flex items-center justify-center mb-4">
+              <Building2 className="h-8 w-8 text-blue-600 mr-2" />
+              <span className="text-2xl font-bold text-gray-900">BHV360</span>
             </div>
-          </div>
-        </div>
-
-        {/* Login Card */}
-        <Card className="shadow-xl border-0">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold flex items-center justify-center">
-              <Shield className="h-6 w-6 mr-2 text-blue-600" />
-              Inloggen
-            </CardTitle>
-            <CardDescription>Voer je gegevens in om toegang te krijgen tot BHV360</CardDescription>
+            <CardTitle className="text-2xl">Inloggen</CardTitle>
+            <CardDescription>Voer je inloggegevens in of gebruik een demo account</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="je.naam@bedrijf.nl"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isSubmitting}
-                  className="h-11"
+                  placeholder="je@bedrijf.nl"
+                  disabled={isLoading}
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="password">Wachtwoord</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Voer je wachtwoord in"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isSubmitting}
-                    className="h-11 pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isSubmitting}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
-                    )}
-                  </Button>
-                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={isLoading}
+                />
               </div>
-
-              <Button type="submit" className="w-full h-11" disabled={isSubmitting}>
-                {isSubmitting ? (
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Inloggen...
@@ -145,22 +134,39 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Nog geen account?{" "}
-                <Link href="/contact" className="text-blue-600 hover:text-blue-500 font-medium">
-                  Neem contact op
-                </Link>
-              </p>
-            </div>
           </CardContent>
         </Card>
 
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <p className="text-xs text-gray-500">© 2024 BHV360. Alle rechten voorbehouden.</p>
-        </div>
+        {/* Demo Accounts */}
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle className="text-xl">Demo Accounts</CardTitle>
+            <CardDescription>Klik op een account om automatisch in te loggen</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {demoAccounts.map((account) => {
+              const IconComponent = account.icon
+              return (
+                <Button
+                  key={account.email}
+                  variant="outline"
+                  className="w-full h-auto p-4 justify-start bg-transparent"
+                  onClick={() => handleDemoLogin(account.email, account.password)}
+                  disabled={isLoading}
+                >
+                  <div className="flex items-center space-x-3">
+                    <IconComponent className="h-5 w-5 text-blue-600" />
+                    <div className="text-left">
+                      <div className="font-medium">{account.name}</div>
+                      <div className="text-sm text-gray-500">{account.role}</div>
+                      <div className="text-xs text-gray-400">{account.description}</div>
+                    </div>
+                  </div>
+                </Button>
+              )
+            })}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

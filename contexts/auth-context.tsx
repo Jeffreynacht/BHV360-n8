@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation"
 
 interface User {
   id: string
-  email: string
   name: string
-  role: string
+  email: string
+  role: "super-admin" | "admin" | "bhv-coordinator" | "employee"
+  customerId?: string
+  avatar?: string
 }
 
 interface AuthContextType {
@@ -21,85 +23,108 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Demo gebruikers database
+const demoUsers: User[] = [
+  {
+    id: "1",
+    name: "Jeffrey van der Meer",
+    email: "jeffrey@bhv360.nl",
+    role: "super-admin",
+    avatar: "/placeholder-user.jpg",
+  },
+  {
+    id: "2",
+    name: "Jan Janssen",
+    email: "jan@demobedrijf.nl",
+    role: "admin",
+    customerId: "1",
+    avatar: "/placeholder-user.jpg",
+  },
+  {
+    id: "3",
+    name: "Piet Pietersen",
+    email: "piet@demobedrijf.nl",
+    role: "bhv-coordinator",
+    customerId: "1",
+    avatar: "/placeholder-user.jpg",
+  },
+  {
+    id: "4",
+    name: "Marie de Vries",
+    email: "marie@demobedrijf.nl",
+    role: "employee",
+    customerId: "1",
+    avatar: "/placeholder-user.jpg",
+  },
+]
+
+// Demo wachtwoorden
+const demoPasswords: { [email: string]: string } = {
+  "jeffrey@bhv360.nl": "jeffrey123",
+  "jan@demobedrijf.nl": "demo123",
+  "piet@demobedrijf.nl": "piet123",
+  "marie@demobedrijf.nl": "marie123",
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  // Check for existing session on mount
   useEffect(() => {
-    const checkAuth = () => {
+    // Controleer opgeslagen gebruikerssessie
+    const storedUser = localStorage.getItem("bhv360-user")
+    if (storedUser) {
       try {
-        const storedUser = localStorage.getItem("bhv360_user")
-        if (storedUser) {
-          setUser(JSON.parse(storedUser))
-        }
+        const parsedUser = JSON.parse(storedUser)
+        setUser(parsedUser)
       } catch (error) {
-        console.error("Error checking auth:", error)
-        localStorage.removeItem("bhv360_user")
-      } finally {
-        setIsLoading(false)
+        console.error("Fout bij het parsen van opgeslagen gebruiker:", error)
+        localStorage.removeItem("bhv360-user")
       }
     }
-
-    checkAuth()
+    setIsLoading(false)
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
     setError(null)
 
-    try {
-      // Hardcoded credentials for Jeffrey
-      if (email === "jef.nachtegaal@gmail.com" && password === "Jefnacht01") {
-        const userData: User = {
-          id: "1",
-          email: "jef.nachtegaal@gmail.com",
-          name: "Jeffrey Nachtegaal",
-          role: "super-admin",
-        }
+    // Simuleer API vertraging
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
-        setUser(userData)
-        localStorage.setItem("bhv360_user", JSON.stringify(userData))
+    // Controleer inloggegevens
+    const foundUser = demoUsers.find((u) => u.email === email)
+    const correctPassword = demoPasswords[email]
 
-        // Redirect to main dashboard, not AED page
-        router.push("/dashboard")
-        return true
-      } else {
-        setError("Ongeldige inloggegevens")
-        return false
-      }
-    } catch (err) {
-      setError("Er is een fout opgetreden bij het inloggen")
-      return false
-    } finally {
+    if (foundUser && correctPassword === password) {
+      setUser(foundUser)
+      localStorage.setItem("bhv360-user", JSON.stringify(foundUser))
       setIsLoading(false)
+      return true
     }
+
+    setError("Ongeldige inloggegevens")
+    setIsLoading(false)
+    return false
   }
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem("bhv360_user")
-    localStorage.removeItem("bhv360_selected_customer")
+    setError(null)
+    localStorage.removeItem("bhv360-user")
+    localStorage.removeItem("bhv360-selected-customer")
     router.push("/")
   }
 
-  const value: AuthContextType = {
-    user,
-    login,
-    logout,
-    isLoading,
-    error,
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, login, logout, isLoading, error }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error("useAuth moet gebruikt worden binnen een AuthProvider")
   }
   return context
 }
