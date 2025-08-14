@@ -4,18 +4,119 @@ import type React from "react"
 
 import { useCustomer } from "@/components/customer-context"
 import { NoCustomerSelected } from "@/components/no-customer-selected"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { Users, QrCode, BarChart3, Shield, Wrench, MapPin } from "lucide-react"
+import {
+  Settings,
+  Users,
+  Shield,
+  BarChart3,
+  Smartphone,
+  Map,
+  FileText,
+  UserCheck,
+  Database,
+  Zap,
+  Package,
+  CheckCircle,
+  Building,
+  Activity,
+} from "lucide-react"
 
-const navigation = [
-  { name: "Plotkaart Editor", href: "/beheer/plotkaart-editor", icon: MapPin },
-  { name: "Gebruikers", href: "/beheer/gebruikers", icon: Users },
-  { name: "Autorisaties", href: "/beheer/autorisaties", icon: Shield },
-  { name: "NFC Tags", href: "/beheer/nfc-tags", icon: QrCode },
-  { name: "Voorzieningen", href: "/beheer/voorzieningen", icon: Wrench },
-  { name: "Rapportages", href: "/beheer/rapportages", icon: BarChart3 },
+const navigationItems = [
+  {
+    title: "Overzicht",
+    href: "/beheer",
+    icon: Activity,
+    description: "Algemeen beheer overzicht",
+  },
+  {
+    title: "Beheeromgeving",
+    href: "/beheer/beheeromgeving",
+    icon: Settings,
+    description: "Systeem configuratie",
+  },
+  {
+    title: "Gebruikers",
+    href: "/beheer/gebruikers",
+    icon: Users,
+    description: "Gebruikersbeheer",
+  },
+  {
+    title: "Voorzieningen",
+    href: "/beheer/voorzieningen",
+    icon: Shield,
+    description: "Veiligheidsvoorzieningen",
+  },
+  {
+    title: "Module Marketplace",
+    href: "/beheer/module-marketplace",
+    icon: Package,
+    description: "Nieuwe modules installeren",
+    badge: "Nieuw",
+  },
+  {
+    title: "Module Goedkeuringen",
+    href: "/beheer/module-approvals",
+    icon: CheckCircle,
+    description: "Module activatie verzoeken",
+  },
+  {
+    title: "NFC Overzicht",
+    href: "/beheer/nfc-overzicht",
+    icon: Smartphone,
+    description: "NFC tags beheer",
+  },
+  {
+    title: "NFC Tags",
+    href: "/beheer/nfc-tags",
+    icon: UserCheck,
+    description: "Tag configuratie",
+  },
+  {
+    title: "Plotkaart Editor",
+    href: "/beheer/plotkaart-editor",
+    icon: Map,
+    description: "Plattegrond bewerken",
+  },
+  {
+    title: "Rapportages",
+    href: "/beheer/rapportages",
+    icon: BarChart3,
+    description: "Rapporten en analytics",
+  },
+  {
+    title: "Inspectie Rapporten",
+    href: "/beheer/inspectierapporten",
+    icon: FileText,
+    description: "Inspectie documentatie",
+  },
+  {
+    title: "Autorisaties",
+    href: "/beheer/autorisaties",
+    icon: UserCheck,
+    description: "Toegangsrechten",
+  },
+  {
+    title: "API Integraties",
+    href: "/beheer/api-integraties",
+    icon: Zap,
+    description: "Externe koppelingen",
+  },
+  {
+    title: "Performance",
+    href: "/beheer/performance",
+    icon: Activity,
+    description: "Systeem prestaties",
+  },
+  {
+    title: "Backups",
+    href: "/beheer/backups",
+    icon: Database,
+    description: "Data backup beheer",
+  },
 ]
 
 export default function BeheerLayout({
@@ -31,42 +132,50 @@ export default function BeheerLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-sm">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900">Beheer</h2>
-          <p className="text-sm text-gray-600">{selectedCustomer.name}</p>
-        </div>
-        <nav className="mt-6">
-          <div className="px-3">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "group flex items-center px-3 py-2 text-sm font-medium rounded-md mb-1",
-                    isActive ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-50 hover:text-gray-900",
-                  )}
-                >
-                  <item.icon
-                    className={cn(
-                      "mr-3 h-5 w-5",
-                      isActive ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500",
-                    )}
-                  />
-                  {item.name}
-                </Link>
-              )
-            })}
+      <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <Building className="h-8 w-8 text-blue-600" />
+            <div>
+              <h1 className="text-xl font-bold">Beheer</h1>
+              <p className="text-sm text-gray-600">{selectedCustomer.name}</p>
+            </div>
           </div>
+        </div>
+
+        <nav className="p-4 space-y-2">
+          {navigationItems.map((item) => {
+            const isActive = pathname === item.href
+            const Icon = item.icon
+
+            return (
+              <Link key={item.href} href={item.href}>
+                <Button variant={isActive ? "secondary" : "ghost"} className="w-full justify-start h-auto p-3">
+                  <div className="flex items-center gap-3 w-full">
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    <div className="flex-1 text-left">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{item.title}</span>
+                        {item.badge && (
+                          <Badge variant="secondary" className="text-xs">
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
+                    </div>
+                  </div>
+                </Button>
+              </Link>
+            )
+          })}
         </nav>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 overflow-auto">{children}</div>
+      {/* Main Content */}
+      <div className="flex-1 overflow-y-auto">{children}</div>
     </div>
   )
 }

@@ -2,506 +2,538 @@
 
 import type React from "react"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { ZoomIn, ZoomOut, RotateCcw, Download, Edit3, Save, X, Plus, Building2 } from "lucide-react"
-import { useCustomer } from "@/components/customer-context"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { BHV360Logo } from "@/components/bhv360-logo"
 import {
-  type Voorziening,
-  getVoorzieningen,
-  createVoorziening,
-  updateVoorziening,
-  deleteVoorziening,
-  getVoorzieningIcon,
-  getVoorzieningLabel,
-  getStatusColor,
-  getStatusLabel,
-} from "@/lib/voorzieningen"
-import VoorzieningModal from "./VoorzieningModal"
-import { toast } from "sonner"
+  Shield,
+  MapPin,
+  AlertTriangle,
+  Heart,
+  Phone,
+  Zap,
+  Eye,
+  Droplets,
+  Wind,
+  Users,
+  Navigation,
+  Edit,
+  Trash2,
+  Save,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Download,
+  Upload,
+  Settings,
+} from "lucide-react"
 
-const SAFETY_ICONS = {
-  brandblusser: {
-    icon: "/images/fire-extinguisher-symbol.png",
-    label: "Brandblusser",
-    color: "bg-red-100 border-red-300",
-  },
-  nooduitgang: {
-    icon: "/images/emergency-exit-green.png",
-    label: "Nooduitgang",
-    color: "bg-green-100 border-green-300",
-  },
-  ehbo: {
-    icon: "/images/medical-cross.png",
-    label: "EHBO Post",
-    color: "bg-blue-100 border-blue-300",
-  },
-  aed: {
-    icon: "/images/aed-heart.png",
-    label: "AED",
-    color: "bg-purple-100 border-purple-300",
-  },
-  verzamelplaats: {
-    icon: "/images/assembly-point-people.png",
-    label: "Verzamelplaats",
-    color: "bg-orange-100 border-orange-300",
-  },
-  brandmelder: {
-    icon: "/images/fire-alarm-symbol.png",
-    label: "Brandmelder",
-    color: "bg-yellow-100 border-yellow-300",
-  },
-  noodtelefoon: {
-    icon: "/images/emergency-phone.png",
-    label: "Noodtelefoon",
-    color: "bg-indigo-100 border-indigo-300",
-  },
+interface Voorziening {
+  id: string
+  type: string
+  x: number
+  y: number
+  label: string
+  status: "active" | "maintenance" | "inactive"
+  lastChecked?: string
+  description?: string
+}
+
+interface Floor {
+  id: string
+  name: string
+  image?: string
+  voorzieningen: Voorziening[]
+}
+
+const voorzieningTypes = {
+  "fire-extinguisher": { icon: Shield, color: "text-red-600", label: "Brandblusser" },
+  "fire-hose": { icon: Droplets, color: "text-blue-600", label: "Brandslang" },
+  aed: { icon: Heart, color: "text-green-600", label: "AED" },
+  "emergency-exit": { icon: Navigation, color: "text-green-600", label: "Nooduitgang" },
+  "assembly-point": { icon: Users, color: "text-blue-600", label: "Verzamelpunt" },
+  "emergency-phone": { icon: Phone, color: "text-orange-600", label: "Noodtelefoon" },
+  "fire-alarm": { icon: AlertTriangle, color: "text-red-600", label: "Brandalarm" },
+  "emergency-shower": { icon: Droplets, color: "text-blue-600", label: "Nooddouche" },
+  "eye-wash": { icon: Eye, color: "text-blue-600", label: "Oogdouche" },
+  "gas-valve": { icon: Wind, color: "text-yellow-600", label: "Gasafsluiter" },
+  "electrical-panel": { icon: Zap, color: "text-yellow-600", label: "Elektriciteitspaneel" },
 }
 
 export function BHV360Plotkaart() {
-  const { selectedCustomer } = useCustomer()
-  const [zoom, setZoom] = useState(1)
-  const [isEditMode, setIsEditMode] = useState(false)
-  const [voorzieningen, setVoorzieningen] = useState<Voorziening[]>([])
+  const [floors, setFloors] = useState<Floor[]>([
+    {
+      id: "ground",
+      name: "Begane Grond",
+      voorzieningen: [
+        {
+          id: "1",
+          type: "fire-extinguisher",
+          x: 100,
+          y: 150,
+          label: "Blusser A1",
+          status: "active",
+          lastChecked: "2024-01-15",
+        },
+        {
+          id: "2",
+          type: "aed",
+          x: 300,
+          y: 200,
+          label: "AED Hoofdingang",
+          status: "active",
+          lastChecked: "2024-01-10",
+        },
+        {
+          id: "3",
+          type: "emergency-exit",
+          x: 450,
+          y: 100,
+          label: "Nooduitgang Noord",
+          status: "active",
+        },
+        {
+          id: "4",
+          type: "assembly-point",
+          x: 200,
+          y: 350,
+          label: "Verzamelpunt A",
+          status: "active",
+        },
+      ],
+    },
+    {
+      id: "first",
+      name: "Eerste Verdieping",
+      voorzieningen: [
+        {
+          id: "5",
+          type: "fire-extinguisher",
+          x: 150,
+          y: 120,
+          label: "Blusser B1",
+          status: "maintenance",
+          lastChecked: "2024-01-12",
+        },
+        {
+          id: "6",
+          type: "fire-hose",
+          x: 350,
+          y: 180,
+          label: "Brandslang B2",
+          status: "active",
+          lastChecked: "2024-01-14",
+        },
+      ],
+    },
+  ])
+
+  const [activeFloor, setActiveFloor] = useState("ground")
   const [selectedVoorziening, setSelectedVoorziening] = useState<Voorziening | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("view")
-  const [isLoading, setIsLoading] = useState(true)
-  const plotkaartRef = useRef<HTMLDivElement>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [showAddDialog, setShowAddDialog] = useState(false)
+  const [zoom, setZoom] = useState(1)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const svgRef = useRef<SVGSVGElement>(null)
 
-  useEffect(() => {
-    loadVoorzieningen()
-  }, [])
+  const currentFloor = floors.find((f) => f.id === activeFloor)
 
-  const loadVoorzieningen = async () => {
-    try {
-      setIsLoading(true)
-      const data = await getVoorzieningen()
-      setVoorzieningen(data)
-    } catch (error) {
-      console.error("Error loading voorzieningen:", error)
-      toast.error("Fout bij laden van voorzieningen")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleZoomIn = () => {
-    setZoom((prev) => Math.min(prev + 0.2, 3))
-  }
-
-  const handleZoomOut = () => {
-    setZoom((prev) => Math.max(prev - 0.2, 0.5))
-  }
-
-  const handleResetZoom = () => {
-    setZoom(1)
-  }
-
-  const handleDownload = () => {
-    if (plotkaartRef.current) {
-      // In een echte implementatie zou hier een PDF of PNG export komen
-      toast.success("Download functionaliteit wordt binnenkort toegevoegd")
-    }
-  }
-
-  const handleEditToggle = () => {
-    setIsEditMode(!isEditMode)
-    if (isEditMode) {
-      toast.success("Edit modus uitgeschakeld")
-    } else {
-      toast.success("Edit modus ingeschakeld - klik op de plattegrond om voorzieningen toe te voegen")
-    }
-  }
-
-  const handlePlotkaartClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isEditMode) return
-
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = Math.round((e.clientX - rect.left) / zoom)
-    const y = Math.round((e.clientY - rect.top) / zoom)
-
-    setSelectedVoorziening({
-      id: "",
-      type: "brandblusser",
-      naam: "",
-      locatie: { x, y },
-      status: "actief",
-      createdAt: "",
-      updatedAt: "",
-    })
-    setModalMode("create")
-    setIsModalOpen(true)
-  }
-
-  const handleVoorzieningClick = (voorziening: Voorziening, e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleVoorzieningClick = (voorziening: Voorziening) => {
     setSelectedVoorziening(voorziening)
-    setModalMode(isEditMode ? "edit" : "view")
-    setIsModalOpen(true)
   }
 
-  const handleSaveVoorziening = async (voorzieningData: Omit<Voorziening, "id" | "createdAt" | "updatedAt">) => {
-    try {
-      if (modalMode === "create") {
-        await createVoorziening(voorzieningData)
-        toast.success("Voorziening toegevoegd")
-      } else if (modalMode === "edit" && selectedVoorziening) {
-        await updateVoorziening(selectedVoorziening.id, voorzieningData)
-        toast.success("Voorziening bijgewerkt")
-      }
-      await loadVoorzieningen()
-    } catch (error) {
-      console.error("Error saving voorziening:", error)
-      toast.error("Fout bij opslaan van voorziening")
+  const handleAddVoorziening = (event: React.MouseEvent<SVGSVGElement>) => {
+    if (!isEditing) return
+
+    const rect = event.currentTarget.getBoundingClientRect()
+    const x = (event.clientX - rect.left - pan.x) / zoom
+    const y = (event.clientY - rect.top - pan.y) / zoom
+
+    const newVoorziening: Voorziening = {
+      id: Date.now().toString(),
+      type: "fire-extinguisher",
+      x,
+      y,
+      label: `Nieuwe voorziening ${Date.now()}`,
+      status: "active",
+    }
+
+    setFloors((prev) =>
+      prev.map((floor) =>
+        floor.id === activeFloor ? { ...floor, voorzieningen: [...floor.voorzieningen, newVoorziening] } : floor,
+      ),
+    )
+  }
+
+  const handleDeleteVoorziening = (id: string) => {
+    setFloors((prev) =>
+      prev.map((floor) =>
+        floor.id === activeFloor ? { ...floor, voorzieningen: floor.voorzieningen.filter((v) => v.id !== id) } : floor,
+      ),
+    )
+    setSelectedVoorziening(null)
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "fill-green-500"
+      case "maintenance":
+        return "fill-yellow-500"
+      case "inactive":
+        return "fill-red-500"
+      default:
+        return "fill-gray-500"
     }
   }
 
-  const handleDeleteVoorziening = async (id: string) => {
-    try {
-      await deleteVoorziening(id)
-      toast.success("Voorziening verwijderd")
-      await loadVoorzieningen()
-      setIsModalOpen(false)
-    } catch (error) {
-      console.error("Error deleting voorziening:", error)
-      toast.error("Fout bij verwijderen van voorziening")
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge className="bg-green-600">Actief</Badge>
+      case "maintenance":
+        return <Badge variant="secondary">Onderhoud</Badge>
+      case "inactive":
+        return <Badge variant="destructive">Inactief</Badge>
+      default:
+        return <Badge variant="outline">Onbekend</Badge>
     }
   }
 
-  const getStatistics = () => {
-    const stats = voorzieningen.reduce(
-      (acc, voorziening) => {
-        acc[voorziening.type] = (acc[voorziening.type] || 0) + 1
-        return acc
-      },
-      {} as Record<string, number>,
-    )
+  const exportPlotkaart = () => {
+    if (!svgRef.current) return
 
-    return Object.entries(SAFETY_ICONS).map(([type, config]) => ({
-      type: type as keyof typeof SAFETY_ICONS,
-      label: config.label,
-      count: stats[type] || 0,
-      color: config.color,
-    }))
-  }
+    const svgData = new XMLSerializer().serializeToString(svgRef.current)
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" })
+    const svgUrl = URL.createObjectURL(svgBlob)
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    )
+    const downloadLink = document.createElement("a")
+    downloadLink.href = svgUrl
+    downloadLink.download = `plotkaart-${activeFloor}-${new Date().toISOString().split("T")[0]}.svg`
+    downloadLink.click()
+
+    URL.revokeObjectURL(svgUrl)
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header met klant branding */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center space-x-4">
-          {/* BHV360 Logo */}
-          <img
-            src="/images/bhv360-logo.png"
-            alt="BHV360"
-            className="h-10 w-auto"
-            onError={(e) => {
-              e.currentTarget.src = "/placeholder.svg?height=40&width=100&text=BHV360"
-            }}
-          />
-          <div className="h-8 w-px bg-gray-300" />
-          {/* Klant informatie */}
-          {selectedCustomer ? (
-            <div className="flex items-center space-x-3">
-              {selectedCustomer.logo ? (
-                <img
-                  src={selectedCustomer.logo || "/placeholder.svg"}
-                  alt={selectedCustomer.name}
-                  className="h-8 w-auto max-w-[100px]"
-                  onError={(e) => {
-                    e.currentTarget.src =
-                      "/placeholder.svg?height=32&width=64&text=" +
-                      encodeURIComponent(selectedCustomer.name.substring(0, 3))
-                  }}
-                />
-              ) : (
-                <div className="h-8 w-12 bg-gray-100 rounded flex items-center justify-center">
-                  <Building2 className="h-5 w-5 text-gray-400" />
-                </div>
-              )}
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{selectedCustomer.name}</h1>
-                <p className="text-sm text-gray-600">Interactieve BHV Plotkaart</p>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">BHV360 Plotkaart</h1>
-              <p className="text-gray-600 mt-1">Interactieve plattegrond met veiligheidsvoorzieningen</p>
-            </div>
-          )}
+    <div className="container p-6">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <BHV360Logo size="md" showText={false} />
+            <h1 className="text-3xl font-bold">BHV360 Plotkaart</h1>
+          </div>
+          <p className="text-muted-foreground">Interactieve plattegrond met BHV voorzieningen</p>
         </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={handleZoomIn}>
-            <ZoomIn className="w-4 h-4 mr-2" />
-            Zoom In
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleZoomOut}>
-            <ZoomOut className="w-4 h-4 mr-2" />
-            Zoom Out
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleResetZoom}>
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Reset
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleDownload}>
-            <Download className="w-4 h-4 mr-2" />
-            Download
-          </Button>
-          <Button variant={isEditMode ? "default" : "outline"} size="sm" onClick={handleEditToggle}>
-            {isEditMode ? (
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
+            {isEditing ? (
               <>
-                <Save className="w-4 h-4 mr-2" />
+                <Save className="mr-2 h-4 w-4" />
                 Opslaan
               </>
             ) : (
               <>
-                <Edit3 className="w-4 h-4 mr-2" />
+                <Edit className="mr-2 h-4 w-4" />
                 Bewerken
               </>
             )}
+          </Button>
+          <Button variant="outline" onClick={exportPlotkaart}>
+            <Download className="mr-2 h-4 w-4" />
+            Exporteren
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Plotkaart */}
+        {/* Main Plotkaart */}
         <div className="lg:col-span-3">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                {selectedCustomer ? `${selectedCustomer.name} - Plattegrond` : "Plattegrond"}
-                {isEditMode && (
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                    <Edit3 className="w-3 h-3 mr-1" />
-                    Edit Modus
-                  </Badge>
-                )}
-              </CardTitle>
-              <CardDescription>
-                {isEditMode
-                  ? "Klik op de plattegrond om voorzieningen toe te voegen of klik op bestaande voorzieningen om te bewerken"
-                  : "Klik op voorzieningen voor meer informatie"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div
-                ref={plotkaartRef}
-                className={`relative bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden ${
-                  isEditMode ? "cursor-crosshair" : "cursor-default"
-                }`}
-                style={{
-                  height: "500px",
-                  transform: `scale(${zoom})`,
-                  transformOrigin: "top left",
-                }}
-                onClick={handlePlotkaartClick}
-              >
-                {/* Gebouw outline */}
-                <div className="absolute inset-4 border-2 border-gray-400 bg-white rounded">
-                  {/* Klant naam in het midden */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-2" />
-                      <h2 className="text-xl font-bold text-gray-600">
-                        {selectedCustomer ? selectedCustomer.name : "Selecteer een klant"}
-                      </h2>
-                      {selectedCustomer && <p className="text-sm text-gray-500 mt-1">{selectedCustomer.address}</p>}
-                    </div>
-                  </div>
-
-                  {/* Kamers */}
-                  <div className="absolute top-4 left-4 w-32 h-24 border border-gray-300 bg-blue-50 rounded flex items-center justify-center text-xs font-medium">
-                    Receptie
-                  </div>
-                  <div className="absolute top-4 right-4 w-40 h-32 border border-gray-300 bg-green-50 rounded flex items-center justify-center text-xs font-medium">
-                    Kantoor
-                  </div>
-                  <div className="absolute bottom-4 left-4 w-48 h-28 border border-gray-300 bg-yellow-50 rounded flex items-center justify-center text-xs font-medium">
-                    Vergaderruimte
-                  </div>
-                  <div className="absolute bottom-4 right-4 w-32 h-20 border border-gray-300 bg-red-50 rounded flex items-center justify-center text-xs font-medium">
-                    Keuken
-                  </div>
-
-                  {/* Gang */}
-                  <div className="absolute top-32 left-4 right-4 bottom-36 bg-gray-100 rounded flex items-center justify-center text-xs font-medium text-gray-600">
-                    Centrale Gang
-                  </div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Plattegrond - {currentFloor?.name}</CardTitle>
+                  <CardDescription>
+                    {isEditing ? "Klik om voorzieningen toe te voegen" : "Klik op voorzieningen voor details"}
+                  </CardDescription>
                 </div>
-
-                {/* Voorzieningen */}
-                {voorzieningen.map((voorziening) => (
-                  <div
-                    key={voorziening.id}
-                    className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all hover:scale-110 ${
-                      SAFETY_ICONS[voorziening.type]?.color || "bg-gray-100 border-gray-300"
-                    } border-2 rounded-full p-2 shadow-md`}
-                    style={{
-                      left: voorziening.locatie.x,
-                      top: voorziening.locatie.y,
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}>
+                    <ZoomOut className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setZoom(Math.min(2, zoom + 0.1))}>
+                    <ZoomIn className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setZoom(1)
+                      setPan({ x: 0, y: 0 })
                     }}
-                    onClick={(e) => handleVoorzieningClick(voorziening, e)}
-                    title={`${voorziening.naam} (${getStatusLabel(voorziening.status)})`}
                   >
-                    <img
-                      src={getVoorzieningIcon(voorziening.type) || "/placeholder.svg"}
-                      alt={getVoorzieningLabel(voorziening.type)}
-                      className="w-6 h-6"
-                    />
-                    {voorziening.status !== "actief" && (
-                      <div
-                        className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${
-                          voorziening.status === "onderhoud" ? "bg-yellow-500" : "bg-red-500"
-                        }`}
-                      />
-                    )}
-                  </div>
-                ))}
-
-                {/* Zoom indicator */}
-                <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-                  {Math.round(zoom * 100)}%
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={activeFloor} onValueChange={setActiveFloor}>
+                <TabsList className="mb-4">
+                  {floors.map((floor) => (
+                    <TabsTrigger key={floor.id} value={floor.id}>
+                      {floor.name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+
+                {floors.map((floor) => (
+                  <TabsContent key={floor.id} value={floor.id}>
+                    <div className="border rounded-lg overflow-hidden bg-gray-50">
+                      <svg
+                        ref={svgRef}
+                        width="100%"
+                        height="500"
+                        viewBox="0 0 600 400"
+                        className="cursor-crosshair"
+                        onClick={isEditing ? handleAddVoorziening : undefined}
+                        style={{ transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)` }}
+                      >
+                        {/* Background grid */}
+                        <defs>
+                          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e5e7eb" strokeWidth="1" />
+                          </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grid)" />
+
+                        {/* Building outline */}
+                        <rect x="50" y="50" width="500" height="300" fill="white" stroke="#374151" strokeWidth="2" />
+
+                        {/* Rooms */}
+                        <rect x="70" y="70" width="150" height="100" fill="#f9fafb" stroke="#d1d5db" strokeWidth="1" />
+                        <text x="145" y="125" textAnchor="middle" className="text-sm fill-gray-600">
+                          Kantoor A
+                        </text>
+
+                        <rect x="240" y="70" width="150" height="100" fill="#f9fafb" stroke="#d1d5db" strokeWidth="1" />
+                        <text x="315" y="125" textAnchor="middle" className="text-sm fill-gray-600">
+                          Kantoor B
+                        </text>
+
+                        <rect x="410" y="70" width="120" height="100" fill="#f9fafb" stroke="#d1d5db" strokeWidth="1" />
+                        <text x="470" y="125" textAnchor="middle" className="text-sm fill-gray-600">
+                          Vergaderruimte
+                        </text>
+
+                        <rect x="70" y="190" width="460" height="140" fill="#f9fafb" stroke="#d1d5db" strokeWidth="1" />
+                        <text x="300" y="265" textAnchor="middle" className="text-sm fill-gray-600">
+                          Open Werkruimte
+                        </text>
+
+                        {/* Voorzieningen */}
+                        {floor.voorzieningen.map((voorziening) => {
+                          const VoorzieningIcon =
+                            voorzieningTypes[voorziening.type as keyof typeof voorzieningTypes]?.icon || Shield
+                          return (
+                            <g key={voorziening.id}>
+                              <circle
+                                cx={voorziening.x}
+                                cy={voorziening.y}
+                                r="15"
+                                className={`${getStatusColor(voorziening.status)} stroke-white stroke-2 cursor-pointer hover:opacity-80`}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleVoorzieningClick(voorziening)
+                                }}
+                              />
+                              <foreignObject
+                                x={voorziening.x - 8}
+                                y={voorziening.y - 8}
+                                width="16"
+                                height="16"
+                                className="pointer-events-none"
+                              >
+                                <VoorzieningIcon className="h-4 w-4 text-white" />
+                              </foreignObject>
+                              <text
+                                x={voorziening.x}
+                                y={voorziening.y + 25}
+                                textAnchor="middle"
+                                className="text-xs fill-gray-700 font-medium"
+                              >
+                                {voorziening.label}
+                              </text>
+                            </g>
+                          )
+                        })}
+                      </svg>
+                    </div>
+                  </TabsContent>
+                ))}
+              </Tabs>
             </CardContent>
           </Card>
         </div>
 
-        {/* Legenda en Statistieken */}
+        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Legenda */}
+          {/* Legend */}
           <Card>
             <CardHeader>
-              <CardTitle>Legenda</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Legenda
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {getStatistics().map((stat) => (
-                <div key={stat.type} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-4 h-4 rounded border ${stat.color}`} />
-                    <span className="text-sm font-medium">{stat.label}</span>
-                  </div>
-                  <Badge variant="secondary">{stat.count} items</Badge>
+            <CardContent>
+              <ScrollArea className="h-64">
+                <div className="space-y-3">
+                  {Object.entries(voorzieningTypes).map(([type, config]) => {
+                    const Icon = config.icon
+                    return (
+                      <div key={type} className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                          <Icon className="h-3 w-3 text-white" />
+                        </div>
+                        <span className="text-sm">{config.label}</span>
+                      </div>
+                    )
+                  })}
                 </div>
-              ))}
+              </ScrollArea>
             </CardContent>
           </Card>
 
-          {/* Statistieken */}
+          {/* Statistics */}
           <Card>
             <CardHeader>
               <CardTitle>Statistieken</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{voorzieningen.length}</div>
-                  <div className="text-xs text-gray-600">Totaal</div>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm">Totaal voorzieningen:</span>
+                  <Badge variant="outline">
+                    {floors.reduce((total, floor) => total + floor.voorzieningen.length, 0)}
+                  </Badge>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {voorzieningen.filter((v) => v.status === "actief").length}
-                  </div>
-                  <div className="text-xs text-gray-600">Actief</div>
+                <div className="flex justify-between">
+                  <span className="text-sm">Actief:</span>
+                  <Badge className="bg-green-600">
+                    {floors.reduce(
+                      (total, floor) => total + floor.voorzieningen.filter((v) => v.status === "active").length,
+                      0,
+                    )}
+                  </Badge>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-600">
-                    {voorzieningen.filter((v) => v.status === "onderhoud").length}
-                  </div>
-                  <div className="text-xs text-gray-600">Onderhoud</div>
+                <div className="flex justify-between">
+                  <span className="text-sm">Onderhoud:</span>
+                  <Badge variant="secondary">
+                    {floors.reduce(
+                      (total, floor) => total + floor.voorzieningen.filter((v) => v.status === "maintenance").length,
+                      0,
+                    )}
+                  </Badge>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">
-                    {voorzieningen.filter((v) => v.status === "defect").length}
-                  </div>
-                  <div className="text-xs text-gray-600">Defect</div>
+                <div className="flex justify-between">
+                  <span className="text-sm">Inactief:</span>
+                  <Badge variant="destructive">
+                    {floors.reduce(
+                      (total, floor) => total + floor.voorzieningen.filter((v) => v.status === "inactive").length,
+                      0,
+                    )}
+                  </Badge>
                 </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <h4 className="font-medium text-sm">Status Overzicht</h4>
-                {voorzieningen
-                  .filter((v) => v.status !== "actief")
-                  .map((voorziening) => (
-                    <div key={voorziening.id} className="flex items-center justify-between text-xs">
-                      <span className="truncate">{voorziening.naam}</span>
-                      <Badge variant="outline" className={getStatusColor(voorziening.status)}>
-                        {getStatusLabel(voorziening.status)}
-                      </Badge>
-                    </div>
-                  ))}
-                {voorzieningen.filter((v) => v.status !== "actief").length === 0 && (
-                  <p className="text-xs text-gray-500 italic">Alle voorzieningen zijn actief</p>
-                )}
               </div>
             </CardContent>
           </Card>
 
           {/* Quick Actions */}
-          {isEditMode && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full justify-start bg-transparent"
-                  onClick={() => {
-                    setSelectedVoorziening(null)
-                    setModalMode("create")
-                    setIsModalOpen(true)
-                  }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Voorziening Toevoegen
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full justify-start bg-transparent"
-                  onClick={handleEditToggle}
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Exit Edit Mode
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Snelle Acties</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button className="w-full justify-start bg-transparent" variant="outline">
+                <Upload className="mr-2 h-4 w-4" />
+                Plattegrond Uploaden
+              </Button>
+              <Button className="w-full justify-start bg-transparent" variant="outline">
+                <Settings className="mr-2 h-4 w-4" />
+                Instellingen
+              </Button>
+              <Button className="w-full justify-start bg-transparent" variant="outline">
+                <Download className="mr-2 h-4 w-4" />
+                Rapport Genereren
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      {/* Modal */}
-      <VoorzieningModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        voorziening={selectedVoorziening}
-        onSave={handleSaveVoorziening}
-        mode={modalMode}
-        onDelete={handleDeleteVoorziening}
-      />
+      {/* Voorziening Details Dialog */}
+      <Dialog open={!!selectedVoorziening} onOpenChange={() => setSelectedVoorziening(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Voorziening Details</DialogTitle>
+            <DialogDescription>Informatie over de geselecteerde voorziening</DialogDescription>
+          </DialogHeader>
+          {selectedVoorziening && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Type</label>
+                  <div className="mt-1">
+                    {voorzieningTypes[selectedVoorziening.type as keyof typeof voorzieningTypes]?.label || "Onbekend"}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Status</label>
+                  <div className="mt-1">{getStatusBadge(selectedVoorziening.status)}</div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Label</label>
+                <div className="mt-1">{selectedVoorziening.label}</div>
+              </div>
+
+              {selectedVoorziening.lastChecked && (
+                <div>
+                  <label className="text-sm font-medium">Laatst gecontroleerd</label>
+                  <div className="mt-1">{new Date(selectedVoorziening.lastChecked).toLocaleDateString("nl-NL")}</div>
+                </div>
+              )}
+
+              {selectedVoorziening.description && (
+                <div>
+                  <label className="text-sm font-medium">Beschrijving</label>
+                  <div className="mt-1">{selectedVoorziening.description}</div>
+                </div>
+              )}
+
+              <div className="flex justify-between pt-4">
+                <Button variant="outline">
+                  <Edit className="mr-2 h-4 w-4" />
+                  Bewerken
+                </Button>
+                <Button variant="destructive" onClick={() => handleDeleteVoorziening(selectedVoorziening.id)}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Verwijderen
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
-
-// Named export for compatibility
-
-// Default export
-export default BHV360Plotkaart

@@ -1,575 +1,511 @@
 "use client"
+
 import { useState } from "react"
-import { useCustomer } from "@/components/customer-context"
-import { NoCustomerSelected } from "@/components/no-customer-selected"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Legend } from "@/components/legend"
-import { UserManual } from "@/components/user-manual"
+import { useCustomer } from "@/components/customer-context"
+import { useAuth } from "@/contexts/auth-context"
+import { useToast } from "@/hooks/use-toast"
 import {
-  Flame,
-  ShieldCheck,
-  Zap,
-  Droplets,
-  Eye,
-  Volume2,
-  Heart,
-  Phone,
   MapPin,
-  QrCode,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  Smartphone,
-  User,
-  ArrowRight,
   Scan,
-  Building2,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Users,
+  Shield,
+  Zap,
+  Navigation,
+  Eye,
+  Activity,
 } from "lucide-react"
 
-interface Floor {
+type FloorStatus = "normal" | "miva_detected" | "investigating" | "evacuated" | "emergency"
+type MivaLocation = {
   id: string
   name: string
-  level: number
-  facilities: Facility[]
-  checklistItems: ChecklistItem[]
+  scanned: boolean
+  timestamp?: string
+  scannedBy?: string
+}
+type EvacuationRoute = {
+  id: string
+  name: string
+  scanned: boolean
+  timestamp?: string
+  scannedBy?: string
+}
+
+type FloorData = {
+  id: number
+  name: string
+  status: FloorStatus
   mivaLocations: MivaLocation[]
-  notes: string
-}
-
-interface Facility {
-  id: string
-  name: string
-  type: string
-  location: string
-  status: "operational" | "maintenance" | "defect" | "unknown"
-  nfcTagId: string
-  lastInspection: string
-  nextInspection: string
-}
-
-interface ChecklistItem {
-  id: string
-  text: string
-  checked: boolean
-  comment: string
-}
-
-interface MivaLocation {
-  id: string
-  name: string
-  location: string
-  present: boolean
-  evacuated: boolean
-}
-
-const facilityTypes = [
-  { id: "fire-extinguisher", name: "Brandblusser", icon: Flame, color: "text-red-500" },
-  { id: "fire-hose", name: "Brandslang", icon: Droplets, color: "text-blue-500" },
-  { id: "emergency-exit", name: "Nooduitgang", icon: ShieldCheck, color: "text-green-500" },
-  { id: "emergency-lighting", name: "Noodverlichting", icon: Zap, color: "text-yellow-500" },
-  { id: "smoke-detector", name: "Rookmelder", icon: Eye, color: "text-gray-500" },
-  { id: "alarm-button", name: "Alarmknop", icon: Volume2, color: "text-orange-500" },
-  { id: "aed", name: "AED", icon: Heart, color: "text-pink-500" },
-  { id: "emergency-phone", name: "Noodtelefoon", icon: Phone, color: "text-indigo-500" },
-]
-
-// Simple safety icons component inline to avoid import issues
-function SafetyIconsDisplay() {
-  return (
-    <div className="grid grid-cols-4 gap-2 p-4">
-      <div className="flex flex-col items-center p-2 border rounded">
-        <Flame className="h-6 w-6 text-red-500 mb-1" />
-        <span className="text-xs">Brand</span>
-      </div>
-      <div className="flex flex-col items-center p-2 border rounded">
-        <ShieldCheck className="h-6 w-6 text-green-500 mb-1" />
-        <span className="text-xs">Veilig</span>
-      </div>
-      <div className="flex flex-col items-center p-2 border rounded">
-        <Heart className="h-6 w-6 text-pink-500 mb-1" />
-        <span className="text-xs">AED</span>
-      </div>
-      <div className="flex flex-col items-center p-2 border rounded">
-        <Phone className="h-6 w-6 text-indigo-500 mb-1" />
-        <span className="text-xs">Nood</span>
-      </div>
-    </div>
-  )
+  evacuationRoutes: EvacuationRoute[]
+  lastUpdate?: string
+  updatedBy?: string
 }
 
 export default function BHVPlotkaartPage() {
   const { selectedCustomer } = useCustomer()
-  const [floors, setFloors] = useState<Floor[]>([
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const [selectedFloor, setSelectedFloor] = useState<number>(1)
+  const [floors, setFloors] = useState<FloorData[]>([
     {
-      id: "floor-1",
+      id: 1,
       name: "Begane Grond",
-      level: 0,
-      facilities: [
-        {
-          id: "fac-1",
-          name: "Brandblusser BG-001",
-          type: "fire-extinguisher",
-          location: "Bij hoofdingang",
-          status: "operational",
-          nfcTagId: "nfc-hg-bg-001",
-          lastInspection: "2024-01-15",
-          nextInspection: "2024-04-15",
-        },
-        {
-          id: "fac-2",
-          name: "AED Receptie",
-          type: "aed",
-          location: "Receptiebalie",
-          status: "operational",
-          nfcTagId: "nfc-hg-bg-002",
-          lastInspection: "2024-01-10",
-          nextInspection: "2024-02-10",
-        },
-      ],
-      checklistItems: [
-        { id: "check-1", text: "Nooduitgangen vrij van obstakels", checked: true, comment: "" },
-        { id: "check-2", text: "Brandblussers gecontroleerd", checked: false, comment: "" },
-      ],
+      status: "normal",
       mivaLocations: [
-        { id: "miva-1", name: "Rolstoelgebruiker", location: "Receptie", present: true, evacuated: false },
+        { id: "miva-bg-1", name: "Hoofdingang", scanned: false },
+        { id: "miva-bg-2", name: "Receptie", scanned: false },
+        { id: "miva-bg-3", name: "Kantine", scanned: false },
       ],
-      notes: "Hoofdingang wordt gebruikt als primaire verzamelplaats.",
+      evacuationRoutes: [
+        { id: "route-bg-1", name: "Trappenhuis A", scanned: false },
+        { id: "route-bg-2", name: "Trappenhuis B", scanned: false },
+        { id: "route-bg-3", name: "Nooduitgang Oost", scanned: false },
+      ],
+    },
+    {
+      id: 2,
+      name: "Verdieping 1",
+      status: "normal",
+      mivaLocations: [
+        { id: "miva-v1-1", name: "Gang Noord", scanned: false },
+        { id: "miva-v1-2", name: "Vergaderruimte", scanned: false },
+        { id: "miva-v1-3", name: "Werkplaats", scanned: false },
+      ],
+      evacuationRoutes: [
+        { id: "route-v1-1", name: "Trappenhuis A", scanned: false },
+        { id: "route-v1-2", name: "Trappenhuis B", scanned: false },
+      ],
+    },
+    {
+      id: 12,
+      name: "Verdieping 12",
+      status: "normal",
+      mivaLocations: [
+        { id: "miva-v12-1", name: "Gang Centrum", scanned: false },
+        { id: "miva-v12-2", name: "Directiekamer", scanned: false },
+        { id: "miva-v12-3", name: "Serverruimte", scanned: false },
+      ],
+      evacuationRoutes: [
+        { id: "route-v12-1", name: "Trappenhuis A", scanned: false },
+        { id: "route-v12-2", name: "Trappenhuis B", scanned: false },
+        { id: "route-v12-3", name: "Nooduitgang West", scanned: false },
+      ],
     },
   ])
-  const [activeFloor, setActiveFloor] = useState<string>("floor-1")
-  const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null)
-  const [isScanning, setIsScanning] = useState<boolean>(false)
-  const [scanResult, setScanResult] = useState<string | null>(null)
 
-  if (!selectedCustomer) {
-    return <NoCustomerSelected />
-  }
-
-  const currentFloor = floors.find((floor) => floor.id === activeFloor) || floors[0]
-
-  const simulateNFCScan = (facility: Facility) => {
-    setIsScanning(true)
-    setScanResult(null)
-    setSelectedFacility(facility)
-
-    setTimeout(() => {
-      setIsScanning(false)
-      setScanResult(facility.nfcTagId)
-    }, 1500)
-  }
-
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: FloorStatus) => {
     switch (status) {
-      case "operational":
-        return "bg-green-500"
-      case "maintenance":
-        return "bg-orange-500"
-      case "defect":
-        return "bg-red-500"
+      case "normal":
+        return "bg-gray-100 text-gray-800 border-gray-200"
+      case "miva_detected":
+        return "bg-orange-100 text-orange-800 border-orange-200"
+      case "investigating":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      case "evacuated":
+        return "bg-green-100 text-green-800 border-green-200"
+      case "emergency":
+        return "bg-red-100 text-red-800 border-red-200"
       default:
-        return "bg-gray-500"
+        return "bg-gray-100 text-gray-800 border-gray-200"
     }
   }
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: FloorStatus) => {
     switch (status) {
-      case "operational":
-        return "Operationeel"
-      case "maintenance":
-        return "Onderhoud"
-      case "defect":
-        return "Defect"
+      case "normal":
+        return "Normaal"
+      case "miva_detected":
+        return "MiVa Gedetecteerd"
+      case "investigating":
+        return "Onderzoek Lopend"
+      case "evacuated":
+        return "Geëvacueerd"
+      case "emergency":
+        return "Calamiteit"
       default:
         return "Onbekend"
     }
   }
 
-  const getFacilityIcon = (type: string) => {
-    const facilityType = facilityTypes.find((ft) => ft.id === type)
-    return facilityType ? facilityType.icon : MapPin
+  const getStatusIcon = (status: FloorStatus) => {
+    switch (status) {
+      case "normal":
+        return <CheckCircle className="h-4 w-4" />
+      case "miva_detected":
+        return <AlertTriangle className="h-4 w-4" />
+      case "investigating":
+        return <Eye className="h-4 w-4" />
+      case "evacuated":
+        return <CheckCircle className="h-4 w-4" />
+      case "emergency":
+        return <Zap className="h-4 w-4" />
+      default:
+        return <Activity className="h-4 w-4" />
+    }
   }
 
-  const getFacilityColor = (type: string) => {
-    const facilityType = facilityTypes.find((ft) => ft.id === type)
-    return facilityType ? facilityType.color : "text-gray-500"
+  const updateFloorStatus = (floorId: number) => {
+    setFloors((prevFloors) =>
+      prevFloors.map((floor) => {
+        if (floor.id !== floorId) return floor
+
+        const mivaScanned = floor.mivaLocations.some((miva) => miva.scanned)
+        const allRoutesScanned = floor.evacuationRoutes.every((route) => route.scanned)
+        const anyMivaScanned = floor.mivaLocations.some((miva) => miva.scanned)
+
+        let newStatus: FloorStatus = "normal"
+
+        if (floor.status === "emergency") {
+          newStatus = "emergency" // Emergency blijft emergency tot handmatig gereset
+        } else if (mivaScanned && !allRoutesScanned) {
+          newStatus = "miva_detected"
+        } else if (mivaScanned && allRoutesScanned) {
+          newStatus = anyMivaScanned ? "investigating" : "evacuated"
+        } else if (allRoutesScanned && !anyMivaScanned) {
+          newStatus = "evacuated"
+        }
+
+        return {
+          ...floor,
+          status: newStatus,
+          lastUpdate: new Date().toLocaleTimeString(),
+          updatedBy: user?.name || "Systeem",
+        }
+      }),
+    )
+  }
+
+  const handleMivaScan = (floorId: number, mivaId: string) => {
+    setFloors((prevFloors) =>
+      prevFloors.map((floor) => {
+        if (floor.id !== floorId) return floor
+
+        return {
+          ...floor,
+          mivaLocations: floor.mivaLocations.map((miva) =>
+            miva.id === mivaId
+              ? {
+                  ...miva,
+                  scanned: !miva.scanned,
+                  timestamp: new Date().toLocaleTimeString(),
+                  scannedBy: user?.name || "Onbekend",
+                }
+              : miva,
+          ),
+        }
+      }),
+    )
+
+    setTimeout(() => updateFloorStatus(floorId), 100)
+
+    toast({
+      title: "NFC Tag Gescand",
+      description: `MiVa locatie gescand op ${floors.find((f) => f.id === floorId)?.name}`,
+    })
+  }
+
+  const handleRouteScan = (floorId: number, routeId: string) => {
+    setFloors((prevFloors) =>
+      prevFloors.map((floor) => {
+        if (floor.id !== floorId) return floor
+
+        return {
+          ...floor,
+          evacuationRoutes: floor.evacuationRoutes.map((route) =>
+            route.id === routeId
+              ? {
+                  ...route,
+                  scanned: !route.scanned,
+                  timestamp: new Date().toLocaleTimeString(),
+                  scannedBy: user?.name || "Onbekend",
+                }
+              : route,
+          ),
+        }
+      }),
+    )
+
+    setTimeout(() => updateFloorStatus(floorId), 100)
+
+    toast({
+      title: "Route Gescand",
+      description: `Ontruimingsroute gescand op ${floors.find((f) => f.id === floorId)?.name}`,
+    })
+  }
+
+  const simulateEmergency = (floorId: number) => {
+    setFloors((prevFloors) =>
+      prevFloors.map((floor) =>
+        floor.id === floorId
+          ? {
+              ...floor,
+              status: "emergency",
+              lastUpdate: new Date().toLocaleTimeString(),
+              updatedBy: user?.name || "Systeem",
+            }
+          : floor,
+      ),
+    )
+
+    toast({
+      title: "🚨 CALAMITEIT",
+      description: `Noodsituatie gemeld op ${floors.find((f) => f.id === floorId)?.name}`,
+      variant: "destructive",
+    })
+  }
+
+  const resetFloor = (floorId: number) => {
+    setFloors((prevFloors) =>
+      prevFloors.map((floor) =>
+        floor.id === floorId
+          ? {
+              ...floor,
+              status: "normal",
+              mivaLocations: floor.mivaLocations.map((miva) => ({
+                ...miva,
+                scanned: false,
+                timestamp: undefined,
+                scannedBy: undefined,
+              })),
+              evacuationRoutes: floor.evacuationRoutes.map((route) => ({
+                ...route,
+                scanned: false,
+                timestamp: undefined,
+                scannedBy: undefined,
+              })),
+              lastUpdate: new Date().toLocaleTimeString(),
+              updatedBy: user?.name || "Systeem",
+            }
+          : floor,
+      ),
+    )
+
+    toast({
+      title: "Verdieping Gereset",
+      description: `${floors.find((f) => f.id === floorId)?.name} is teruggezet naar normale status`,
+    })
+  }
+
+  const currentFloor = floors.find((f) => f.id === selectedFloor)
+
+  if (!selectedCustomer) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-center text-muted-foreground">Selecteer eerst een klant om de plotkaart te bekijken.</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
-    <div className="container p-6">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header met klant branding */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            {/* BHV360 Logo */}
-            <img
-              src="/images/bhv360-logo.png"
-              alt="BHV360"
-              className="h-12 w-auto"
-              onError={(e) => {
-                e.currentTarget.src = "/placeholder.svg?height=48&width=120&text=BHV360"
-              }}
-            />
-            <div className="h-8 w-px bg-gray-300" />
-            {/* Klant Logo */}
-            <div className="flex items-center space-x-3">
-              {selectedCustomer.logo ? (
-                <img
-                  src={selectedCustomer.logo || "/placeholder.svg"}
-                  alt={selectedCustomer.name}
-                  className="h-10 w-auto max-w-[120px]"
-                  onError={(e) => {
-                    e.currentTarget.src =
-                      "/placeholder.svg?height=40&width=80&text=" +
-                      encodeURIComponent(selectedCustomer.name.substring(0, 3))
-                  }}
-                />
-              ) : (
-                <div className="h-10 w-16 bg-gray-100 rounded flex items-center justify-center">
-                  <Building2 className="h-6 w-6 text-gray-400" />
-                </div>
-              )}
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{selectedCustomer.name}</h1>
-                <p className="text-sm text-gray-600">{selectedCustomer.address}</p>
-              </div>
-            </div>
-          </div>
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            BHV Plotkaart Actief
-          </Badge>
-        </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0">
-              <CheckCircle2 className="h-5 w-5 text-blue-600 mt-0.5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-blue-800">BHV Plotkaart voor {selectedCustomer.name}</h3>
-              <p className="text-sm text-blue-700 mt-1">
-                Actuele BHV informatie en veiligheidsvoorzieningen voor {selectedCustomer.address}
-              </p>
-            </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <img
+            src="/images/bhv360-logo-full.png"
+            alt="BHV360 Logo"
+            className="h-12 w-auto"
+            onError={(e) => {
+              e.currentTarget.src = "/placeholder.svg?height=48&width=120&text=BHV360"
+            }}
+          />
+          <div className="h-8 w-px bg-gray-300" />
+          <img
+            src="/placeholder-logo.png"
+            alt={`${selectedCustomer.name} Logo`}
+            className="h-12 w-auto"
+            onError={(e) => {
+              e.currentTarget.src = "/placeholder.svg?height=48&width=120&text=Logo"
+            }}
+          />
+          <div>
+            <h1 className="text-3xl font-bold">Plotkaart {selectedCustomer.name}</h1>
+            <p className="text-muted-foreground">{selectedCustomer.address}</p>
           </div>
         </div>
+        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+          <MapPin className="h-3 w-3 mr-1" />
+          BHV Plotkaart
+        </Badge>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Floor Selection & Map */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Verdieping Selectie</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex space-x-2 overflow-x-auto pb-2">
-                {floors.map((floor) => (
-                  <Button
-                    key={floor.id}
-                    variant={activeFloor === floor.id ? "default" : "outline"}
-                    onClick={() => setActiveFloor(floor.id)}
-                    className="whitespace-nowrap"
-                  >
-                    {floor.name}
-                  </Button>
-                ))}
+      {/* Status Overzicht */}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {floors.map((floor) => (
+          <Card
+            key={floor.id}
+            className={`cursor-pointer transition-all hover:shadow-lg ${
+              selectedFloor === floor.id ? "ring-2 ring-blue-500" : ""
+            }`}
+            onClick={() => setSelectedFloor(floor.id)}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold">{floor.name}</h3>
+                {getStatusIcon(floor.status)}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <CardTitle>
-                  {currentFloor.name} - {selectedCustomer.name}
-                </CardTitle>
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline">Niveau {currentFloor.level}</Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="relative bg-gray-100 w-full h-[500px] flex items-center justify-center">
-                <div className="text-center p-6">
-                  <div className="mb-4">
-                    <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-2" />
-                    <p className="text-lg font-medium text-gray-700">{selectedCustomer.name}</p>
-                    <p className="text-sm text-gray-500">{currentFloor.name}</p>
-                  </div>
-
-                  {/* Facility Icons on Map */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    {currentFloor.facilities.map((facility) => {
-                      const Icon = getFacilityIcon(facility.type)
-                      return (
-                        <div
-                          key={facility.id}
-                          className="flex flex-col items-center p-2 border rounded-lg cursor-pointer hover:bg-gray-50"
-                          onClick={() => setSelectedFacility(facility)}
-                        >
-                          <div className={`w-3 h-3 rounded-full mb-2 ${getStatusColor(facility.status)}`} />
-                          <Icon className={`h-8 w-8 mb-1 ${getFacilityColor(facility.type)}`} />
-                          <p className="text-xs text-center">{facility.name}</p>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  <SafetyIconsDisplay />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Voorzieningen op {currentFloor.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {currentFloor.facilities.map((facility) => {
-                  const Icon = getFacilityIcon(facility.type)
-                  return (
-                    <div
-                      key={facility.id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted cursor-pointer"
-                      onClick={() => setSelectedFacility(facility)}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 rounded-full ${getStatusColor(facility.status)}`} />
-                        <Icon className={`h-5 w-5 ${getFacilityColor(facility.type)}`} />
-                        <div>
-                          <h3 className="font-medium">{facility.name}</h3>
-                          <p className="text-sm text-muted-foreground">{facility.location}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge
-                          variant={
-                            facility.status === "operational"
-                              ? "default"
-                              : facility.status === "maintenance"
-                                ? "secondary"
-                                : "destructive"
-                          }
-                        >
-                          {getStatusText(facility.status)}
-                        </Badge>
-                        <Button variant="outline" size="sm" onClick={() => simulateNFCScan(facility)}>
-                          <Scan className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          <UserManual module="bhv-plotkaart" />
-        </div>
-
-        {/* Right Column - Checklist & MiVa */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>BHV Checklist</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {currentFloor.checklistItems.map((item) => (
-                  <div key={item.id} className="space-y-2">
-                    <div className="flex items-start space-x-2">
-                      <Checkbox id={item.id} checked={item.checked} />
-                      <div className="grid gap-1.5 leading-none w-full">
-                        <Label
-                          htmlFor={item.id}
-                          className={`text-sm font-medium leading-none ${
-                            item.checked ? "line-through text-muted-foreground" : ""
-                          }`}
-                        >
-                          {item.text}
-                        </Label>
-                        {item.comment && (
-                          <Textarea
-                            placeholder="Voeg opmerking toe..."
-                            className="mt-1 h-20"
-                            value={item.comment}
-                            readOnly
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>MiVa Tracking</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {currentFloor.mivaLocations.length > 0 ? (
-                <div className="space-y-4">
-                  {currentFloor.mivaLocations.map((miva) => (
-                    <div key={miva.id} className="p-3 border rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <User className="h-4 w-4" />
-                          <span className="font-medium">{miva.name}</span>
-                        </div>
-                        <Badge variant="outline">{miva.location}</Badge>
-                      </div>
-                      <div className="flex items-center justify-between space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox id={`present-${miva.id}`} checked={miva.present} />
-                          <Label htmlFor={`present-${miva.id}`}>Aanwezig</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox id={`evacuated-${miva.id}`} checked={miva.evacuated} />
-                          <Label htmlFor={`evacuated-${miva.id}`}>Geëvacueerd</Label>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">Geen MiVa personen op deze verdieping</p>
+              <Badge className={`${getStatusColor(floor.status)} text-xs`}>{getStatusText(floor.status)}</Badge>
+              {floor.lastUpdate && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Update: {floor.lastUpdate} door {floor.updatedBy}
+                </p>
               )}
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Notities</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                placeholder="Voeg notities toe over deze verdieping..."
-                className="min-h-[100px]"
-                value={currentFloor.notes}
-                readOnly
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Legenda</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Legend />
-            </CardContent>
-          </Card>
-        </div>
+        ))}
       </div>
 
-      {/* Facility Detail Dialog */}
-      {selectedFacility && (
-        <Dialog
-          open={!!selectedFacility}
-          onOpenChange={() => {
-            setSelectedFacility(null)
-            setScanResult(null)
-          }}
-        >
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>{selectedFacility.name}</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-6 py-4">
-              <div className="flex items-center space-x-4">
-                {(() => {
-                  const Icon = getFacilityIcon(selectedFacility.type)
-                  return <Icon className={`h-10 w-10 ${getFacilityColor(selectedFacility.type)}`} />
-                })()}
-                <div>
-                  <h3 className="font-medium">{facilityTypes.find((t) => t.id === selectedFacility.type)?.name}</h3>
-                  <p className="text-sm text-muted-foreground">{selectedFacility.location}</p>
-                </div>
-                <Badge
-                  variant={
-                    selectedFacility.status === "operational"
-                      ? "default"
-                      : selectedFacility.status === "maintenance"
-                        ? "secondary"
-                        : "destructive"
-                  }
-                  className="ml-auto"
+      {/* Verdieping Details */}
+      {currentFloor && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* MiVa Locaties */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="mr-2 h-5 w-5" />
+                MiVa Locaties - {currentFloor.name}
+              </CardTitle>
+              <CardDescription>Scan NFC tags bij MiVa detectie</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {currentFloor.mivaLocations.map((miva) => (
+                <div
+                  key={miva.id}
+                  className={`flex items-center justify-between p-3 rounded-lg border ${
+                    miva.scanned ? "bg-orange-50 border-orange-200" : "bg-gray-50 border-gray-200"
+                  }`}
                 >
-                  {getStatusText(selectedFacility.status)}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium">Laatste controle</p>
-                  <div className="flex items-center mt-1">
-                    <CheckCircle2 className="h-4 w-4 mr-1 text-green-500" />
-                    <p className="text-sm">{selectedFacility.lastInspection}</p>
+                  <div>
+                    <h4 className="font-medium">{miva.name}</h4>
+                    {miva.timestamp && (
+                      <p className="text-xs text-muted-foreground">
+                        Gescand: {miva.timestamp} door {miva.scannedBy}
+                      </p>
+                    )}
                   </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Volgende controle</p>
-                  <div className="flex items-center mt-1">
-                    <Clock className="h-4 w-4 mr-1 text-blue-500" />
-                    <p className="text-sm">{selectedFacility.nextInspection}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <p className="text-sm font-medium mb-2">NFC Tag</p>
-                <div className="flex items-center space-x-2">
-                  <QrCode className="h-4 w-4 text-blue-500" />
-                  <p className="text-sm font-mono">{selectedFacility.nfcTagId}</p>
-                </div>
-
-                {isScanning ? (
-                  <div className="flex items-center justify-center space-x-2 mt-4 p-4 border rounded-lg bg-blue-50">
-                    <Smartphone className="h-5 w-5 text-blue-500 animate-pulse" />
-                    <p className="text-blue-700">NFC tag scannen...</p>
-                  </div>
-                ) : scanResult ? (
-                  <div className="mt-4 p-4 border rounded-lg bg-green-50">
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                      <p className="text-green-700 font-medium">NFC Tag gescand</p>
-                    </div>
-                    <p className="text-sm text-green-600 mt-1">Tag ID: {scanResult}</p>
-                    <div className="mt-3 space-y-2">
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <ArrowRight className="h-4 w-4 mr-2" />
-                        Bekijk instructies
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        Meld probleem
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Clock className="h-4 w-4 mr-2" />
-                        Registreer controle
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <Button className="mt-4 w-full" onClick={() => simulateNFCScan(selectedFacility)}>
-                    <Scan className="h-4 w-4 mr-2" />
-                    Scan NFC Tag
+                  <Button
+                    size="sm"
+                    variant={miva.scanned ? "destructive" : "default"}
+                    onClick={() => handleMivaScan(currentFloor.id, miva.id)}
+                  >
+                    <Scan className="h-4 w-4 mr-1" />
+                    {miva.scanned ? "Reset" : "Scan NFC"}
                   </Button>
-                )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Ontruimingsroutes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Navigation className="mr-2 h-5 w-5" />
+                Ontruimingsroutes - {currentFloor.name}
+              </CardTitle>
+              <CardDescription>Scan routes tijdens evacuatie controle</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {currentFloor.evacuationRoutes.map((route) => (
+                <div
+                  key={route.id}
+                  className={`flex items-center justify-between p-3 rounded-lg border ${
+                    route.scanned ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-200"
+                  }`}
+                >
+                  <div>
+                    <h4 className="font-medium">{route.name}</h4>
+                    {route.timestamp && (
+                      <p className="text-xs text-muted-foreground">
+                        Gescand: {route.timestamp} door {route.scannedBy}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant={route.scanned ? "destructive" : "outline"}
+                    onClick={() => handleRouteScan(currentFloor.id, route.id)}
+                  >
+                    <Scan className="h-4 w-4 mr-1" />
+                    {route.scanned ? "Reset" : "Scan Route"}
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Controle Paneel */}
+      {currentFloor && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Shield className="mr-2 h-5 w-5" />
+              Controle Paneel - {currentFloor.name}
+            </CardTitle>
+            <CardDescription>Simulatie en controle functies voor training en noodsituaties</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="destructive" onClick={() => simulateEmergency(currentFloor.id)}>
+                <Zap className="h-4 w-4 mr-1" />
+                Calamiteit Melden
+              </Button>
+              <Button variant="outline" onClick={() => resetFloor(currentFloor.id)}>
+                <Activity className="h-4 w-4 mr-1" />
+                Verdieping Resetten
+              </Button>
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <span>Laatste update: {currentFloor.lastUpdate || "Geen updates"}</span>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+          </CardContent>
+        </Card>
       )}
+
+      {/* Status Legenda */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Status Legenda</CardTitle>
+          <CardDescription>Betekenis van de verschillende kleuren en statussen</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-gray-200 rounded"></div>
+              <span className="text-sm">Normaal</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-orange-200 rounded"></div>
+              <span className="text-sm">MiVa Gedetecteerd</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-blue-200 rounded"></div>
+              <span className="text-sm">Onderzoek Lopend</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-green-200 rounded"></div>
+              <span className="text-sm">Geëvacueerd</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-red-200 rounded"></div>
+              <span className="text-sm">Calamiteit</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

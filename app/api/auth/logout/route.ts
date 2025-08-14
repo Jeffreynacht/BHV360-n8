@@ -1,28 +1,25 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    const response = NextResponse.json({
-      success: true,
-      message: "Logged out successfully",
-    })
+    const response = NextResponse.json({ success: true })
 
     // Clear session cookie
-    response.cookies.set("bhv360-session", "", {
+    response.cookies.set("session", "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 0,
-      path: "/",
+      maxAge: 0, // Expire immediately
     })
 
+    console.log("🚪 User logged out, session cleared")
     return response
   } catch (error) {
-    console.error("Logout failed:", error)
+    console.error("❌ Logout error:", error)
     return NextResponse.json(
       {
         success: false,
-        error: "Logout failed due to server error",
+        error: "Server error",
       },
       { status: 500 },
     )

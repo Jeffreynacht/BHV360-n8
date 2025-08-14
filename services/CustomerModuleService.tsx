@@ -1,126 +1,187 @@
-export interface CustomerModule {
-  customerId: string
-  moduleId: string
-  isEnabled: boolean
-  enabledAt: Date
-  enabledBy: string
-  disabledAt?: Date
-  disabledBy?: string
-  settings?: Record<string, any>
+"use client"
+
+import { toast } from "@/hooks/use-toast"
+
+export interface InstalledModule {
+  id: string
+  module_id: string
+  customer_id: string
+  installed_at: string
+  status: "active" | "inactive" | "pending"
+  configuration?: any
 }
 
-export interface CustomerModuleConfig {
-  customerId: string
-  modules: CustomerModule[]
-  lastUpdated: Date
-  updatedBy: string
+export interface ModuleInstallRequest {
+  module_id: string
+  customer_id?: string
+  configuration?: any
 }
 
 export class CustomerModuleService {
-  // Get all modules for a customer
-  static async getCustomerModules(customerId: string): Promise<CustomerModule[]> {
-    // In productie zou dit uit database komen
-    const stored = localStorage.getItem(`customer_modules_${customerId}`)
-    if (stored) {
-      return JSON.parse(stored).map((m: any) => ({
-        ...m,
-        enabledAt: new Date(m.enabledAt),
-        disabledAt: m.disabledAt ? new Date(m.disabledAt) : undefined,
-      }))
-    }
+  private static baseUrl = "/api/modules"
 
-    // Default: alleen core modules enabled
-    return [
-      {
-        customerId,
-        moduleId: "core-bhv",
-        isEnabled: true,
-        enabledAt: new Date(),
-        enabledBy: "system",
-      },
-      {
-        customerId,
-        moduleId: "plotkaart",
-        isEnabled: true,
-        enabledAt: new Date(),
-        enabledBy: "system",
-      },
-    ]
-  }
-
-  // Get enabled modules for a customer
-  static async getEnabledModules(customerId: string): Promise<string[]> {
-    const customerModules = await this.getCustomerModules(customerId)
-    return customerModules.filter((cm) => cm.isEnabled).map((cm) => cm.moduleId)
-  }
-
-  // Enable a module for a customer
-  static async enableModule(
-    customerId: string,
-    moduleId: string,
-    enabledBy: string,
-  ): Promise<{ success: boolean; error?: string }> {
+  static async getInstalledModules(customerId?: string): Promise<InstalledModule[]> {
     try {
-      const customerModules = await this.getCustomerModules(customerId)
-      const existingModule = customerModules.find((cm) => cm.moduleId === moduleId)
+      const url = customerId ? `${this.baseUrl}/installed?customer_id=${customerId}` : `${this.baseUrl}/installed`
 
-      if (existingModule) {
-        existingModule.isEnabled = true
-        existingModule.enabledAt = new Date()
-        existingModule.enabledBy = enabledBy
-        existingModule.disabledAt = undefined
-        existingModule.disabledBy = undefined
-      } else {
-        customerModules.push({
-          customerId,
-          moduleId,
-          isEnabled: true,
-          enabledAt: new Date(),
-          enabledBy,
-        })
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error("Fout bij ophalen geïnstalleerde modules")
       }
 
-      // Save to storage
-      localStorage.setItem(`customer_modules_${customerId}`, JSON.stringify(customerModules))
-
-      return { success: true }
+      return await response.json()
     } catch (error) {
-      return { success: false, error: "Fout bij inschakelen module" }
+      console.error("Fout bij laden modules:", error)
+      return []
     }
   }
 
-  // Disable a module for a customer
-  static async disableModule(
-    customerId: string,
-    moduleId: string,
-    disabledBy: string,
-  ): Promise<{ success: boolean; error?: string }> {
+  static async installModule(moduleId: string, customerId?: string): Promise<boolean> {
     try {
-      const customerModules = await this.getCustomerModules(customerId)
-      const existingModule = customerModules.find((cm) => cm.moduleId === moduleId)
+      const response = await fetch(`${this.baseUrl}/install`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          module_id: moduleId,
+          customer_id: customerId,
+        }),
+      })
 
-      if (existingModule) {
-        existingModule.isEnabled = false
-        existingModule.disabledAt = new Date()
-        existingModule.disabledBy = disabledBy
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || "Fout bij installeren module")
       }
 
-      // Save to storage
-      localStorage.setItem(`customer_modules_${customerId}`, JSON.stringify(customerModules))
-
-      return { success: true }
+      return true
     } catch (error) {
-      return { success: false, error: "Fout bij uitschakelen module" }
+      console.error("Installatie fout:", error)
+      throw error
     }
   }
 
-  // Check if customer has module enabled
-  static async hasModule(customerId: string, moduleId: string): Promise<boolean> {
-    const customerModules = await this.getCustomerModules(customerId)
-    const module = customerModules.find((cm) => cm.moduleId === moduleId)
-    return module?.isEnabled || false
+  static async uninstallModule(moduleId: string, customerId?: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseUrl}/uninstall`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          module_id: moduleId,
+          customer_id: customerId,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || "Fout bij deïnstalleren module")
+      }
+
+      return true
+    } catch (error) {
+      console.error("Deïnstallatie fout:", error)
+      throw error
+    }
+  }
+
+  static async updateModuleConfiguration(moduleId: string, configuration: any, customerId?: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseUrl}/configure`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          module_id: moduleId,
+          customer_id: customerId,
+          configuration,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || "Fout bij bijwerken configuratie")
+      }
+
+      return true
+    } catch (error) {
+      console.error("Configuratie fout:", error)
+      throw error
+    }
+  }
+
+  static async getModuleUsageStats(moduleId: string, customerId?: string): Promise<any> {
+    try {
+      const url = customerId
+        ? `${this.baseUrl}/${moduleId}/stats?customer_id=${customerId}`
+        : `${this.baseUrl}/${moduleId}/stats`
+
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error("Fout bij ophalen module statistieken")
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error("Statistieken fout:", error)
+      return null
+    }
+  }
+
+  static async calculateModulePricing(moduleId: string, userCount: number, buildingCount: number): Promise<number> {
+    try {
+      const response = await fetch(`${this.baseUrl}/${moduleId}/pricing`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_count: userCount,
+          building_count: buildingCount,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Fout bij berekenen prijzen")
+      }
+
+      const result = await response.json()
+      return result.total_price || 0
+    } catch (error) {
+      console.error("Prijsberekening fout:", error)
+      return 0
+    }
+  }
+
+  static async requestModuleApproval(moduleId: string, customerId?: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseUrl}/request-approval`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          module_id: moduleId,
+          customer_id: customerId,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || "Fout bij aanvragen goedkeuring")
+      }
+
+      toast({
+        title: "Goedkeuring Aangevraagd",
+        description: "Uw aanvraag voor module goedkeuring is verzonden.",
+      })
+
+      return true
+    } catch (error) {
+      console.error("Goedkeuring fout:", error)
+      throw error
+    }
   }
 }
-
-// Default export
-export default CustomerModuleService

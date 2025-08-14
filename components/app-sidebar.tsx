@@ -3,44 +3,12 @@
 import type * as React from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
-import { useState } from "react"
+import { BHV360Logo } from "@/components/bhv360-logo"
 import { useAuth } from "@/contexts/auth-context"
-import { useCustomer } from "@/components/customer-context"
-import {
-  Building2,
-  Users,
-  Shield,
-  AlertTriangle,
-  Settings,
-  FileText,
-  BarChart3,
-  Crown,
-  Globe,
-  Database,
-  HelpCircle,
-  LogOut,
-  ChevronDown,
-  Home,
-  MapPin,
-  Bell,
-  Wrench,
-  Monitor,
-  Smartphone,
-  Calendar,
-  Package,
-  Activity,
-  Zap,
-  Plus,
-} from "lucide-react"
-
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -49,416 +17,446 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
-  SidebarSeparator,
-  useSidebar,
 } from "@/components/ui/sidebar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import {
+  LayoutDashboard,
+  Map,
+  AlertTriangle,
+  Settings,
+  HelpCircle,
+  Building2,
+  ChevronRight,
+  Crown,
+  Users,
+  Shield,
+  BarChart3,
+  Heart,
+  Smartphone,
+  UserCheck,
+  Briefcase,
+  Palette,
+  Activity,
+  Database,
+  QrCode,
+  UserPlus,
+  Building,
+  Edit,
+  Plus,
+  FileText,
+} from "lucide-react"
 
-const navigationItems = [
+interface MenuItem {
+  title: string
+  url: string
+  icon: any
+  badge?: string
+  roles: string[]
+  items?: MenuItem[]
+}
+
+const menuData: MenuItem[] = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: Home,
-    roles: ["super-admin", "admin", "customer-admin", "bhv-coordinator", "employee"],
-  },
-  {
-    title: "Klanten",
-    icon: Building2,
-    roles: ["super-admin", "admin"],
-    items: [
-      {
-        title: "Alle Klanten",
-        url: "/klanten",
-        icon: Building2,
-      },
-      {
-        title: "Whitelabel Klanten",
-        url: "/whitelabel-klanten",
-        icon: Crown,
-      },
-      {
-        title: "Klant Overzichten",
-        url: "/klant-overzichten",
-        icon: BarChart3,
-      },
+    icon: LayoutDashboard,
+    roles: [
+      "super-admin",
+      "partner-admin",
+      "partner-manager",
+      "customer-admin",
+      "customer-manager",
+      "bhv-coordinator",
+      "employee",
+      "bhv_medewerker",
+      "security-receptionist",
+      "admin",
     ],
   },
   {
-    title: "BHV Management",
+    title: "NFC Scanner",
+    url: "/nfc-scan",
+    icon: QrCode,
+    badge: "Live",
+    roles: [
+      "bhv-coordinator",
+      "employee",
+      "bhv_medewerker",
+      "customer-admin",
+      "customer-manager",
+      "security-receptionist",
+      "admin",
+    ],
+  },
+  {
+    title: "Plotkaart",
+    url: "/plotkaart",
+    icon: Map,
+    badge: "Live",
+    roles: [
+      "partner-admin",
+      "partner-manager",
+      "customer-admin",
+      "customer-manager",
+      "bhv-coordinator",
+      "employee",
+      "bhv_medewerker",
+      "security-receptionist",
+      "admin",
+    ],
+  },
+  {
+    title: "BHV Plotkaart",
+    url: "/bhv/plotkaart",
     icon: Shield,
-    roles: ["super-admin", "admin", "customer-admin", "bhv-coordinator"],
+    badge: "BHV",
+    roles: ["bhv-coordinator", "admin"],
+  },
+  {
+    title: "Klanten",
+    url: "/klanten",
+    icon: Building2,
+    roles: ["super-admin", "partner-admin", "partner-manager", "customer-admin"],
+  },
+  {
+    title: "Incidenten",
+    url: "/incidenten",
+    icon: AlertTriangle,
+    badge: "3",
+    roles: [
+      "super-admin",
+      "bhv-coordinator",
+      "customer-admin",
+      "employee",
+      "bhv_medewerker",
+      "security-receptionist",
+      "admin",
+    ],
+  },
+  {
+    title: "BHV Functies",
+    url: "/bhv",
+    icon: Shield,
+    roles: ["bhv-coordinator", "customer-admin", "admin"],
     items: [
       {
-        title: "BHV Personeel",
-        url: "/gebruikers",
-        icon: Users,
+        title: "BHV Overzicht",
+        url: "/bhv",
+        icon: Shield,
+        roles: ["bhv-coordinator", "customer-admin", "admin"],
+      },
+      {
+        title: "BHV Editor",
+        url: "/bhv/editor",
+        icon: Edit,
+        roles: ["bhv-coordinator", "admin"],
       },
       {
         title: "BHV Aanwezigheid",
         url: "/bhv-aanwezigheid",
-        icon: Calendar,
+        icon: Users,
+        roles: ["bhv-coordinator", "employee", "bhv_medewerker", "admin"],
       },
       {
-        title: "BHV Coordinator",
-        url: "/bhv-coordinator",
-        icon: Shield,
-      },
-    ],
-  },
-  {
-    title: "Plotkaart & Locaties",
-    icon: MapPin,
-    roles: ["super-admin", "admin", "customer-admin", "bhv-coordinator", "employee"],
-    items: [
-      {
-        title: "Plotkaart Bekijken",
-        url: "/plotkaart",
-        icon: MapPin,
-      },
-      {
-        title: "Plotkaart Editor",
-        url: "/beheer/plotkaart-editor",
-        icon: Settings,
-        roles: ["super-admin", "admin", "customer-admin"],
-      },
-      {
-        title: "Voorzieningen",
-        url: "/beheer/voorzieningen",
-        icon: Package,
-        roles: ["super-admin", "admin", "customer-admin"],
-      },
-    ],
-  },
-  {
-    title: "Incidenten",
-    icon: AlertTriangle,
-    roles: ["super-admin", "admin", "customer-admin", "bhv-coordinator", "employee"],
-    items: [
-      {
-        title: "Incident Overzicht",
-        url: "/incidenten",
-        icon: AlertTriangle,
-      },
-      {
-        title: "Nieuwe Melding",
-        url: "/incidenten/nieuw",
-        icon: Plus,
+        title: "EHBO Voorraad",
+        url: "/ehbo-voorraad",
+        icon: Heart,
+        roles: ["bhv-coordinator", "customer-admin", "admin"],
       },
     ],
   },
   {
     title: "Beheer",
+    url: "/beheer",
     icon: Settings,
-    roles: ["super-admin", "admin", "customer-admin"],
+    roles: ["customer-admin", "customer-manager", "bhv-coordinator", "admin"],
     items: [
       {
-        title: "Gebruikers Beheer",
+        title: "Gebruikers",
         url: "/beheer/gebruikers",
         icon: Users,
+        roles: ["customer-admin", "bhv-coordinator", "admin"],
       },
       {
-        title: "Autorisaties",
-        url: "/beheer/autorisaties",
+        title: "Voorzieningen",
+        url: "/beheer/voorzieningen",
         icon: Shield,
+        roles: ["customer-admin", "bhv-coordinator", "admin"],
       },
       {
-        title: "Rapportages",
-        url: "/beheer/rapportages",
+        title: "Module Marketplace",
+        url: "/beheer/module-marketplace",
+        icon: Plus,
+        badge: "Nieuw",
+        roles: ["customer-admin", "bhv-coordinator", "admin"],
+      },
+      {
+        title: "Plotkaart Editor",
+        url: "/beheer/plotkaart-editor",
+        icon: Edit,
+        roles: ["customer-admin", "bhv-coordinator", "admin"],
+      },
+      {
+        title: "Inspectierapporten",
+        url: "/beheer/inspectierapporten",
         icon: FileText,
-      },
-      {
-        title: "Backups",
-        url: "/beheer/backups",
-        icon: Database,
-      },
-      {
-        title: "Performance",
-        url: "/beheer/performance",
-        icon: Activity,
-      },
-    ],
-  },
-  {
-    title: "Geavanceerd",
-    icon: Wrench,
-    roles: ["super-admin", "admin"],
-    items: [
-      {
-        title: "API Integraties",
-        url: "/beheer/api-integraties",
-        icon: Zap,
+        roles: ["customer-admin", "customer-manager", "bhv-coordinator", "admin"],
       },
       {
         title: "NFC Overzicht",
         url: "/beheer/nfc-overzicht",
         icon: Smartphone,
+        roles: ["customer-admin", "bhv-coordinator", "admin"],
       },
       {
-        title: "System Health",
-        url: "/system-health",
-        icon: Monitor,
+        title: "Rapportages",
+        url: "/beheer/rapportages",
+        icon: BarChart3,
+        roles: ["customer-admin", "customer-manager", "bhv-coordinator", "admin"],
+      },
+      {
+        title: "Autorisaties",
+        url: "/beheer/autorisaties",
+        icon: UserCheck,
+        roles: ["customer-admin", "bhv-coordinator", "admin"],
+      },
+      {
+        title: "Backups",
+        url: "/beheer/backups",
+        icon: Database,
+        roles: ["customer-admin", "bhv-coordinator", "admin"],
+      },
+    ],
+  },
+  {
+    title: "Partner Beheer",
+    url: "/partner",
+    icon: Briefcase,
+    roles: ["partner-admin", "partner-manager"],
+    items: [
+      {
+        title: "Mijn Klanten",
+        url: "/klanten",
+        icon: Building2,
+        roles: ["partner-admin", "partner-manager"],
+      },
+      {
+        title: "White-label",
+        url: "/white-label",
+        icon: Palette,
+        roles: ["partner-admin"],
+      },
+      {
+        title: "Partner Klanten",
+        url: "/white-label/partner-customers",
+        icon: Building2,
+        roles: ["partner-admin", "partner-manager"],
       },
     ],
   },
   {
     title: "Super Admin",
+    url: "/super-admin",
     icon: Crown,
     roles: ["super-admin"],
     items: [
       {
         title: "Partners",
         url: "/super-admin/partners",
-        icon: Globe,
+        icon: Briefcase,
+        roles: ["super-admin"],
       },
       {
-        title: "System Overview",
-        url: "/super-admin",
-        icon: Monitor,
+        title: "Link Monitoring",
+        url: "/super-admin/link-monitoring",
+        icon: Activity,
+        badge: "Nieuw",
+        roles: ["super-admin"],
+      },
+      {
+        title: "System Health",
+        url: "/system-health",
+        icon: Activity,
+        roles: ["super-admin"],
+      },
+      {
+        title: "White-label Portal",
+        url: "/white-label",
+        icon: Palette,
+        roles: ["super-admin"],
+      },
+      {
+        title: "Database Beheer",
+        url: "/database-test",
+        icon: Database,
+        roles: ["super-admin"],
       },
     ],
+  },
+  {
+    title: "Help",
+    url: "/help",
+    icon: HelpCircle,
+    roles: [
+      "super-admin",
+      "partner-admin",
+      "partner-manager",
+      "customer-admin",
+      "customer-manager",
+      "bhv-coordinator",
+      "employee",
+      "bhv_medewerker",
+      "admin",
+    ],
+  },
+  {
+    title: "Mijn Profiel",
+    url: "/profiel",
+    icon: Users,
+    roles: ["bhv-coordinator", "employee", "customer-admin", "customer-manager", "bhv_medewerker", "admin"],
+  },
+  {
+    title: "Bezoeker Registratie",
+    url: "/visitor-registration",
+    icon: UserPlus,
+    badge: "Nieuw",
+    roles: ["security-receptionist", "customer-admin", "bhv-coordinator", "admin"],
+  },
+  {
+    title: "Monteur Registratie",
+    url: "/contractor-registration",
+    icon: Building,
+    badge: "Nieuw",
+    roles: ["security-receptionist", "customer-admin", "bhv-coordinator", "admin"],
   },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
-  const { user, logout } = useAuth()
-  const { selectedCustomer, customers } = useCustomer()
-  const { state } = useSidebar()
-  const [logoError, setLogoError] = useState(false)
+  const { user } = useAuth()
 
-  const handleLogout = async () => {
-    try {
-      await logout()
-    } catch (error) {
-      console.error("Logout error:", error)
-    }
+  // Filter menu items based on user role
+  const filterMenuItems = (items: MenuItem[]): MenuItem[] => {
+    if (!user?.role) return []
+
+    return items
+      .filter((item) => {
+        // Check if user has access to this item
+        const hasAccess = item.roles.includes(user.role)
+        if (!hasAccess) return false
+
+        // If item has subitems, filter those too
+        if (item.items) {
+          const filteredSubItems = filterMenuItems(item.items)
+          // Only show parent if it has accessible subitems
+          return filteredSubItems.length > 0
+        }
+
+        return true
+      })
+      .map((item) => ({
+        ...item,
+        items: item.items ? filterMenuItems(item.items) : undefined,
+      }))
   }
 
-  const filteredNavigation = navigationItems.filter((item) => {
-    if (!item.roles || !user?.role) return false
-    return item.roles.includes(user.role)
-  })
+  const visibleMenuItems = filterMenuItems(menuData)
+
+  // Show loading state if user is not loaded yet
+  if (!user) {
+    return (
+      <Sidebar collapsible="icon" {...props}>
+        <SidebarHeader className="bg-gradient-to-r from-blue-600 to-green-600 text-white">
+          <div className="flex items-center gap-2 px-4 py-2">
+            <BHV360Logo size="md" variant="white" />
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <div className="p-4 text-center text-muted-foreground">Laden...</div>
+        </SidebarContent>
+      </Sidebar>
+    )
+  }
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-blue-600 text-white">
-                  {!logoError ? (
-                    <Image
-                      src="/images/bhv360-logo.png"
-                      alt="BHV360 Logo"
-                      width={32}
-                      height={32}
-                      className="rounded-lg"
-                      onError={() => setLogoError(true)}
-                    />
-                  ) : (
-                    <Shield className="h-5 w-5" />
-                  )}
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">BHV360</span>
-                  <span className="truncate text-xs">Safety Management</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="bg-gradient-to-r from-blue-600 to-green-600 text-white">
+        <div className="flex items-center gap-2 px-4 py-2">
+          <BHV360Logo size="md" variant="white" />
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
-        {/* Customer Selection */}
-        {user?.role !== "employee" && (
-          <>
-            <SidebarGroup>
-              <SidebarGroupLabel>Klant</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton>
-                          <Building2 className="h-4 w-4" />
-                          <span className="truncate">
-                            {selectedCustomer ? selectedCustomer.name : "Selecteer klant"}
-                          </span>
-                          <ChevronDown className="ml-auto h-4 w-4" />
-                        </SidebarMenuButton>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-[--radix-popper-anchor-width]" align="start">
-                        {customers.length === 0 ? (
-                          <DropdownMenuItem disabled>Geen klanten beschikbaar</DropdownMenuItem>
-                        ) : (
-                          customers.map((customer) => (
-                            <DropdownMenuItem key={customer.id}>
-                              <Building2 className="mr-2 h-4 w-4" />
-                              {customer.name}
-                            </DropdownMenuItem>
-                          ))
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link href="/klanten">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Nieuwe klant
-                          </Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-            <SidebarSeparator />
-          </>
-        )}
-
-        {/* Navigation */}
-        {filteredNavigation.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {item.items ? (
-                  <Collapsible defaultOpen className="group/collapsible">
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton tooltip={item.title}>
-                          {item.icon && <item.icon className="h-4 w-4" />}
-                          <span>{item.title}</span>
-                          <ChevronDown className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {item.items.map((subItem) => {
-                            const isActive = pathname === subItem.url
-                            const hasAccess = !subItem.roles || subItem.roles.includes(user?.role || "")
-
-                            if (!hasAccess) return null
-
-                            return (
-                              <SidebarMenuSubItem key={subItem.title}>
-                                <SidebarMenuSubButton asChild isActive={isActive}>
-                                  <Link href={subItem.url}>
-                                    {subItem.icon && <subItem.icon className="h-4 w-4" />}
-                                    <span>{subItem.title}</span>
-                                  </Link>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            )
-                          })}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                ) : (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={pathname === item.url} tooltip={item.title}>
-                      <Link href={item.url}>
-                        {item.icon && <item.icon className="h-4 w-4" />}
+        <SidebarMenu>
+          {visibleMenuItems.map((item) => (
+            <Collapsible
+              key={item.title}
+              asChild
+              defaultOpen={pathname.startsWith(item.url)}
+              className="group/collapsible"
+            >
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton tooltip={item.title} isActive={pathname === item.url} asChild={!item.items}>
+                    {item.items ? (
+                      <div className="flex items-center">
+                        <item.icon className="mr-2 h-4 w-4" />
                         <span>{item.title}</span>
+                        {item.badge && (
+                          <Badge variant="secondary" className="ml-auto">
+                            {item.badge}
+                          </Badge>
+                        )}
+                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      </div>
+                    ) : (
+                      <Link href={item.url} className="flex items-center">
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.title}</span>
+                        {item.badge && (
+                          <Badge variant="secondary" className="ml-auto">
+                            {item.badge}
+                          </Badge>
+                        )}
                       </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                    )}
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                {item.items && (
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {item.items.map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.title}>
+                          <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
+                            <Link href={subItem.url} className="flex items-center">
+                              <span>{subItem.title}</span>
+                              {subItem.badge && (
+                                <Badge variant="outline" className="ml-auto text-xs">
+                                  {subItem.badge}
+                                </Badge>
+                              )}
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
                 )}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
-
-        {/* Quick Actions */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Snelle Acties</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Help & Support">
-                  <Link href="/help">
-                    <HelpCircle className="h-4 w-4" />
-                    <span>Help</span>
-                  </Link>
-                </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Notificaties">
-                  <Link href="/notificaties">
-                    <Bell className="h-4 w-4" />
-                    <span>Notificaties</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+            </Collapsible>
+          ))}
+        </SidebarMenu>
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src="/placeholder-user.jpg" alt={user?.name} />
-                    <AvatarFallback className="rounded-lg">
-                      {user?.name
-                        ?.split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user?.name || "Gebruiker"}</span>
-                    <span className="truncate text-xs">{user?.email}</span>
-                  </div>
-                  <ChevronDown className="ml-auto size-4" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-popper-anchor-width] min-w-56 rounded-lg"
-                side={state === "collapsed" ? "right" : "bottom"}
-                align="end"
-                sideOffset={4}
-              >
-                <DropdownMenuItem asChild>
-                  <Link href="/instellingen">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Instellingen
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/help">
-                    <HelpCircle className="mr-2 h-4 w-4" />
-                    Help & Support
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Uitloggen
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="p-4 text-center">
+          <div className="text-xs text-muted-foreground">Ingelogd als: {user.role}</div>
+          <div className="text-xs text-muted-foreground mt-1">BHV360 Platform v2.0</div>
+          <div className="text-xs text-muted-foreground">© 2024 BHV360</div>
+        </div>
       </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   )

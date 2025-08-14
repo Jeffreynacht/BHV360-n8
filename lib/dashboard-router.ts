@@ -1,59 +1,133 @@
-import { UserRole } from "@/lib/rbac/roles"
+export function getDashboardRoute(userRole: string): string {
+  console.log("🚀 Getting dashboard route for role:", userRole)
 
-export function getDashboardRoute(role: UserRole): string {
-  switch (role) {
-    case UserRole.SUPER_ADMIN:
+  switch (userRole) {
+    case "super_admin":
+      console.log("✅ Super admin detected, routing to super-admin dashboard")
       return "/dashboards/super-admin"
-    case UserRole.PARTNER_ADMIN:
-    case UserRole.PARTNER_MANAGER:
+    case "admin":
+      console.log("🎯 Admin role detected, routing to BHV coordinator dashboard")
+      return "/dashboards/bhv-coordinator" // Admin krijgt BHV Coordinator dashboard
+    case "partner_admin":
+    case "partner-admin":
+      console.log("✅ Partner admin detected")
       return "/dashboards/partner-admin"
-    case UserRole.CUSTOMER_OWNER:
-    case UserRole.CUSTOMER_ADMIN:
-    case UserRole.CUSTOMER_MANAGER:
+    case "partner_manager":
+    case "partner-manager":
+      console.log("✅ Partner manager detected")
+      return "/dashboards/partner-admin"
+    case "customer_admin":
+    case "customer-admin":
+      console.log("✅ Customer admin detected")
       return "/dashboards/customer-admin"
-    case UserRole.BHV_COORDINATOR:
-    case UserRole.BHV_PLOEGLEIDER:
+    case "customer_manager":
+      console.log("✅ Customer manager detected")
+      return "/dashboards/customer-admin"
+    case "bhv-coordinator":
+    case "bhv_coordinator":
+      console.log("✅ BHV coordinator detected")
       return "/dashboards/bhv-coordinator"
-    case UserRole.BHV_MEMBER:
-    case UserRole.EHBO_MEMBER:
-    case UserRole.ONTRUIMER:
-    case UserRole.EMPLOYEE:
-    case UserRole.VISITOR:
-      return "/dashboards/employee"
+    case "security-receptionist":
+    case "security_receptionist":
+      console.log("✅ Security receptionist detected")
+      return "/dashboards/security-receptionist"
+    case "employee":
+    case "bhv_medewerker":
     default:
+      console.log("✅ Employee detected")
       return "/dashboards/employee"
   }
 }
 
-export function getDashboardTitle(role: UserRole): string {
-  switch (role) {
-    case UserRole.SUPER_ADMIN:
-      return "Platform Overzicht"
-    case UserRole.PARTNER_ADMIN:
-      return "Partner Dashboard"
-    case UserRole.PARTNER_MANAGER:
-      return "Partner Manager Dashboard"
-    case UserRole.CUSTOMER_OWNER:
-      return "Organisatie Eigenaar Dashboard"
-    case UserRole.CUSTOMER_ADMIN:
-      return "Organisatie Dashboard"
-    case UserRole.CUSTOMER_MANAGER:
-      return "Organisatie Manager Dashboard"
-    case UserRole.BHV_COORDINATOR:
-      return "BHV Coördinator Dashboard"
-    case UserRole.BHV_PLOEGLEIDER:
-      return "BHV Ploegleider Dashboard"
-    case UserRole.BHV_MEMBER:
-      return "BHV Lid Dashboard"
-    case UserRole.EHBO_MEMBER:
-      return "EHBO Lid Dashboard"
-    case UserRole.ONTRUIMER:
-      return "Ontruimer Dashboard"
-    case UserRole.EMPLOYEE:
-      return "Medewerker Dashboard"
-    case UserRole.VISITOR:
-      return "Bezoeker Dashboard"
+export function getAvailableRoutes(userRole: string): string[] {
+  const baseRoutes = ["/plotkaart", "/incidenten", "/profiel"]
+
+  switch (userRole) {
+    case "super_admin":
+      return [
+        ...baseRoutes,
+        "/dashboards/super-admin",
+        "/dashboards/bhv-coordinator",
+        "/dashboards/customer-admin",
+        "/dashboards/partner-admin",
+        "/dashboards/security-receptionist",
+        "/dashboards/employee",
+        "/gebruikers",
+        "/klanten",
+        "/beheer",
+        "/visitor-registration",
+        "/contractor-registration",
+        "/bhv-aanwezigheid",
+        "/ehbo-voorraad",
+        "/nfc-scan",
+        "/bhv/plotkaart",
+      ]
+    case "admin":
+    case "bhv-coordinator":
+    case "bhv_coordinator":
+      return [
+        ...baseRoutes,
+        "/dashboards/bhv-coordinator",
+        "/gebruikers",
+        "/beheer/voorzieningen",
+        "/beheer/plotkaart-editor",
+        "/beheer/nfc-tags",
+        "/beheer/gebruikers",
+        "/beheer/module-marketplace",
+        "/beheer/inspectierapporten",
+        "/beheer/rapportages",
+        "/beheer/autorisaties",
+        "/beheer/backups",
+        "/bhv-aanwezigheid",
+        "/ehbo-voorraad",
+        "/nfc-scan",
+        "/bhv/plotkaart",
+        "/bhv/editor",
+      ]
+    case "security-receptionist":
+    case "security_receptionist":
+      return [
+        ...baseRoutes,
+        "/dashboards/security-receptionist",
+        "/visitor-registration",
+        "/contractor-registration",
+        "/bhv-aanwezigheid",
+      ]
+    case "customer_admin":
+    case "customer-admin":
+    case "customer_manager":
+      return [...baseRoutes, "/dashboards/customer-admin", "/gebruikers", "/beheer/voorzieningen"]
+    case "employee":
+    case "bhv_medewerker":
     default:
-      return "Dashboard"
+      return [...baseRoutes, "/dashboards/employee", "/bhv-aanwezigheid", "/nfc-scan"]
+  }
+}
+
+export function canAccessRoute(userRole: string, route: string): boolean {
+  const availableRoutes = getAvailableRoutes(userRole)
+  return availableRoutes.some((availableRoute) => route.startsWith(availableRoute))
+}
+
+export function getDashboardTitle(role: string): string {
+  switch (role) {
+    case "super_admin":
+      return "Platform Overzicht"
+    case "partner_admin":
+    case "partner-manager":
+      return "Partner Dashboard"
+    case "customer_admin":
+    case "customer_manager":
+      return "Organisatie Dashboard"
+    case "bhv-coordinator":
+      return "BHV Coördinator Dashboard"
+    case "admin":
+      return "Admin Dashboard" // Admin heeft eigen titel maar BHV Coordinator rechten
+    case "security-receptionist":
+      return "Beveiliging & Receptie Dashboard"
+    case "employee":
+    case "bhv_medewerker":
+    default:
+      return "Medewerker Dashboard"
   }
 }

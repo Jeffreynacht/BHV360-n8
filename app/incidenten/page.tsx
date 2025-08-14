@@ -1,413 +1,742 @@
 "use client"
 
-import { useState } from "react"
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PageHeader } from "@/components/page-header"
-import { useToast } from "@/hooks/use-toast"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { useAuth } from "@/contexts/auth-context"
 import {
   AlertTriangle,
   Plus,
   Search,
-  Filter,
   Clock,
   User,
   MapPin,
+  Mail,
+  Building,
+  Users,
   Calendar,
   Eye,
   Edit,
   CheckCircle,
   XCircle,
   AlertCircle,
+  Building2,
+  Briefcase,
 } from "lucide-react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 interface Incident {
-  id: string
+  id: number
   title: string
   description: string
-  type: "fire" | "medical" | "evacuation" | "security" | "other"
   severity: "low" | "medium" | "high" | "critical"
   status: "open" | "in_progress" | "resolved" | "closed"
-  reportedBy: string
-  reportedAt: string
   location: string
-  assignedTo?: string
-  resolvedAt?: string
-  notes?: string
+  building?: string
+  floor?: string
+  reported_by: string
+  reported_at: string
+  assigned_to?: string
+  customer_id: number
+  customer_name?: string
+  customer_contact?: string
+  partner_id?: number
+  partner_name?: string
+  whitelabel_partner?: string
 }
 
 const mockIncidents: Incident[] = [
   {
-    id: "INC-001",
-    title: "Brandmelding Kantine",
-    description: "Rookmelder afgegaan in de kantine, mogelijk vals alarm",
-    type: "fire",
+    id: 1,
+    title: "Brand alarm verdieping 3",
+    description: "Rookmelder afgegaan in kantoorruimte 3.12. Mogelijk vals alarm door stof.",
     severity: "high",
-    status: "resolved",
-    reportedBy: "Jan de Vries",
-    reportedAt: "2024-01-20T14:30:00Z",
-    location: "Kantine, Begane Grond",
-    assignedTo: "Maria Janssen",
-    resolvedAt: "2024-01-20T15:15:00Z",
-    notes: "Vals alarm door aangebrande toast",
-  },
-  {
-    id: "INC-002",
-    title: "Medische Noodsituatie",
-    description: "Medewerker gevallen op trap, mogelijk enkelblessure",
-    type: "medical",
-    severity: "medium",
     status: "in_progress",
-    reportedBy: "Peter van der Berg",
-    reportedAt: "2024-01-20T11:45:00Z",
-    location: "Trap A, Eerste Verdieping",
-    assignedTo: "Dr. Lisa de Jong",
+    location: "Gebouw A, Verdieping 3, Ruimte 3.12",
+    building: "Gebouw A",
+    floor: "Verdieping 3",
+    reported_by: "Jan Janssen",
+    reported_at: "2024-01-15T10:30:00Z",
+    assigned_to: "BHV Team Alpha",
+    customer_id: 1,
+    customer_name: "Ziekenhuis Sint Anna",
+    customer_contact: "Dr. Maria van der Berg",
+    partner_id: 1,
+    partner_name: "SafetyFirst Consultancy",
+    whitelabel_partner: "SafetyFirst Consultancy",
   },
   {
-    id: "INC-003",
-    title: "Verdachte Persoon",
-    description: "Onbekende persoon in gebouw zonder badge",
-    type: "security",
+    id: 2,
+    title: "EHBO incident kantine",
+    description: "Medewerker gevallen in kantine, mogelijk enkelblessure. EHBO verleend.",
     severity: "medium",
-    status: "open",
-    reportedBy: "Receptie",
-    reportedAt: "2024-01-20T09:15:00Z",
-    location: "Hoofdingang",
+    status: "resolved",
+    location: "Hoofdgebouw, Begane grond, Kantine",
+    building: "Hoofdgebouw",
+    floor: "Begane grond",
+    reported_by: "Lisa de Vries",
+    reported_at: "2024-01-15T14:15:00Z",
+    assigned_to: "EHBO Team",
+    customer_id: 2,
+    customer_name: "TU Eindhoven",
+    customer_contact: "Prof. Dr. Peter Bakker",
+    partner_id: 2,
+    partner_name: "VeiligheidsExperts BV",
+    whitelabel_partner: "VeiligheidsExperts BV",
   },
   {
-    id: "INC-004",
-    title: "Waterlekkage",
-    description: "Lekkage in plafond kantoorruimte",
-    type: "other",
+    id: 3,
+    title: "Evacuatie oefening",
+    description: "Geplande evacuatie oefening voor alle medewerkers van verdieping 1 en 2.",
     severity: "low",
+    status: "open",
+    location: "Kantoorgebouw, Verdieping 1-2",
+    building: "Kantoorgebouw",
+    floor: "Verdieping 1-2",
+    reported_by: "BHV Coördinator",
+    reported_at: "2024-01-15T09:00:00Z",
+    customer_id: 3,
+    customer_name: "Gemeente Tilburg",
+    customer_contact: "Dhr. Jan van Tilburg",
+    partner_id: 1,
+    partner_name: "SafetyFirst Consultancy",
+    whitelabel_partner: "SafetyFirst Consultancy",
+  },
+  {
+    id: 4,
+    title: "AED gebruikt parkeergarage",
+    description: "AED gebruikt bij reanimatie in parkeergarage. Ambulance ter plaatse geweest.",
+    severity: "critical",
     status: "closed",
-    reportedBy: "Anna Bakker",
-    reportedAt: "2024-01-19T16:20:00Z",
-    location: "Kantoor 2.15",
-    assignedTo: "Technische Dienst",
-    resolvedAt: "2024-01-20T08:30:00Z",
+    location: "Parkeergarage, Niveau -1",
+    building: "Parkeergarage",
+    floor: "Niveau -1",
+    reported_by: "Beveiliging",
+    reported_at: "2024-01-14T16:45:00Z",
+    assigned_to: "Emergency Response Team",
+    customer_id: 4,
+    customer_name: "Winkelcentrum De Plaza",
+    customer_contact: "Mevr. Sandra Willems",
+    partner_id: 3,
+    partner_name: "BHV Solutions",
+    whitelabel_partner: "BHV Solutions",
   },
 ]
 
-const typeLabels = {
-  fire: "Brand",
-  medical: "Medisch",
-  evacuation: "Evacuatie",
-  security: "Beveiliging",
-  other: "Overig",
-}
-
-const typeColors = {
-  fire: "bg-red-100 text-red-800",
-  medical: "bg-blue-100 text-blue-800",
-  evacuation: "bg-purple-100 text-purple-800",
-  security: "bg-yellow-100 text-yellow-800",
-  other: "bg-gray-100 text-gray-800",
-}
-
-const severityLabels = {
-  low: "Laag",
-  medium: "Gemiddeld",
-  high: "Hoog",
-  critical: "Kritiek",
-}
-
-const severityColors = {
-  low: "bg-green-100 text-green-800",
-  medium: "bg-yellow-100 text-yellow-800",
-  high: "bg-orange-100 text-orange-800",
-  critical: "bg-red-100 text-red-800",
-}
-
-const statusLabels = {
-  open: "Open",
-  in_progress: "In Behandeling",
-  resolved: "Opgelost",
-  closed: "Gesloten",
-}
-
-const statusColors = {
-  open: "bg-red-100 text-red-800",
-  in_progress: "bg-yellow-100 text-yellow-800",
-  resolved: "bg-green-100 text-green-800",
-  closed: "bg-gray-100 text-gray-800",
-}
-
-const statusIcons = {
-  open: AlertCircle,
-  in_progress: Clock,
-  resolved: CheckCircle,
-  closed: XCircle,
-}
-
 export default function IncidentenPage() {
+  const { user } = useAuth()
   const [incidents, setIncidents] = useState<Incident[]>(mockIncidents)
+  const [filteredIncidents, setFilteredIncidents] = useState<Incident[]>(mockIncidents)
   const [searchTerm, setSearchTerm] = useState("")
-  const [typeFilter, setTypeFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [severityFilter, setSeverityFilter] = useState<string>("all")
-  const { toast } = useToast()
+  const [isNewIncidentOpen, setIsNewIncidentOpen] = useState(false)
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null)
 
-  const filteredIncidents = incidents.filter((incident) => {
-    const matchesSearch =
-      incident.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incident.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incident.location.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filter incidents based on user role and search/filter criteria
+  useEffect(() => {
+    let filtered = incidents
 
-    const matchesType = typeFilter === "all" || incident.type === typeFilter
-    const matchesStatus = statusFilter === "all" || incident.status === statusFilter
-    const matchesSeverity = severityFilter === "all" || incident.severity === severityFilter
+    // Filter by user role - Super Admin sees all, others see only their customer's incidents
+    if (user?.role !== "super-admin") {
+      filtered = filtered.filter((incident) => incident.customer_id === user?.customer_id)
+    }
 
-    return matchesSearch && matchesType && matchesStatus && matchesSeverity
-  })
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (incident) =>
+          incident.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          incident.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          incident.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          incident.reported_by.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (incident.customer_name && incident.customer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (incident.partner_name && incident.partner_name.toLowerCase().includes(searchTerm.toLowerCase())),
+      )
+    }
 
-  const getStatusCount = (status: Incident["status"]) => {
-    return incidents.filter((incident) => incident.status === status).length
+    // Apply status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((incident) => incident.status === statusFilter)
+    }
+
+    // Apply severity filter
+    if (severityFilter !== "all") {
+      filtered = filtered.filter((incident) => incident.severity === severityFilter)
+    }
+
+    setFilteredIncidents(filtered)
+  }, [incidents, searchTerm, statusFilter, severityFilter, user])
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case "critical":
+        return "bg-red-100 text-red-800 border-red-200"
+      case "high":
+        return "bg-orange-100 text-orange-800 border-orange-200"
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "low":
+        return "bg-green-100 text-green-800 border-green-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
+    }
   }
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString("nl-NL")
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "open":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      case "in_progress":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "resolved":
+        return "bg-green-100 text-green-800 border-green-200"
+      case "closed":
+        return "bg-gray-100 text-gray-800 border-gray-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "open":
+        return <AlertCircle className="h-4 w-4" />
+      case "in_progress":
+        return <Clock className="h-4 w-4" />
+      case "resolved":
+        return <CheckCircle className="h-4 w-4" />
+      case "closed":
+        return <XCircle className="h-4 w-4" />
+      default:
+        return <AlertCircle className="h-4 w-4" />
+    }
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("nl-NL")
-  }
-
-  const handleNewIncident = () => {
-    toast({
-      title: "Nieuw Incident",
-      description: "Je wordt doorgestuurd naar het incident formulier",
+    return new Date(dateString).toLocaleString("nl-NL", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     })
   }
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Incidenten Beheer"
-        description="Overzicht en beheer van alle veiligheidsincidenten"
-        showBackButton={true}
-        backUrl="/dashboard"
-      >
-        <Button onClick={handleNewIncident} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Nieuw Incident
-        </Button>
-      </PageHeader>
+  const handleNewIncident = (formData: any) => {
+    const newIncident: Incident = {
+      id: incidents.length + 1,
+      title: formData.title,
+      description: formData.description,
+      severity: formData.severity,
+      status: "open",
+      location: formData.location,
+      building: formData.building,
+      floor: formData.floor,
+      reported_by: user?.name || "Onbekend",
+      reported_at: new Date().toISOString(),
+      customer_id: user?.customer_id || 1,
+      customer_name: "Huidige Klant",
+      customer_contact: user?.email || "",
+    }
+    setIncidents([newIncident, ...incidents])
+    setIsNewIncidentOpen(false)
+  }
 
-      {/* Status Overview */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{getStatusCount("open")}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Behandeling</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{getStatusCount("in_progress")}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Opgelost</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{getStatusCount("resolved")}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gesloten</CardTitle>
-            <XCircle className="h-4 w-4 text-gray-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-600">{getStatusCount("closed")}</div>
-          </CardContent>
-        </Card>
+  return (
+    <div className="container mx-auto p-6">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center">
+            <AlertTriangle className="mr-3 h-8 w-8 text-red-600" />
+            Incident Management
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {user?.role === "super-admin"
+              ? "Overzicht van alle incidenten across het platform"
+              : "Beheer en volg incidenten binnen uw organisatie"}
+          </p>
+        </div>
+        <Dialog open={isNewIncidentOpen} onOpenChange={setIsNewIncidentOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Nieuw Incident
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Nieuw Incident Melden</DialogTitle>
+              <DialogDescription>Vul de details van het incident in voor snelle afhandeling</DialogDescription>
+            </DialogHeader>
+            <NewIncidentForm onSubmit={handleNewIncident} />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <Label htmlFor="search">Zoeken</Label>
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  id="search"
-                  placeholder="Zoek in titel, beschrijving of locatie..."
+                  placeholder={
+                    user?.role === "super-admin" ? "Zoek incidenten, klanten, partners..." : "Zoek incidenten..."
+                  }
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="type">Type</Label>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Alle types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle types</SelectItem>
-                  <SelectItem value="fire">Brand</SelectItem>
-                  <SelectItem value="medical">Medisch</SelectItem>
-                  <SelectItem value="evacuation">Evacuatie</SelectItem>
-                  <SelectItem value="security">Beveiliging</SelectItem>
-                  <SelectItem value="other">Overig</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Alle statussen" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle statussen</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="in_progress">In Behandeling</SelectItem>
-                  <SelectItem value="resolved">Opgelost</SelectItem>
-                  <SelectItem value="closed">Gesloten</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="severity">Ernst</Label>
-              <Select value={severityFilter} onValueChange={setSeverityFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Alle niveaus" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle niveaus</SelectItem>
-                  <SelectItem value="low">Laag</SelectItem>
-                  <SelectItem value="medium">Gemiddeld</SelectItem>
-                  <SelectItem value="high">Hoog</SelectItem>
-                  <SelectItem value="critical">Kritiek</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Status filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle statussen</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="in_progress">In behandeling</SelectItem>
+                <SelectItem value="resolved">Opgelost</SelectItem>
+                <SelectItem value="closed">Gesloten</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={severityFilter} onValueChange={setSeverityFilter}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Ernst filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle ernst niveaus</SelectItem>
+                <SelectItem value="critical">Kritiek</SelectItem>
+                <SelectItem value="high">Hoog</SelectItem>
+                <SelectItem value="medium">Gemiddeld</SelectItem>
+                <SelectItem value="low">Laag</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Incidents Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Incidenten ({filteredIncidents.length})</CardTitle>
-          <CardDescription>Overzicht van alle incidenten met hun huidige status</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Incident</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Ernst</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Locatie</TableHead>
-                <TableHead>Gemeld</TableHead>
-                <TableHead className="text-right">Acties</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredIncidents.map((incident) => {
-                const StatusIcon = statusIcons[incident.status]
-                return (
-                  <TableRow key={incident.id}>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium">{incident.title}</div>
-                        <div className="text-sm text-muted-foreground">{incident.id}</div>
-                        <div className="text-sm text-muted-foreground line-clamp-2">{incident.description}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={typeColors[incident.type]}>{typeLabels[incident.type]}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={severityColors[incident.severity]}>{severityLabels[incident.severity]}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <StatusIcon className="h-4 w-4" />
-                        <Badge className={statusColors[incident.status]}>{statusLabels[incident.status]}</Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm">
-                        <MapPin className="h-3 w-3" />
-                        {incident.location}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(incident.reportedAt)}
-                        </div>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <User className="h-3 w-3" />
-                          {incident.reportedBy}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center gap-1 justify-end">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+      {/* Incidents List */}
+      <div className="space-y-4">
+        {filteredIncidents.map((incident) => (
+          <Card key={incident.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-lg font-semibold">{incident.title}</h3>
+                    <Badge className={getSeverityColor(incident.severity)}>
+                      {incident.severity === "critical" && "Kritiek"}
+                      {incident.severity === "high" && "Hoog"}
+                      {incident.severity === "medium" && "Gemiddeld"}
+                      {incident.severity === "low" && "Laag"}
+                    </Badge>
+                    <Badge className={getStatusColor(incident.status)}>
+                      {getStatusIcon(incident.status)}
+                      <span className="ml-1">
+                        {incident.status === "open" && "Open"}
+                        {incident.status === "in_progress" && "In behandeling"}
+                        {incident.status === "resolved" && "Opgelost"}
+                        {incident.status === "closed" && "Gesloten"}
+                      </span>
+                    </Badge>
+                  </div>
+                  <p className="text-gray-600 mb-3">{incident.description}</p>
 
-          {filteredIncidents.length === 0 && (
-            <div className="text-center py-12">
-              <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Geen incidenten gevonden</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm || typeFilter !== "all" || statusFilter !== "all" || severityFilter !== "all"
-                  ? "Probeer je zoekfilters aan te passen"
-                  : "Er zijn momenteel geen incidenten geregistreerd"}
-              </p>
-              {!searchTerm && typeFilter === "all" && statusFilter === "all" && severityFilter === "all" && (
-                <Button onClick={handleNewIncident}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Eerste Incident Melden
-                </Button>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  {/* Location and Customer Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-2 text-blue-500" />
+                      <span>{incident.location}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <User className="h-4 w-4 mr-2 text-green-500" />
+                      <span>Gemeld door: {incident.reported_by}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-2 text-purple-500" />
+                      <span>{formatDate(incident.reported_at)}</span>
+                    </div>
+
+                    {/* Super Admin sees customer and partner info */}
+                    {user?.role === "super-admin" && (
+                      <>
+                        <div className="flex items-center">
+                          <Building2 className="h-4 w-4 mr-2 text-orange-500" />
+                          <span>Klant: {incident.customer_name}</span>
+                        </div>
+                        {incident.customer_contact && (
+                          <div className="flex items-center">
+                            <Mail className="h-4 w-4 mr-2 text-blue-500" />
+                            <span>Contact: {incident.customer_contact}</span>
+                          </div>
+                        )}
+                        {incident.whitelabel_partner && (
+                          <div className="flex items-center">
+                            <Briefcase className="h-4 w-4 mr-2 text-purple-500" />
+                            <span>Partner: {incident.whitelabel_partner}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {incident.assigned_to && (
+                      <div className="flex items-center">
+                        <Users className="h-4 w-4 mr-2 text-red-500" />
+                        <span>Toegewezen aan: {incident.assigned_to}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-2 ml-4">
+                  <Button variant="outline" size="sm" onClick={() => setSelectedIncident(incident)}>
+                    <Eye className="h-4 w-4 mr-1" />
+                    Details
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Edit className="h-4 w-4 mr-1" />
+                    Bewerken
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredIncidents.length === 0 && (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Geen incidenten gevonden</h3>
+            <p className="text-gray-600 mb-4">
+              {searchTerm || statusFilter !== "all" || severityFilter !== "all"
+                ? "Probeer uw zoek- of filtercriteria aan te passen"
+                : "Er zijn momenteel geen incidenten gemeld"}
+            </p>
+            <Button onClick={() => setIsNewIncidentOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Eerste Incident Melden
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Incident Detail Modal */}
+      {selectedIncident && (
+        <IncidentDetailModal
+          incident={selectedIncident}
+          isOpen={!!selectedIncident}
+          onClose={() => setSelectedIncident(null)}
+          showCustomerInfo={user?.role === "super-admin"}
+        />
+      )}
     </div>
   )
+}
+
+// New Incident Form Component
+function NewIncidentForm({ onSubmit }: { onSubmit: (data: any) => void }) {
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    severity: "medium",
+    location: "",
+    building: "",
+    floor: "",
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSubmit(formData)
+    setFormData({
+      title: "",
+      description: "",
+      severity: "medium",
+      location: "",
+      building: "",
+      floor: "",
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="title">Incident Titel *</Label>
+        <Input
+          id="title"
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          placeholder="Korte beschrijving van het incident"
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="description">Beschrijving *</Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          placeholder="Uitgebreide beschrijving van wat er is gebeurd"
+          rows={3}
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="severity">Ernst Niveau</Label>
+          <Select value={formData.severity} onValueChange={(value) => setFormData({ ...formData, severity: value })}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="low">Laag</SelectItem>
+              <SelectItem value="medium">Gemiddeld</SelectItem>
+              <SelectItem value="high">Hoog</SelectItem>
+              <SelectItem value="critical">Kritiek</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="building">Gebouw</Label>
+          <Input
+            id="building"
+            value={formData.building}
+            onChange={(e) => setFormData({ ...formData, building: e.target.value })}
+            placeholder="Gebouw naam/nummer"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="floor">Verdieping</Label>
+          <Input
+            id="floor"
+            value={formData.floor}
+            onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
+            placeholder="Verdieping/niveau"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="location">Specifieke Locatie *</Label>
+          <Input
+            id="location"
+            value={formData.location}
+            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            placeholder="Ruimte, gang, etc."
+            required
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-3 pt-4">
+        <Button type="button" variant="outline">
+          Annuleren
+        </Button>
+        <Button type="submit">
+          <AlertTriangle className="mr-2 h-4 w-4" />
+          Incident Melden
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+// Incident Detail Modal Component
+function IncidentDetailModal({
+  incident,
+  isOpen,
+  onClose,
+  showCustomerInfo,
+}: {
+  incident: Incident
+  isOpen: boolean
+  onClose: () => void
+  showCustomerInfo: boolean
+}) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3">
+            <AlertTriangle className="h-6 w-6 text-red-600" />
+            {incident.title}
+          </DialogTitle>
+          <div className="flex gap-2">
+            <Badge className={getSeverityColor(incident.severity)}>
+              {incident.severity === "critical" && "Kritiek"}
+              {incident.severity === "high" && "Hoog"}
+              {incident.severity === "medium" && "Gemiddeld"}
+              {incident.severity === "low" && "Laag"}
+            </Badge>
+            <Badge className={getStatusColor(incident.status)}>
+              {incident.status === "open" && "Open"}
+              {incident.status === "in_progress" && "In behandeling"}
+              {incident.status === "resolved" && "Opgelost"}
+              {incident.status === "closed" && "Gesloten"}
+            </Badge>
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-semibold mb-2">Beschrijving</h4>
+            <p className="text-gray-600">{incident.description}</p>
+          </div>
+
+          <Separator />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-semibold mb-3">Incident Details</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center">
+                  <MapPin className="h-4 w-4 mr-2 text-blue-500" />
+                  <span>{incident.location}</span>
+                </div>
+                {incident.building && (
+                  <div className="flex items-center">
+                    <Building className="h-4 w-4 mr-2 text-gray-500" />
+                    <span>Gebouw: {incident.building}</span>
+                  </div>
+                )}
+                {incident.floor && (
+                  <div className="flex items-center">
+                    <span className="w-4 h-4 mr-2"></span>
+                    <span>Verdieping: {incident.floor}</span>
+                  </div>
+                )}
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-purple-500" />
+                  <span>Gemeld: {formatDate(incident.reported_at)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-3">Betrokkenen</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center">
+                  <User className="h-4 w-4 mr-2 text-green-500" />
+                  <span>Gemeld door: {incident.reported_by}</span>
+                </div>
+                {incident.assigned_to && (
+                  <div className="flex items-center">
+                    <Users className="h-4 w-4 mr-2 text-red-500" />
+                    <span>Toegewezen aan: {incident.assigned_to}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {showCustomerInfo && (
+            <>
+              <Separator />
+              <div>
+                <h4 className="font-semibold mb-3">Klant & Partner Informatie</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <Building2 className="h-4 w-4 mr-2 text-orange-500" />
+                      <span>Klant: {incident.customer_name}</span>
+                    </div>
+                    {incident.customer_contact && (
+                      <div className="flex items-center">
+                        <Mail className="h-4 w-4 mr-2 text-blue-500" />
+                        <span>Contact: {incident.customer_contact}</span>
+                      </div>
+                    )}
+                  </div>
+                  {incident.whitelabel_partner && (
+                    <div className="space-y-2">
+                      <div className="flex items-center">
+                        <Briefcase className="h-4 w-4 mr-2 text-purple-500" />
+                        <span>Partner: {incident.whitelabel_partner}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4">
+          <Button variant="outline" onClick={onClose}>
+            Sluiten
+          </Button>
+          <Button>
+            <Edit className="mr-2 h-4 w-4" />
+            Bewerken
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function getSeverityColor(severity: string) {
+  switch (severity) {
+    case "critical":
+      return "bg-red-100 text-red-800 border-red-200"
+    case "high":
+      return "bg-orange-100 text-orange-800 border-orange-200"
+    case "medium":
+      return "bg-yellow-100 text-yellow-800 border-yellow-200"
+    case "low":
+      return "bg-green-100 text-green-800 border-green-200"
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-200"
+  }
+}
+
+function getStatusColor(status: string) {
+  switch (status) {
+    case "open":
+      return "bg-blue-100 text-blue-800 border-blue-200"
+    case "in_progress":
+      return "bg-yellow-100 text-yellow-800 border-yellow-200"
+    case "resolved":
+      return "bg-green-100 text-green-800 border-green-200"
+    case "closed":
+      return "bg-gray-100 text-gray-800 border-gray-200"
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-200"
+  }
+}
+
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleString("nl-NL", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
 }

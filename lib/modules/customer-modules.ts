@@ -33,13 +33,42 @@ export class CustomerModuleService {
 
     // Default: alleen core modules enabled
     const coreModules = getCoreModules()
-    return coreModules.map((module) => ({
+    const defaultModules = coreModules.map((module) => ({
       customerId,
       moduleId: module.id,
       isEnabled: true,
       enabledAt: new Date(),
       enabledBy: "system",
     }))
+
+    // Add some popular modules for demo
+    const popularModules = [
+      "bhv_coordinator",
+      "bhv_advanced_plotkaart",
+      "nfc_management",
+      "facility_management",
+      "inspection_management",
+      "basic_reporting",
+      "api_access",
+      "mobile_app",
+    ]
+
+    for (const moduleId of popularModules) {
+      const module = getModuleById(moduleId)
+      if (module && !module.isCore) {
+        defaultModules.push({
+          customerId,
+          moduleId,
+          isEnabled: true,
+          enabledAt: new Date(),
+          enabledBy: "system",
+        })
+      }
+    }
+
+    // Store defaults
+    localStorage.setItem(`customer_modules_${customerId}`, JSON.stringify(defaultModules))
+    return defaultModules
   }
 
   // Get enabled modules for a customer

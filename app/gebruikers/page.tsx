@@ -40,7 +40,13 @@ import {
   Clock,
   Calendar,
   Star,
+  AlertTriangle,
 } from "lucide-react"
+import Link from "next/link"
+import { useAuth } from "@/contexts/auth-context"
+import { BHV360Logo } from "@/components/bhv360-logo"
+import { Map, CheckCircle, ArrowRight, Play } from "lucide-react"
+import { RBACService, type UserRole } from "@/lib/rbac/roles"
 
 type User = {
   id: number
@@ -85,7 +91,89 @@ type User = {
   }
 }
 
+const features = [
+  {
+    icon: Map,
+    title: "Interactieve Plotkaarten",
+    description: "Digitale plattegronden met alle BHV voorzieningen en evacuatieroutes",
+  },
+  {
+    icon: Shield,
+    title: "BHV Beheer",
+    description: "Complete administratie van BHV'ers, certificaten en roosters",
+  },
+  {
+    icon: AlertTriangle,
+    title: "Incident Management",
+    description: "Realtime incident registratie en opvolging",
+  },
+  {
+    icon: Users,
+    title: "Gebruikersbeheer",
+    description: "Rol-gebaseerde toegang en autorisaties",
+  },
+]
+
+const pricing = [
+  {
+    name: "Starter",
+    price: "€49",
+    period: "/maand",
+    description: "Perfect voor kleine bedrijven",
+    features: ["Tot 50 gebruikers", "Basis plotkaarten", "Email support", "Standaard rapportages"],
+    popular: false,
+  },
+  {
+    name: "Professional",
+    price: "€149",
+    period: "/maand",
+    description: "Voor groeiende organisaties",
+    features: [
+      "Tot 250 gebruikers",
+      "Geavanceerde plotkaarten",
+      "Priority support",
+      "Custom rapportages",
+      "API toegang",
+      "White-label optie",
+    ],
+    popular: true,
+  },
+  {
+    name: "Enterprise",
+    price: "Op maat",
+    period: "",
+    description: "Voor grote organisaties",
+    features: [
+      "Onbeperkt gebruikers",
+      "Alle functies",
+      "24/7 support",
+      "Dedicated account manager",
+      "Custom integraties",
+      "On-premise optie",
+    ],
+    popular: false,
+  },
+]
+
+const testimonials = [
+  {
+    name: "Jan van der Berg",
+    role: "BHV Coördinator",
+    company: "TechCorp Nederland",
+    content: "BHV360 heeft onze BHV organisatie volledig getransformeerd. Alles is nu digitaal en overzichtelijk.",
+    rating: 5,
+  },
+  {
+    name: "Maria Janssen",
+    role: "Facility Manager",
+    company: "HealthCare Plus",
+    content: "De plotkaarten zijn fantastisch. Onze medewerkers weten nu precies waar alles staat.",
+    rating: 5,
+  },
+]
+
 export default function GebruikersPage() {
+  const { user } = useAuth()
   const { selectedCustomer } = useCustomer()
   const [users, setUsers] = useState<User[]>([])
   const [activeTab, setActiveTab] = useState("alle-gebruikers")
@@ -99,6 +187,7 @@ export default function GebruikersPage() {
   const [filterRole, setFilterRole] = useState("all")
   const [filterDepartment, setFilterDepartment] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
+  const [email, setEmail] = useState("")
 
   const [selectedCertificates, setSelectedCertificates] = useState<{ [key: string]: boolean }>({})
   const [certificateFiles, setCertificateFiles] = useState<{ [key: string]: File | null }>({})
@@ -110,7 +199,10 @@ export default function GebruikersPage() {
     }
   }>({})
 
-  // Dummy data for users
+  // Check of huidige gebruiker BHV rollen mag toekennen
+  const canAssignBHVRoles = user ? RBACService.canAssignBHVRoles(user.role as UserRole) : false
+
+  // Dummy data for users - Security heeft GEEN BHV rechten
   useEffect(() => {
     if (selectedCustomer) {
       setUsers([
@@ -305,6 +397,34 @@ export default function GebruikersPage() {
             sunday: { start: "", end: "", present: false },
           },
         },
+        // Sandra Beveiliging - GEEN BHV rechten standaard
+        {
+          id: 7,
+          name: "Sandra Beveiliging",
+          email: "security@demobedrijf.nl",
+          phone: "06-78901234",
+          role: "Security/Receptionist",
+          department: "Beveiliging",
+          bhvRoles: [], // GEEN BHV rechten standaard
+          active: true,
+          lastLogin: "2023-06-09 08:00",
+          photoUrl: "/placeholder.svg?height=100&width=100",
+          emergencyContact: {
+            name: "Peter Beveiliging",
+            phone: "06-99001122",
+            relation: "Partner",
+          },
+          certificates: {},
+          workSchedule: {
+            monday: { start: "06:00", end: "14:00", present: true },
+            tuesday: { start: "06:00", end: "14:00", present: true },
+            wednesday: { start: "06:00", end: "14:00", present: true },
+            thursday: { start: "06:00", end: "14:00", present: true },
+            friday: { start: "06:00", end: "14:00", present: true },
+            saturday: { start: "06:00", end: "14:00", present: true },
+            sunday: { start: "", end: "", present: false },
+          },
+        },
       ])
     }
   }, [selectedCustomer])
@@ -470,13 +590,235 @@ export default function GebruikersPage() {
 
   if (!selectedCustomer) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <Card className="w-[450px]">
-          <CardHeader>
-            <CardTitle>Geen klant geselecteerd</CardTitle>
-            <CardDescription>Selecteer een klant om gebruikers te beheren</CardDescription>
-          </CardHeader>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+        {/* Header */}
+        <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <BHV360Logo size="lg" />
+            <div className="flex items-center gap-4">
+              {user ? (
+                <Link href="/dashboard">
+                  <Button>
+                    Naar Dashboard
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login">
+                    <Button variant="ghost">Inloggen</Button>
+                  </Link>
+                  <Button>Gratis Demo</Button>
+                </>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* Hero Section */}
+        <section className="py-20 px-4">
+          <div className="container mx-auto text-center">
+            <Badge className="mb-4" variant="secondary">
+              🚀 Nieuw: AI-powered incident detectie
+            </Badge>
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+              De toekomst van BHV beheer
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+              Digitaliseer je BHV organisatie met onze complete software suite. Van plotkaarten tot incident management
+              - alles in één platform.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="text-lg px-8">
+                <Play className="mr-2 h-5 w-5" />
+                Bekijk Demo
+              </Button>
+              <Button size="lg" variant="outline" className="text-lg px-8 bg-transparent">
+                Gratis Trial Starten
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="py-20 px-4 bg-gray-50">
+          <div className="container mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold mb-4">Alles wat je nodig hebt</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                Een complete suite van tools om je BHV organisatie professioneel te beheren
+              </p>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {features.map((feature, index) => (
+                <Card key={index} className="text-center hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <feature.icon className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                    <CardTitle className="text-xl">{feature.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription>{feature.description}</CardDescription>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section className="py-20 px-4">
+          <div className="container mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold mb-4">Transparante prijzen</h2>
+              <p className="text-gray-600">Kies het plan dat bij jouw organisatie past</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {pricing.map((plan, index) => (
+                <Card key={index} className={`relative ${plan.popular ? "border-blue-500 shadow-lg scale-105" : ""}`}>
+                  {plan.popular && (
+                    <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2">Meest Populair</Badge>
+                  )}
+                  <CardHeader className="text-center">
+                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                    <div className="text-3xl font-bold text-blue-600">
+                      {plan.price}
+                      <span className="text-sm text-gray-500">{plan.period}</span>
+                    </div>
+                    <CardDescription>{plan.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3 mb-6">
+                      {plan.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="flex items-center">
+                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
+                      {plan.name === "Enterprise" ? "Contact Opnemen" : "Gratis Proberen"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials */}
+        <section className="py-20 px-4 bg-gray-50">
+          <div className="container mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold mb-4">Wat onze klanten zeggen</h2>
+            </div>
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {testimonials.map((testimonial, index) => (
+                <Card key={index}>
+                  <CardContent className="pt-6">
+                    <div className="flex mb-4">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                      ))}
+                    </div>
+                    <p className="text-gray-600 mb-4">"{testimonial.content}"</p>
+                    <div>
+                      <div className="font-semibold">{testimonial.name}</div>
+                      <div className="text-sm text-gray-500">{testimonial.role}</div>
+                      <div className="text-sm text-gray-500">{testimonial.company}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-green-600 text-white">
+          <div className="container mx-auto text-center">
+            <h2 className="text-3xl font-bold mb-4">Klaar om te beginnen?</h2>
+            <p className="text-xl mb-8 opacity-90">Start vandaag nog met je gratis trial en ervaar het verschil</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
+              <Input
+                placeholder="Je email adres"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-white text-gray-900"
+              />
+              <Button size="lg" variant="secondary">
+                Start Gratis Trial
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="bg-gray-900 text-white py-12 px-4">
+          <div className="container mx-auto">
+            <div className="grid md:grid-cols-4 gap-8">
+              <div>
+                <BHV360Logo size="md" variant="white" />
+                <p className="text-gray-400 mt-4">De complete BHV software suite voor moderne organisaties</p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-4">Product</h3>
+                <ul className="space-y-2 text-gray-400">
+                  <li>
+                    <Link href="#" className="hover:text-white">
+                      Features
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#" className="hover:text-white">
+                      Prijzen
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#" className="hover:text-white">
+                      Demo
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-4">Support</h3>
+                <ul className="space-y-2 text-gray-400">
+                  <li>
+                    <Link href="#" className="hover:text-white">
+                      Help Center
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#" className="hover:text-white">
+                      Contact
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#" className="hover:text-white">
+                      Status
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-4">Contact</h3>
+                <div className="space-y-2 text-gray-400">
+                  <div className="flex items-center">
+                    <Phone className="h-4 w-4 mr-2" />
+                    <span>+31 20 123 4567</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Mail className="h-4 w-4 mr-2" />
+                    <span>info@bhv360.nl</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+              <p>&copy; 2024 BHV360. Alle rechten voorbehouden.</p>
+            </div>
+          </div>
+        </footer>
       </div>
     )
   }
@@ -559,6 +901,7 @@ export default function GebruikersPage() {
                       <SelectItem value="bhv">BHV'er</SelectItem>
                       <SelectItem value="ehbo">EHBO'er</SelectItem>
                       <SelectItem value="ontruimer">Ontruimer</SelectItem>
+                      <SelectItem value="security-receptionist">Security/Receptionist</SelectItem>
                       <SelectItem value="user">Gebruiker</SelectItem>
                     </SelectContent>
                   </Select>
@@ -573,6 +916,7 @@ export default function GebruikersPage() {
                       <SelectItem value="IT">IT</SelectItem>
                       <SelectItem value="HR">HR</SelectItem>
                       <SelectItem value="Facilitair">Facilitair</SelectItem>
+                      <SelectItem value="Beveiliging">Beveiliging</SelectItem>
                       <SelectItem value="Receptie">Receptie</SelectItem>
                       <SelectItem value="Marketing">Marketing</SelectItem>
                       <SelectItem value="Verkoop">Verkoop</SelectItem>
@@ -582,98 +926,122 @@ export default function GebruikersPage() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <Label>BHV Rollen & Certificaten</Label>
+              {/* BHV Rollen sectie - alleen zichtbaar voor admin/bhv-coordinator */}
+              {canAssignBHVRoles && (
                 <div className="space-y-4">
-                  {[
-                    { id: "coordinator-bhv", label: "Coordinator BHV", icon: Star, role: "coordinator" },
-                    { id: "ploegleider", label: "Ploegleider", icon: Shield, role: "ploegleider" },
-                    { id: "bhv", label: "BHV", icon: Shield, role: "bhv" },
-                    { id: "ehbo", label: "EHBO", icon: Heart, role: "ehbo" },
-                    { id: "ontruimer", label: "Ontruimer", icon: Users, role: "ontruiming" },
-                  ].map(({ id, label, icon: Icon, role }) => (
-                    <div key={id} className="space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id={id}
-                          checked={selectedCertificates[role] || false}
-                          onCheckedChange={(checked) => handleCertificateToggle(role, checked as boolean)}
-                        />
-                        <Label htmlFor={id} className="text-sm flex items-center">
-                          <Icon className="h-3 w-3 mr-1" />
-                          {label}
-                        </Label>
-                      </div>
-
-                      {selectedCertificates[role] && (
-                        <div className="ml-6 p-4 bg-gray-50 rounded-lg space-y-3">
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-2">
-                              <Label htmlFor={`${role}-expiry`} className="text-sm">
-                                Verloopdatum
-                              </Label>
-                              <Input
-                                id={`${role}-expiry`}
-                                type="date"
-                                onChange={(e) => handleCertificateDataChange(role, "expiryDate", e.target.value)}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`${role}-level`} className="text-sm">
-                                Niveau
-                              </Label>
-                              <Select onValueChange={(value) => handleCertificateDataChange(role, "level", value)}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecteer niveau" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="basis">Basis</SelectItem>
-                                  <SelectItem value="diploma">Diploma</SelectItem>
-                                  <SelectItem value="herhalingscursus">Herhalingscursus</SelectItem>
-                                  <SelectItem value="instructeur">Instructeur</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor={`${role}-number`} className="text-sm">
-                              Certificaatnummer
-                            </Label>
-                            <Input
-                              id={`${role}-number`}
-                              placeholder="Bijv. BHV-2024-001"
-                              onChange={(e) => handleCertificateDataChange(role, "certificateNumber", e.target.value)}
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor={`${role}-file`} className="text-sm">
-                              Certificaat uploaden
-                            </Label>
-                            <div className="flex items-center space-x-2">
-                              <Input
-                                id={`${role}-file`}
-                                type="file"
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                onChange={(e) => handleCertificateFileChange(role, e)}
-                                className="flex-1"
-                              />
-                              {certificateFiles[role] && (
-                                <Badge variant="outline" className="text-green-600">
-                                  <Upload className="h-3 w-3 mr-1" />
-                                  Geüpload
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-500">PDF, JPG of PNG - Max. 10MB</p>
-                          </div>
+                  <div className="flex items-center justify-between">
+                    <Label>BHV Rollen & Certificaten</Label>
+                    <Badge variant="outline" className="text-xs">
+                      <Shield className="h-3 w-3 mr-1" />
+                      Alleen Admin/BHV Coordinator
+                    </Badge>
+                  </div>
+                  <div className="space-y-4">
+                    {[
+                      { id: "coordinator-bhv", label: "Coordinator BHV", icon: Star, role: "coordinator" },
+                      { id: "ploegleider", label: "Ploegleider", icon: Shield, role: "ploegleider" },
+                      { id: "bhv", label: "BHV", icon: Shield, role: "bhv" },
+                      { id: "ehbo", label: "EHBO", icon: Heart, role: "ehbo" },
+                      { id: "ontruimer", label: "Ontruimer", icon: Users, role: "ontruiming" },
+                    ].map(({ id, label, icon: Icon, role }) => (
+                      <div key={id} className="space-y-3">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={id}
+                            checked={selectedCertificates[role] || false}
+                            onCheckedChange={(checked) => handleCertificateToggle(role, checked as boolean)}
+                          />
+                          <Label htmlFor={id} className="text-sm flex items-center">
+                            <Icon className="h-3 w-3 mr-1" />
+                            {label}
+                          </Label>
                         </div>
-                      )}
-                    </div>
-                  ))}
+
+                        {selectedCertificates[role] && (
+                          <div className="ml-6 p-4 bg-gray-50 rounded-lg space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-2">
+                                <Label htmlFor={`${role}-expiry`} className="text-sm">
+                                  Verloopdatum
+                                </Label>
+                                <Input
+                                  id={`${role}-expiry`}
+                                  type="date"
+                                  onChange={(e) => handleCertificateDataChange(role, "expiryDate", e.target.value)}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`${role}-level`} className="text-sm">
+                                  Niveau
+                                </Label>
+                                <Select onValueChange={(value) => handleCertificateDataChange(role, "level", value)}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecteer niveau" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="basis">Basis</SelectItem>
+                                    <SelectItem value="diploma">Diploma</SelectItem>
+                                    <SelectItem value="herhalingscursus">Herhalingscursus</SelectItem>
+                                    <SelectItem value="instructeur">Instructeur</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor={`${role}-number`} className="text-sm">
+                                Certificaatnummer
+                              </Label>
+                              <Input
+                                id={`${role}-number`}
+                                placeholder="Bijv. BHV-2024-001"
+                                onChange={(e) => handleCertificateDataChange(role, "certificateNumber", e.target.value)}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor={`${role}-file`} className="text-sm">
+                                Certificaat uploaden
+                              </Label>
+                              <div className="flex items-center space-x-2">
+                                <Input
+                                  id={`${role}-file`}
+                                  type="file"
+                                  accept=".pdf,.jpg,.jpeg,.png"
+                                  onChange={(e) => handleCertificateFileChange(role, e)}
+                                  className="flex-1"
+                                />
+                                {certificateFiles[role] && (
+                                  <Badge variant="outline" className="text-green-600">
+                                    <Upload className="h-3 w-3 mr-1" />
+                                    Geüpload
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500">PDF, JPG of PNG - Max. 10MB</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Waarschuwing voor niet-geautoriseerde gebruikers */}
+              {!canAssignBHVRoles && (
+                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="h-5 w-5 text-orange-600" />
+                    <div>
+                      <h4 className="font-semibold text-orange-800">BHV Rollen Toekenning</h4>
+                      <p className="text-sm text-orange-700">
+                        Alleen Admin en BHV Coördinatoren kunnen BHV rollen toekennen aan gebruikers.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-4">
                 <Label>Noodcontact</Label>
@@ -791,6 +1159,7 @@ export default function GebruikersPage() {
                       <SelectItem value="IT">IT</SelectItem>
                       <SelectItem value="HR">HR</SelectItem>
                       <SelectItem value="Facilitair">Facilitair</SelectItem>
+                      <SelectItem value="Beveiliging">Beveiliging</SelectItem>
                       <SelectItem value="Receptie">Receptie</SelectItem>
                       <SelectItem value="Marketing">Marketing</SelectItem>
                       <SelectItem value="Verkoop">Verkoop</SelectItem>
@@ -1583,6 +1952,7 @@ export default function GebruikersPage() {
                       <SelectItem value="bhv">BHV'er</SelectItem>
                       <SelectItem value="ehbo">EHBO'er</SelectItem>
                       <SelectItem value="ontruimer">Ontruimer</SelectItem>
+                      <SelectItem value="security-receptionist">Security/Receptionist</SelectItem>
                       <SelectItem value="user">Gebruiker</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1597,6 +1967,7 @@ export default function GebruikersPage() {
                       <SelectItem value="it">IT</SelectItem>
                       <SelectItem value="hr">HR</SelectItem>
                       <SelectItem value="facilitair">Facilitair</SelectItem>
+                      <SelectItem value="beveiliging">Beveiliging</SelectItem>
                       <SelectItem value="receptie">Receptie</SelectItem>
                       <SelectItem value="marketing">Marketing</SelectItem>
                       <SelectItem value="verkoop">Verkoop</SelectItem>
@@ -1604,49 +1975,75 @@ export default function GebruikersPage() {
                   </Select>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>BHV Rollen</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="edit-coordinator-bhv"
-                      defaultChecked={currentUser.bhvRoles.includes("Coordinator BHV")}
-                    />
-                    <Label htmlFor="edit-coordinator-bhv" className="text-sm flex items-center">
-                      <Star className="h-3 w-3 mr-1" />
-                      Coordinator BHV
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="edit-ploegleider" defaultChecked={currentUser.bhvRoles.includes("Ploegleider")} />
-                    <Label htmlFor="edit-ploegleider" className="text-sm flex items-center">
+
+              {/* BHV Rollen - alleen zichtbaar voor geautoriseerde gebruikers */}
+              {canAssignBHVRoles && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>BHV Rollen</Label>
+                    <Badge variant="outline" className="text-xs">
                       <Shield className="h-3 w-3 mr-1" />
-                      Ploegleider
-                    </Label>
+                      Admin/BHV Coordinator
+                    </Badge>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="edit-bhv" defaultChecked={currentUser.bhvRoles.includes("BHV")} />
-                    <Label htmlFor="edit-bhv" className="text-sm flex items-center">
-                      <Shield className="h-3 w-3 mr-1" />
-                      BHV
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="edit-ehbo" defaultChecked={currentUser.bhvRoles.includes("EHBO")} />
-                    <Label htmlFor="edit-ehbo" className="text-sm flex items-center">
-                      <Heart className="h-3 w-3 mr-1" />
-                      EHBO
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="edit-ontruimer" defaultChecked={currentUser.bhvRoles.includes("Ontruimer")} />
-                    <Label htmlFor="edit-ontruimer" className="text-sm flex items-center">
-                      <Users className="h-3 w-3 mr-1" />
-                      Ontruimer
-                    </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-coordinator-bhv"
+                        defaultChecked={currentUser.bhvRoles.includes("Coordinator BHV")}
+                      />
+                      <Label htmlFor="edit-coordinator-bhv" className="text-sm flex items-center">
+                        <Star className="h-3 w-3 mr-1" />
+                        Coordinator BHV
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit-ploegleider" defaultChecked={currentUser.bhvRoles.includes("Ploegleider")} />
+                      <Label htmlFor="edit-ploegleider" className="text-sm flex items-center">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Ploegleider
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit-bhv" defaultChecked={currentUser.bhvRoles.includes("BHV")} />
+                      <Label htmlFor="edit-bhv" className="text-sm flex items-center">
+                        <Shield className="h-3 w-3 mr-1" />
+                        BHV
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit-ehbo" defaultChecked={currentUser.bhvRoles.includes("EHBO")} />
+                      <Label htmlFor="edit-ehbo" className="text-sm flex items-center">
+                        <Heart className="h-3 w-3 mr-1" />
+                        EHBO
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit-ontruimer" defaultChecked={currentUser.bhvRoles.includes("Ontruimer")} />
+                      <Label htmlFor="edit-ontruimer" className="text-sm flex items-center">
+                        <Users className="h-3 w-3 mr-1" />
+                        Ontruimer
+                      </Label>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* Waarschuwing voor niet-geautoriseerde gebruikers */}
+              {!canAssignBHVRoles && (
+                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="h-5 w-5 text-orange-600" />
+                    <div>
+                      <h4 className="font-semibold text-orange-800">BHV Rollen Beperking</h4>
+                      <p className="text-sm text-orange-700">
+                        Alleen Admin en BHV Coördinatoren kunnen BHV rollen wijzigen.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center space-x-2">
                 <Switch id="edit-active" defaultChecked={currentUser.active} />
                 <Label htmlFor="edit-active">Actief</Label>

@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useAuth } from "./auth-context"
 
 // Types
@@ -122,6 +122,12 @@ interface User {
 }
 
 interface DataContextType {
+  data: any
+  loading: boolean
+  error: string | null
+  refreshData: () => Promise<void>
+  lastRefresh: Date | null
+
   // Plotkaart functions
   getPlotkaartByCustomer: (customerId: string) => Promise<PlotkaartData | null>
   updatePlotkaartForCustomer: (customerId: string, plotkaart: PlotkaartData) => Promise<boolean>
@@ -141,10 +147,6 @@ interface DataContextType {
   updateUser: (user: User) => Promise<boolean>
   createUser: (user: Omit<User, "id">) => Promise<string>
   deleteUser: (id: string) => Promise<boolean>
-
-  // Loading states
-  isLoading: boolean
-  error: string | null
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
@@ -782,13 +784,34 @@ const DEMO_PLOTKAART: PlotkaartData = {
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [isLoading, setIsLoading] = useState(false)
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
   const { user } = useAuth()
+
+  const refreshData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      // Mock data loading - replace with actual API calls
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      setData({ message: "Data loaded successfully" })
+      setLastRefresh(new Date())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    refreshData()
+  }, [])
 
   // Plotkaart functions
   const getPlotkaartByCustomer = async (customerId: string): Promise<PlotkaartData | null> => {
-    setIsLoading(true)
+    setLoading(true)
     setError(null)
 
     try {
@@ -799,7 +822,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem(`plotkaart-${customerId}`)
       if (stored) {
         const plotkaart = JSON.parse(stored)
-        setIsLoading(false)
+        setLoading(false)
         return plotkaart
       }
 
@@ -807,21 +830,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (customerId === "demo-bedrijf-bv") {
         // Store in localStorage for persistence
         localStorage.setItem(`plotkaart-${customerId}`, JSON.stringify(DEMO_PLOTKAART))
-        setIsLoading(false)
+        setLoading(false)
         return DEMO_PLOTKAART
       }
 
-      setIsLoading(false)
+      setLoading(false)
       return null
     } catch (err) {
       setError("Fout bij ophalen plotkaart")
-      setIsLoading(false)
+      setLoading(false)
       return null
     }
   }
 
   const updatePlotkaartForCustomer = async (customerId: string, plotkaart: PlotkaartData): Promise<boolean> => {
-    setIsLoading(true)
+    setLoading(true)
     setError(null)
 
     try {
@@ -839,11 +862,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // Store in localStorage
       localStorage.setItem(`plotkaart-${customerId}`, JSON.stringify(updatedPlotkaart))
 
-      setIsLoading(false)
+      setLoading(false)
       return true
     } catch (err) {
       setError("Fout bij bijwerken plotkaart")
-      setIsLoading(false)
+      setLoading(false)
       return false
     }
   }
@@ -852,7 +875,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     customerId: string,
     plotkaart: Omit<PlotkaartData, "id">,
   ): Promise<string> => {
-    setIsLoading(true)
+    setLoading(true)
     setError(null)
 
     try {
@@ -871,17 +894,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // Store in localStorage
       localStorage.setItem(`plotkaart-${customerId}`, JSON.stringify(newPlotkaart))
 
-      setIsLoading(false)
+      setLoading(false)
       return newId
     } catch (err) {
       setError("Fout bij aanmaken plotkaart")
-      setIsLoading(false)
+      setLoading(false)
       throw err
     }
   }
 
   const deletePlotkaartForCustomer = async (customerId: string): Promise<boolean> => {
-    setIsLoading(true)
+    setLoading(true)
     setError(null)
 
     try {
@@ -891,18 +914,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // Remove from localStorage
       localStorage.removeItem(`plotkaart-${customerId}`)
 
-      setIsLoading(false)
+      setLoading(false)
       return true
     } catch (err) {
       setError("Fout bij verwijderen plotkaart")
-      setIsLoading(false)
+      setLoading(false)
       return false
     }
   }
 
   // Customer functions
   const getCustomers = async (): Promise<Customer[]> => {
-    setIsLoading(true)
+    setLoading(true)
     setError(null)
 
     try {
@@ -913,17 +936,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem("customers")
       if (stored) {
         const customers = JSON.parse(stored)
-        setIsLoading(false)
+        setLoading(false)
         return customers
       }
 
       // Store demo data
       localStorage.setItem("customers", JSON.stringify(DEMO_CUSTOMERS))
-      setIsLoading(false)
+      setLoading(false)
       return DEMO_CUSTOMERS
     } catch (err) {
       setError("Fout bij ophalen klanten")
-      setIsLoading(false)
+      setLoading(false)
       return []
     }
   }
@@ -934,7 +957,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }
 
   const updateCustomer = async (customer: Customer): Promise<boolean> => {
-    setIsLoading(true)
+    setLoading(true)
     setError(null)
 
     try {
@@ -942,17 +965,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const updatedCustomers = customers.map((c) => (c.id === customer.id ? customer : c))
       localStorage.setItem("customers", JSON.stringify(updatedCustomers))
 
-      setIsLoading(false)
+      setLoading(false)
       return true
     } catch (err) {
       setError("Fout bij bijwerken klant")
-      setIsLoading(false)
+      setLoading(false)
       return false
     }
   }
 
   const createCustomer = async (customer: Omit<Customer, "id">): Promise<string> => {
-    setIsLoading(true)
+    setLoading(true)
     setError(null)
 
     try {
@@ -963,17 +986,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const updatedCustomers = [...customers, newCustomer]
       localStorage.setItem("customers", JSON.stringify(updatedCustomers))
 
-      setIsLoading(false)
+      setLoading(false)
       return newId
     } catch (err) {
       setError("Fout bij aanmaken klant")
-      setIsLoading(false)
+      setLoading(false)
       throw err
     }
   }
 
   const deleteCustomer = async (id: string): Promise<boolean> => {
-    setIsLoading(true)
+    setLoading(true)
     setError(null)
 
     try {
@@ -981,18 +1004,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const updatedCustomers = customers.filter((c) => c.id !== id)
       localStorage.setItem("customers", JSON.stringify(updatedCustomers))
 
-      setIsLoading(false)
+      setLoading(false)
       return true
     } catch (err) {
       setError("Fout bij verwijderen klant")
-      setIsLoading(false)
+      setLoading(false)
       return false
     }
   }
 
   // User functions
   const getUsersByCustomer = async (customerId: string): Promise<User[]> => {
-    setIsLoading(true)
+    setLoading(true)
     setError(null)
 
     try {
@@ -1003,7 +1026,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem(`users-${customerId}`)
       if (stored) {
         const users = JSON.parse(stored)
-        setIsLoading(false)
+        setLoading(false)
         return users
       }
 
@@ -1011,21 +1034,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (customerId === "demo-bedrijf-bv") {
         const demoUsers = DEMO_USERS.filter((u) => u.customerId === customerId)
         localStorage.setItem(`users-${customerId}`, JSON.stringify(demoUsers))
-        setIsLoading(false)
+        setLoading(false)
         return demoUsers
       }
 
-      setIsLoading(false)
+      setLoading(false)
       return []
     } catch (err) {
       setError("Fout bij ophalen gebruikers")
-      setIsLoading(false)
+      setLoading(false)
       return []
     }
   }
 
   const getUserById = async (id: string): Promise<User | null> => {
-    setIsLoading(true)
+    setLoading(true)
     setError(null)
 
     try {
@@ -1035,28 +1058,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const users = await getUsersByCustomer(customer.id)
         const user = users.find((u) => u.id === id)
         if (user) {
-          setIsLoading(false)
+          setLoading(false)
           return user
         }
       }
 
-      setIsLoading(false)
+      setLoading(false)
       return null
     } catch (err) {
       setError("Fout bij ophalen gebruiker")
-      setIsLoading(false)
+      setLoading(false)
       return null
     }
   }
 
   const updateUser = async (user: User): Promise<boolean> => {
-    setIsLoading(true)
+    setLoading(true)
     setError(null)
 
     try {
       if (!user.customerId) {
         setError("Gebruiker heeft geen klant ID")
-        setIsLoading(false)
+        setLoading(false)
         return false
       }
 
@@ -1064,23 +1087,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const updatedUsers = users.map((u) => (u.id === user.id ? user : u))
       localStorage.setItem(`users-${user.customerId}`, JSON.stringify(updatedUsers))
 
-      setIsLoading(false)
+      setLoading(false)
       return true
     } catch (err) {
       setError("Fout bij bijwerken gebruiker")
-      setIsLoading(false)
+      setLoading(false)
       return false
     }
   }
 
   const createUser = async (user: Omit<User, "id">): Promise<string> => {
-    setIsLoading(true)
+    setLoading(true)
     setError(null)
 
     try {
       if (!user.customerId) {
         setError("Gebruiker moet een klant ID hebben")
-        setIsLoading(false)
+        setLoading(false)
         throw new Error("Customer ID required")
       }
 
@@ -1091,17 +1114,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const updatedUsers = [...users, newUser]
       localStorage.setItem(`users-${user.customerId}`, JSON.stringify(updatedUsers))
 
-      setIsLoading(false)
+      setLoading(false)
       return newId
     } catch (err) {
       setError("Fout bij aanmaken gebruiker")
-      setIsLoading(false)
+      setLoading(false)
       throw err
     }
   }
 
   const deleteUser = async (id: string): Promise<boolean> => {
-    setIsLoading(true)
+    setLoading(true)
     setError(null)
 
     try {
@@ -1109,7 +1132,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const user = await getUserById(id)
       if (!user || !user.customerId) {
         setError("Gebruiker niet gevonden")
-        setIsLoading(false)
+        setLoading(false)
         return false
       }
 
@@ -1117,16 +1140,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const updatedUsers = users.filter((u) => u.id !== id)
       localStorage.setItem(`users-${user.customerId}`, JSON.stringify(updatedUsers))
 
-      setIsLoading(false)
+      setLoading(false)
       return true
     } catch (err) {
       setError("Fout bij verwijderen gebruiker")
-      setIsLoading(false)
+      setLoading(false)
       return false
     }
   }
 
   const value: DataContextType = {
+    data,
+    loading,
+    error,
+    refreshData,
+    lastRefresh,
+
     // Plotkaart functions
     getPlotkaartByCustomer,
     updatePlotkaartForCustomer,
@@ -1146,10 +1175,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     updateUser,
     createUser,
     deleteUser,
-
-    // Loading states
-    isLoading,
-    error,
   }
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

@@ -1,31 +1,64 @@
 import { type NextRequest, NextResponse } from "next/server"
 
+// Demo users with their credentials and roles
+const demoUsers = [
+  {
+    id: "1",
+    email: "security@demobedrijf.nl",
+    password: "demo123",
+    name: "Security Medewerker",
+    role: "security-receptionist",
+    customerId: "demo-company",
+    customerName: "Demo Bedrijf BV",
+    department: "Beveiliging",
+    active: true,
+  },
+  {
+    id: "2",
+    email: "jan@demobedrijf.nl",
+    password: "demo123",
+    name: "Jan Pietersen",
+    role: "admin", // Changed from bhv-coordinator to admin
+    customerId: "demo-company",
+    customerName: "Demo Bedrijf BV",
+    department: "BHV",
+    active: true,
+  },
+  {
+    id: "3",
+    email: "marie@demobedrijf.nl",
+    password: "demo123",
+    name: "Marie Janssen",
+    role: "employee",
+    customerId: "demo-company",
+    customerName: "Demo Bedrijf BV",
+    department: "HR",
+    active: true,
+  },
+  {
+    id: "4",
+    email: "admin@demobedrijf.nl",
+    password: "demo123",
+    name: "Admin Gebruiker",
+    role: "customer-admin",
+    customerId: "demo-company",
+    customerName: "Demo Bedrijf BV",
+    department: "IT",
+    active: true,
+  },
+]
+
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
 
-    if (!email || !password) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Email and password are required",
-        },
-        { status: 400 },
-      )
-    }
+    console.log("🔐 Login attempt for:", email)
 
-    // Demo credentials - in a real app, you would validate against your database
-    const demoCredentials = [
-      { email: "jan@demobedrijf.nl", password: "demo123", name: "Jan de Vries", role: "admin" },
-      { email: "marie@demobedrijf.nl", password: "demo123", name: "Marie Janssen", role: "bhv_coordinator" },
-      { email: "piet@demobedrijf.nl", password: "demo123", name: "Piet van der Berg", role: "bhv_medewerker" },
-      { email: "lisa@demobedrijf.nl", password: "demo123", name: "Lisa de Jong", role: "employee" },
-      { email: "tom@demobedrijf.nl", password: "demo123", name: "Tom Bakker", role: "ehbo" },
-    ]
-
-    const user = demoCredentials.find((cred) => cred.email === email && cred.password === password)
+    // Find user in demo data
+    const user = demoUsers.find((u) => u.email === email && u.password === password)
 
     if (!user) {
+      console.log("❌ Invalid credentials for:", email)
       return NextResponse.json(
         {
           success: false,
@@ -35,39 +68,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create session
-    const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    console.log("✅ User found:", user.name, "with role:", user.role)
 
+    // Create session data
+    const sessionData = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      customerId: user.customerId,
+      customerName: user.customerName,
+      loginTime: new Date().toISOString(),
+    }
+
+    // Create response with session cookie
     const response = NextResponse.json({
       success: true,
-      user: {
-        id: 1,
-        customer_id: 1,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        department: "Demo Department",
-        bhv_roles: user.role === "bhv_coordinator" ? ["bhv_coordinator"] : [],
-        active: true,
-      },
+      user: sessionData,
+      message: `Welcome ${user.name}!`,
     })
 
     // Set session cookie
-    response.cookies.set("bhv360-session", sessionToken, {
+    response.cookies.set("session", JSON.stringify(sessionData), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: "/",
     })
 
+    console.log("🍪 Session cookie set for:", user.name)
     return response
   } catch (error) {
-    console.error("Login failed:", error)
+    console.error("❌ Login error:", error)
     return NextResponse.json(
       {
         success: false,
-        error: "Login failed due to server error",
+        error: "Server error",
       },
       { status: 500 },
     )
