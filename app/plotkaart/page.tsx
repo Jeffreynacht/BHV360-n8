@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PageHeader } from "@/components/page-header"
 import { useToast } from "@/hooks/use-toast"
+import { useCustomer } from "@/components/customer-context"
+import { NoCustomerSelected } from "@/components/no-customer-selected"
 import {
   MapPin,
   Building,
@@ -121,12 +123,17 @@ const statusLabels = {
 }
 
 export default function PlotkaartPage() {
+  const { selectedCustomer } = useCustomer()
   const [selectedFloorPlan, setSelectedFloorPlan] = useState<FloorPlan>(mockFloorPlans[0])
   const [safetyItems, setSafetyItems] = useState<SafetyItem[]>(mockSafetyItems)
   const [zoom, setZoom] = useState(1)
   const [showLegend, setShowLegend] = useState(true)
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>(Object.keys(safetyItemLabels))
   const { toast } = useToast()
+
+  if (!selectedCustomer) {
+    return <NoCustomerSelected />
+  }
 
   const handleZoomIn = () => {
     setZoom((prev) => Math.min(prev + 0.2, 3))
@@ -161,7 +168,7 @@ export default function PlotkaartPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       <PageHeader
         title="Plotkaart Viewer"
         description="Bekijk en navigeer door de veiligheidsplattegronden"

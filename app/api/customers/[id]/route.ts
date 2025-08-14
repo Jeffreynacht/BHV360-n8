@@ -1,54 +1,33 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 
+const sql = neon(process.env.DATABASE_URL!)
+
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params
-    console.log(`🔍 Fetching customer ${id}...`)
+    const customerId = Number.parseInt(params.id)
 
-    if (!process.env.DATABASE_URL) {
-      return NextResponse.json({ error: "Database not configured" }, { status: 500 })
+    if (isNaN(customerId)) {
+      return NextResponse.json({ success: false, error: "Invalid customer ID" }, { status: 400 })
     }
 
-    const sql = neon(process.env.DATABASE_URL)
-
     const customers = await sql`
-      SELECT 
-        id,
-        name,
-        contact_person,
-        email,
-        phone,
-        address,
-        created_at,
-        updated_at
-      FROM customers 
-      WHERE id = ${Number.parseInt(id)}
+      SELECT * FROM customers WHERE id = ${customerId}
     `
 
     if (customers.length === 0) {
-      return NextResponse.json({ error: "Customer not found" }, { status: 404 })
+      return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 })
     }
 
-    const customer = customers[0]
-    console.log("✅ Customer found:", customer.name)
-
     return NextResponse.json({
-      customer: {
-        id: customer.id,
-        name: customer.name,
-        contactPerson: customer.contact_person,
-        email: customer.email,
-        phone: customer.phone,
-        address: customer.address,
-        createdAt: customer.created_at,
-        updatedAt: customer.updated_at,
-      },
+      success: true,
+      customer: customers[0],
     })
   } catch (error) {
-    console.error("❌ Error fetching customer:", error)
+    console.error("Database error:", error)
     return NextResponse.json(
       {
+        success: false,
         error: "Failed to fetch customer",
         details: error instanceof Error ? error.message : "Unknown error",
       },
@@ -59,60 +38,48 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params
-    console.log(`📝 Updating customer ${id}...`)
+    const customerId = Number.parseInt(params.id)
 
-    if (!process.env.DATABASE_URL) {
-      return NextResponse.json({ error: "Database not configured" }, { status: 500 })
+    if (isNaN(customerId)) {
+      return NextResponse.json({ success: false, error: "Invalid customer ID" }, { status: 400 })
     }
 
     const body = await request.json()
-    const { name, contactPerson, email, phone, address } = body
+    const { name, contact_person, email, phone, address, subscription_type, status } = body
 
-    // Validation
-    if (!name || !contactPerson || !email) {
-      return NextResponse.json({ error: "Name, contact person, and email are required" }, { status: 400 })
+    if (!name) {
+      return NextResponse.json({ success: false, error: "Name is required" }, { status: 400 })
     }
-
-    const sql = neon(process.env.DATABASE_URL)
 
     const result = await sql`
       UPDATE customers 
       SET 
         name = ${name},
-        contact_person = ${contactPerson},
-        email = ${email},
+        contact_person = ${contact_person || null},
+        email = ${email || null},
         phone = ${phone || null},
         address = ${address || null},
+        subscription_type = ${subscription_type || "basic"},
+        status = ${status || "active"},
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${Number.parseInt(id)}
+      WHERE id = ${customerId}
       RETURNING *
     `
 
     if (result.length === 0) {
-      return NextResponse.json({ error: "Customer not found" }, { status: 404 })
+      return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 })
     }
 
-    const updatedCustomer = result[0]
-    console.log("✅ Customer updated:", updatedCustomer.name)
-
     return NextResponse.json({
-      customer: {
-        id: updatedCustomer.id,
-        name: updatedCustomer.name,
-        contactPerson: updatedCustomer.contact_person,
-        email: updatedCustomer.email,
-        phone: updatedCustomer.phone,
-        address: updatedCustomer.address,
-        createdAt: updatedCustomer.created_at,
-        updatedAt: updatedCustomer.updated_at,
-      },
+      success: true,
+      customer: result[0],
       message: "Customer updated successfully",
     })
   } catch (error) {
-    console.error("❌ Error updating customer:", error)
+    console.error("Database error:", error)
     return NextResponse.json(
       {
+        success: false,
         error: "Failed to update customer",
         details: error instanceof Error ? error.message : "Unknown error",
       },
@@ -123,34 +90,33 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params
-    console.log(`🗑️ Deleting customer ${id}...`)
+    const customerId = Number.parseInt(params.id)
 
-    if (!process.env.DATABASE_URL) {
-      return NextResponse.json({ error: "Database not configured" }, { status: 500 })
+    if (isNaN(customerId)) {
+      return NextResponse.json({ success: false, error: "Invalid customer ID" }, { status: 400 })
     }
 
-    const sql = neon(process.env.DATABASE_URL)
-
+    // Soft delete - set status to inactive instead of actually deleting
     const result = await sql`
-      DELETE FROM customers 
-      WHERE id = ${Number.parseInt(id)}
-      RETURNING name
+      UPDATE customers 
+      SET status = 'deleted', updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${customerId}
+      RETURNING *
     `
 
     if (result.length === 0) {
-      return NextResponse.json({ error: "Customer not found" }, { status: 404 })
+      return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 })
     }
 
-    console.log("✅ Customer deleted:", result[0].name)
-
     return NextResponse.json({
+      success: true,
       message: "Customer deleted successfully",
     })
   } catch (error) {
-    console.error("❌ Error deleting customer:", error)
+    console.error("Database error:", error)
     return NextResponse.json(
       {
+        success: false,
         error: "Failed to delete customer",
         details: error instanceof Error ? error.message : "Unknown error",
       },

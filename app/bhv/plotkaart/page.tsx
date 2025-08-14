@@ -29,6 +29,7 @@ import {
   User,
   ArrowRight,
   Scan,
+  Building2,
 } from "lucide-react"
 
 interface Floor {
@@ -201,9 +202,61 @@ export default function BHVPlotkaartPage() {
 
   return (
     <div className="container p-6">
+      {/* Header met klant branding */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">BHV Plotkaart</h1>
-        <p className="text-muted-foreground">Actuele BHV informatie voor {selectedCustomer.name}</p>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            {/* BHV360 Logo */}
+            <img
+              src="/images/bhv360-logo.png"
+              alt="BHV360"
+              className="h-12 w-auto"
+              onError={(e) => {
+                e.currentTarget.src = "/placeholder.svg?height=48&width=120&text=BHV360"
+              }}
+            />
+            <div className="h-8 w-px bg-gray-300" />
+            {/* Klant Logo */}
+            <div className="flex items-center space-x-3">
+              {selectedCustomer.logo ? (
+                <img
+                  src={selectedCustomer.logo || "/placeholder.svg"}
+                  alt={selectedCustomer.name}
+                  className="h-10 w-auto max-w-[120px]"
+                  onError={(e) => {
+                    e.currentTarget.src =
+                      "/placeholder.svg?height=40&width=80&text=" +
+                      encodeURIComponent(selectedCustomer.name.substring(0, 3))
+                  }}
+                />
+              ) : (
+                <div className="h-10 w-16 bg-gray-100 rounded flex items-center justify-center">
+                  <Building2 className="h-6 w-6 text-gray-400" />
+                </div>
+              )}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{selectedCustomer.name}</h1>
+                <p className="text-sm text-gray-600">{selectedCustomer.address}</p>
+              </div>
+            </div>
+          </div>
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            BHV Plotkaart Actief
+          </Badge>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <CheckCircle2 className="h-5 w-5 text-blue-600 mt-0.5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-blue-800">BHV Plotkaart voor {selectedCustomer.name}</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                Actuele BHV informatie en veiligheidsvoorzieningen voor {selectedCustomer.address}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -232,7 +285,9 @@ export default function BHVPlotkaartPage() {
           <Card className="overflow-hidden">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-center">
-                <CardTitle>{currentFloor.name} Plotkaart</CardTitle>
+                <CardTitle>
+                  {currentFloor.name} - {selectedCustomer.name}
+                </CardTitle>
                 <div className="flex items-center space-x-2">
                   <Badge variant="outline">Niveau {currentFloor.level}</Badge>
                 </div>
@@ -241,7 +296,11 @@ export default function BHVPlotkaartPage() {
             <CardContent className="p-0">
               <div className="relative bg-gray-100 w-full h-[500px] flex items-center justify-center">
                 <div className="text-center p-6">
-                  <p className="text-muted-foreground mb-4">Interactieve plotkaart voor {currentFloor.name}</p>
+                  <div className="mb-4">
+                    <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-2" />
+                    <p className="text-lg font-medium text-gray-700">{selectedCustomer.name}</p>
+                    <p className="text-sm text-gray-500">{currentFloor.name}</p>
+                  </div>
 
                   {/* Facility Icons on Map */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -486,15 +545,15 @@ export default function BHVPlotkaartPage() {
                     </div>
                     <p className="text-sm text-green-600 mt-1">Tag ID: {scanResult}</p>
                     <div className="mt-3 space-y-2">
-                      <Button variant="outline" className="w-full justify-start">
+                      <Button variant="outline" className="w-full justify-start bg-transparent">
                         <ArrowRight className="h-4 w-4 mr-2" />
                         Bekijk instructies
                       </Button>
-                      <Button variant="outline" className="w-full justify-start">
+                      <Button variant="outline" className="w-full justify-start bg-transparent">
                         <AlertTriangle className="h-4 w-4 mr-2" />
                         Meld probleem
                       </Button>
-                      <Button variant="outline" className="w-full justify-start">
+                      <Button variant="outline" className="w-full justify-start bg-transparent">
                         <Clock className="h-4 w-4 mr-2" />
                         Registreer controle
                       </Button>

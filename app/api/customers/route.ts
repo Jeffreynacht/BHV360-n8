@@ -1,69 +1,55 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 
+const sql = neon(process.env.DATABASE_URL!)
+
 export async function GET() {
   try {
-    console.log("🔍 Fetching customers...")
-
-    if (!process.env.DATABASE_URL) {
-      return NextResponse.json({ error: "Database not configured" }, { status: 500 })
-    }
-
-    const sql = neon(process.env.DATABASE_URL)
-
-    // Check if customers table exists
-    const tableCheck = await sql`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'customers'
+    // Create customers table if it doesn't exist
+    await sql`
+      CREATE TABLE IF NOT EXISTS customers (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        contact_person VARCHAR(255),
+        email VARCHAR(255),
+        phone VARCHAR(50),
+        address TEXT,
+        subscription_type VARCHAR(100) DEFAULT 'basic',
+        status VARCHAR(50) DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
 
-    if (!tableCheck[0]?.exists) {
-      console.log("⚠️ Customers table does not exist")
-      return NextResponse.json({
-        customers: [],
-        total: 0,
-        message: "Customers table not found - database setup required",
-      })
+    // Check if we have any customers, if not, insert demo data
+    const existingCustomers = await sql`SELECT COUNT(*) as count FROM customers`
+
+    if (existingCustomers[0].count === "0") {
+      await sql`
+        INSERT INTO customers (name, contact_person, email, phone, address, subscription_type, status) VALUES
+        ('Acme Corporation', 'John Smith', 'john@acme.com', '+31 20 123 4567', 'Hoofdstraat 1, 1000 AA Amsterdam', 'premium', 'active'),
+        ('TechStart BV', 'Sarah Johnson', 'sarah@techstart.nl', '+31 30 987 6543', 'Innovatielaan 25, 3500 BB Utrecht', 'basic', 'active'),
+        ('Global Industries', 'Mike Wilson', 'mike@global.com', '+31 10 555 0123', 'Zakenkwartier 100, 3000 CC Rotterdam', 'enterprise', 'active'),
+        ('Local Services', 'Emma Brown', 'emma@local.nl', '+31 40 444 5678', 'Dorpsstraat 15, 5600 DD Eindhoven', 'basic', 'inactive')
+      `
     }
 
-    // Fetch customers
+    // Fetch all customers
     const customers = await sql`
-      SELECT 
-        id,
-        name,
-        contact_person,
-        email,
-        phone,
-        address,
-        created_at,
-        updated_at
-      FROM customers 
-      ORDER BY name ASC
+      SELECT * FROM customers 
+      ORDER BY created_at DESC
     `
 
-    console.log(`✅ Found ${customers.length} customers`)
-
     return NextResponse.json({
-      customers: customers.map((customer) => ({
-        id: customer.id,
-        name: customer.name,
-        contactPerson: customer.contact_person,
-        email: customer.email,
-        phone: customer.phone,
-        address: customer.address,
-        createdAt: customer.created_at,
-        updatedAt: customer.updated_at,
-      })),
-      total: customers.length,
-      message: `Found ${customers.length} customers`,
+      success: true,
+      customers: customers,
+      count: customers.length,
     })
   } catch (error) {
-    console.error("❌ Error fetching customers:", error)
+    console.error("Database error:", error)
     return NextResponse.json(
       {
+        success: false,
         error: "Failed to fetch customers",
         details: error instanceof Error ? error.message : "Unknown error",
       },
@@ -74,66 +60,29 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("📝 Creating new customer...")
-
-    if (!process.env.DATABASE_URL) {
-      return NextResponse.json({ error: "Database not configured" }, { status: 500 })
-    }
-
     const body = await request.json()
-    const { name, contactPerson, email, phone, address } = body
+    const { name, contact_person, email, phone, address, subscription_type } = body
 
-    // Validation
-    if (!name || !contactPerson || !email) {
-      return NextResponse.json({ error: "Name, contact person, and email are required" }, { status: 400 })
+    if (!name) {
+      return NextResponse.json({ success: false, error: "Name is required" }, { status: 400 })
     }
 
-    const sql = neon(process.env.DATABASE_URL)
-
-    // Check if customers table exists, create if not
-    await sql`
-      CREATE TABLE IF NOT EXISTS customers (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        contact_person VARCHAR(255) NOT NULL,
-        email VARCHAR(255) NOT NULL,
-        phone VARCHAR(50),
-        address TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `
-
-    // Insert new customer
     const result = await sql`
-      INSERT INTO customers (name, contact_person, email, phone, address)
-      VALUES (${name}, ${contactPerson}, ${email}, ${phone || null}, ${address || null})
+      INSERT INTO customers (name, contact_person, email, phone, address, subscription_type)
+      VALUES (${name}, ${contact_person || null}, ${email || null}, ${phone || null}, ${address || null}, ${subscription_type || "basic"})
       RETURNING *
     `
 
-    const newCustomer = result[0]
-    console.log("✅ Customer created:", newCustomer.name)
-
-    return NextResponse.json(
-      {
-        customer: {
-          id: newCustomer.id,
-          name: newCustomer.name,
-          contactPerson: newCustomer.contact_person,
-          email: newCustomer.email,
-          phone: newCustomer.phone,
-          address: newCustomer.address,
-          createdAt: newCustomer.created_at,
-          updatedAt: newCustomer.updated_at,
-        },
-        message: "Customer created successfully",
-      },
-      { status: 201 },
-    )
+    return NextResponse.json({
+      success: true,
+      customer: result[0],
+      message: "Customer created successfully",
+    })
   } catch (error) {
-    console.error("❌ Error creating customer:", error)
+    console.error("Database error:", error)
     return NextResponse.json(
       {
+        success: false,
         error: "Failed to create customer",
         details: error instanceof Error ? error.message : "Unknown error",
       },

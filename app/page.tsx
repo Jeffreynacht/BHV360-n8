@@ -2,84 +2,77 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  Database,
-  Users,
-  Building2,
-  Shield,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  RefreshCw,
-  ArrowRight,
-  Zap,
-  Bell,
-  MapPin,
-} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Shield, Database, Building2, Activity, CheckCircle, XCircle, AlertTriangle } from "lucide-react"
 import Link from "next/link"
+import { useAuth } from "@/contexts/auth-context"
 
 interface DatabaseStatus {
-  connection: {
-    success: boolean
-    message: string
-    timestamp: string
-  }
-  schema: {
-    exists: boolean
-    tables: string[]
-    message: string
-  }
-  data: {
-    customers: number
-    users: number
-    message: string
-  }
+  success: boolean
+  message: string
+  timestamp?: string
+  database?: string
+  error?: string
+}
+
+interface CustomerStats {
+  total: number
+  active: number
+  inactive: number
 }
 
 export default function HomePage() {
+  const { user, loading } = useAuth()
   const [dbStatus, setDbStatus] = useState<DatabaseStatus | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const checkDatabaseStatus = async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const response = await fetch("/api/test-database")
-      const data = await response.json()
-
-      if (response.ok) {
-        setDbStatus(data)
-      } else {
-        setError(data.error || "Database check failed")
-      }
-    } catch (err) {
-      console.error("Database check error:", err)
-      setError("Failed to connect to database")
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [customerStats, setCustomerStats] = useState<CustomerStats | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     checkDatabaseStatus()
+    loadCustomerStats()
   }, [])
 
-  const getStatusIcon = (success: boolean | undefined) => {
-    if (success === undefined) return <RefreshCw className="h-4 w-4 animate-spin" />
-    return success ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-500" />
+  const checkDatabaseStatus = async () => {
+    try {
+      const response = await fetch("/api/test-database")
+      const data = await response.json()
+      setDbStatus(data)
+    } catch (error) {
+      console.error("Failed to check database status:", error)
+      setDbStatus({
+        success: false,
+        message: "Failed to connect to database",
+        error: "Connection error",
+      })
+    }
   }
 
-  const getStatusBadge = (success: boolean | undefined) => {
-    if (success === undefined) return <Badge variant="secondary">Checking...</Badge>
-    return success ? (
-      <Badge className="bg-green-100 text-green-800">Connected</Badge>
-    ) : (
-      <Badge variant="destructive">Failed</Badge>
+  const loadCustomerStats = async () => {
+    try {
+      const response = await fetch("/api/customers")
+      const data = await response.json()
+
+      if (data.success) {
+        const customers = data.customers
+        setCustomerStats({
+          total: customers.length,
+          active: customers.filter((c: any) => c.status === "active").length,
+          inactive: customers.filter((c: any) => c.status !== "active").length,
+        })
+      }
+    } catch (error) {
+      console.error("Failed to load customer stats:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
     )
   }
 
@@ -87,255 +80,246 @@ export default function HomePage() {
     <div className="container mx-auto p-6 space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          BHV360 Management System
-        </h1>
+        <div className="flex items-center justify-center gap-3">
+          <Shield className="h-12 w-12 text-blue-600" />
+          <h1 className="text-4xl font-bold tracking-tight">BHV360</h1>
+        </div>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Professioneel BHV beheer met real-time monitoring, incident management en compliance rapportage
+          Professional Safety Management System - Complete BHV management with real-time monitoring and compliance
+          reporting
         </p>
+        {user && (
+          <div className="flex items-center justify-center gap-2">
+            <Badge variant="outline">Welcome back, {user.name}</Badge>
+            <Badge variant={user.role === "super-admin" ? "default" : "secondary"}>{user.role}</Badge>
+          </div>
+        )}
       </div>
 
       {/* System Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            System Status
-            {getStatusBadge(dbStatus?.connection?.success)}
-          </CardTitle>
-          <CardDescription>Real-time status van database connectie en systeem gezondheid</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription className="flex items-center justify-between">
-                <span>{error}</span>
-                <Button variant="outline" size="sm" onClick={checkDatabaseStatus}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Retry
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Database Connection */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                {getStatusIcon(dbStatus?.connection?.success)}
-                <div>
-                  <p className="font-medium">Database</p>
-                  <p className="text-sm text-muted-foreground">
-                    {loading ? "Checking..." : dbStatus?.connection?.message || "Unknown"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Schema Status */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                {getStatusIcon(dbStatus?.schema?.exists)}
-                <div>
-                  <p className="font-medium">Schema</p>
-                  <p className="text-sm text-muted-foreground">
-                    {loading ? "Checking..." : dbStatus?.schema?.message || "Unknown"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Data Status */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                {getStatusIcon(dbStatus?.data ? true : false)}
-                <div>
-                  <p className="font-medium">Data</p>
-                  <p className="text-sm text-muted-foreground">
-                    {loading ? "Checking..." : dbStatus?.data?.message || "No data"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {dbStatus?.schema?.tables && dbStatus.schema.tables.length > 0 && (
-            <div className="mt-4">
-              <p className="text-sm font-medium mb-2">Available Tables:</p>
-              <div className="flex flex-wrap gap-2">
-                {dbStatus.schema.tables.map((table) => (
-                  <Badge key={table} variant="outline">
-                    {table}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Klanten</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Database Status</CardTitle>
+            <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : dbStatus?.data?.customers || 0}</div>
-            <p className="text-xs text-muted-foreground">Actieve organisaties</p>
+            <div className="flex items-center gap-2">
+              {dbStatus?.success ? (
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              ) : (
+                <XCircle className="h-5 w-5 text-red-600" />
+              )}
+              <div className="text-2xl font-bold">{dbStatus?.success ? "Connected" : "Disconnected"}</div>
+            </div>
+            <p className="text-xs text-muted-foreground">{dbStatus?.database || "Neon PostgreSQL"}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gebruikers</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : dbStatus?.data?.users || 0}</div>
-            <p className="text-xs text-muted-foreground">BHV medewerkers</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gebouwen</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">Beheerde locaties</p>
+            <div className="text-2xl font-bold">{isLoading ? "..." : customerStats?.total || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {customerStats?.active || 0} active, {customerStats?.inactive || 0} inactive
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Uptime</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">System Health</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">99.9%</div>
-            <p className="text-xs text-muted-foreground">Laatste 30 dagen</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Key Features */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-blue-500" />
-              Multi-channel Alarmering
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Push, SMS, telefoon, e-mail en desktop notificaties met bypass van stille modus
-            </p>
-            <Link href="/beheer/module-approvals">
-              <Button variant="outline" size="sm" className="w-full bg-transparent">
-                Configureren <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-green-500" />
-              Scenario-based Alerting
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Voorgeprogrammeerde evacuatie, brand en lone worker scenario's
-            </p>
-            <Link href="/bhv/plotkaart">
-              <Button variant="outline" size="sm" className="w-full bg-transparent">
-                Bekijken <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-purple-500" />
-              Hardware Triggers
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Koppeling met fysieke paniekknoppen, NFC en BMC (ESPA 4.4.4)
-            </p>
-            <Link href="/beheer/nfc-tags">
-              <Button variant="outline" size="sm" className="w-full bg-transparent">
-                Beheren <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div className="text-2xl font-bold">Operational</div>
+            </div>
+            <p className="text-xs text-muted-foreground">All systems running</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Snelle Acties</CardTitle>
-          <CardDescription>Veelgebruikte functies en beheer opties</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link href="/klanten">
-              <Button variant="outline" className="w-full h-20 flex flex-col gap-2 bg-transparent">
-                <Users className="h-6 w-6" />
-                <span className="text-sm">Klanten</span>
-              </Button>
-            </Link>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {user?.role === "super-admin" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Customer Management
+              </CardTitle>
+              <CardDescription>Manage all customers and their configurations</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Link href="/klanten">
+                  <Button className="w-full">View All Customers</Button>
+                </Link>
+                <Link href="/whitelabel-klanten">
+                  <Button variant="outline" className="w-full bg-transparent">
+                    Whitelabel Customers
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-            <Link href="/bhv/plotkaart">
-              <Button variant="outline" className="w-full h-20 flex flex-col gap-2 bg-transparent">
-                <MapPin className="h-6 w-6" />
-                <span className="text-sm">Plotkaart</span>
-              </Button>
-            </Link>
-
-            <Link href="/incidenten">
-              <Button variant="outline" className="w-full h-20 flex flex-col gap-2 bg-transparent">
-                <AlertTriangle className="h-6 w-6" />
-                <span className="text-sm">Incidenten</span>
-              </Button>
-            </Link>
-
-            <Link href="/beheer">
-              <Button variant="outline" className="w-full h-20 flex flex-col gap-2 bg-transparent">
-                <Shield className="h-6 w-6" />
-                <span className="text-sm">Beheer</span>
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Setup Help */}
-      {(!dbStatus?.connection?.success || !dbStatus?.schema?.exists) && (
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <div className="flex items-center justify-between">
-              <span>Database setup vereist. Volg de setup instructies om te beginnen.</span>
-              <Link href="/database-test">
-                <Button variant="outline" size="sm">
-                  Setup Guide
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              BHV Management
+            </CardTitle>
+            <CardDescription>Manage safety personnel and incidents</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Link href="/gebruikers">
+                <Button className="w-full">BHV Personnel</Button>
+              </Link>
+              <Link href="/incidenten">
+                <Button variant="outline" className="w-full bg-transparent">
+                  View Incidents
                 </Button>
               </Link>
             </div>
-          </AlertDescription>
-        </Alert>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              System Tools
+            </CardTitle>
+            <CardDescription>Database and system management tools</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Link href="/test-database">
+                <Button className="w-full">Test Database</Button>
+              </Link>
+              <Link href="/help">
+                <Button variant="outline" className="w-full bg-transparent">
+                  Help & Support
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Role-based Access Test */}
+      {user && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Role-based Access Test
+            </CardTitle>
+            <CardDescription>Test different access levels based on your role: {user.role}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="space-y-2">
+                <h4 className="font-semibold">Super Admin Only</h4>
+                <Link href="/whitelabel-klanten">
+                  <Button
+                    variant={user.role === "super-admin" ? "default" : "outline"}
+                    className="w-full"
+                    disabled={user.role !== "super-admin"}
+                  >
+                    Whitelabel Overview
+                  </Button>
+                </Link>
+                <Link href="/super-admin">
+                  <Button
+                    variant={user.role === "super-admin" ? "default" : "outline"}
+                    className="w-full"
+                    disabled={user.role !== "super-admin"}
+                  >
+                    Super Admin Panel
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-semibold">Admin & Above</h4>
+                <Link href="/klanten">
+                  <Button
+                    variant={["super-admin", "admin"].includes(user.role) ? "default" : "outline"}
+                    className="w-full"
+                    disabled={!["super-admin", "admin"].includes(user.role)}
+                  >
+                    Customer Management
+                  </Button>
+                </Link>
+                <Link href="/beheer/gebruikers">
+                  <Button
+                    variant={["super-admin", "admin", "customer-admin"].includes(user.role) ? "default" : "outline"}
+                    className="w-full"
+                    disabled={!["super-admin", "admin", "customer-admin"].includes(user.role)}
+                  >
+                    User Management
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-semibold">All Users</h4>
+                <Link href="/dashboard">
+                  <Button className="w-full">Dashboard</Button>
+                </Link>
+                <Link href="/help">
+                  <Button variant="outline" className="w-full bg-transparent">
+                    Help
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Database Status Details */}
+      {dbStatus && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Database Connection Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span>Status:</span>
+                <Badge variant={dbStatus.success ? "default" : "destructive"}>
+                  {dbStatus.success ? "Connected" : "Error"}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Message:</span>
+                <span className="text-sm">{dbStatus.message}</span>
+              </div>
+              {dbStatus.timestamp && (
+                <div className="flex items-center justify-between">
+                  <span>Timestamp:</span>
+                  <span className="text-sm">{new Date(dbStatus.timestamp).toLocaleString()}</span>
+                </div>
+              )}
+              {dbStatus.error && (
+                <div className="flex items-center justify-between">
+                  <span>Error:</span>
+                  <span className="text-sm text-red-600">{dbStatus.error}</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   )

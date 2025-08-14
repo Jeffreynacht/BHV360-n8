@@ -4,13 +4,10 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -18,130 +15,95 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  Users,
-  Plus,
-  Search,
-  Building2,
-  Mail,
-  Phone,
-  MapPin,
-  Edit,
-  Trash2,
-  AlertTriangle,
-  RefreshCw,
-} from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Building2, Plus, Search, Edit, Trash2, Phone, Mail, MapPin } from "lucide-react"
+import { RoleGuard } from "@/components/role-guard"
+import { UserRole } from "@/lib/rbac/roles"
+import { useToast } from "@/hooks/use-toast"
 
 interface Customer {
   id: number
   name: string
-  contactPerson: string
-  email: string
-  phone?: string
-  address?: string
-  createdAt: string
-  updatedAt: string
-}
-
-interface CustomerFormData {
-  name: string
-  contactPerson: string
+  contact_person: string
   email: string
   phone: string
   address: string
+  subscription_type: string
+  status: string
+  created_at: string
+  updated_at: string
 }
 
 export default function KlantenPage() {
   const [customers, setCustomers] = useState<Customer[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [showAddDialog, setShowAddDialog] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
-  const [formData, setFormData] = useState<CustomerFormData>({
+  const { toast } = useToast()
+
+  const [formData, setFormData] = useState({
     name: "",
-    contactPerson: "",
+    contact_person: "",
     email: "",
     phone: "",
     address: "",
+    subscription_type: "basic",
+    status: "active",
   })
-  const [submitting, setSubmitting] = useState(false)
-
-  const loadCustomers = async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      console.log("🔍 Loading customers...")
-      const response = await fetch("/api/customers")
-      const data = await response.json()
-
-      if (response.ok) {
-        // Handle both array and object responses
-        const customerList = Array.isArray(data) ? data : data.customers || []
-        setCustomers(customerList)
-        console.log(`✅ Loaded ${customerList.length} customers`)
-      } else {
-        setError(data.error || "Failed to load customers")
-        setCustomers([])
-      }
-    } catch (err) {
-      console.error("❌ Error loading customers:", err)
-      setError("Failed to connect to server")
-      setCustomers([])
-    } finally {
-      setLoading(false)
-    }
-  }
 
   useEffect(() => {
     loadCustomers()
   }, [])
 
-  const filteredCustomers = customers.filter(
-    (customer) =>
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  useEffect(() => {
+    const filtered = customers.filter(
+      (customer) =>
+        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.email?.toLowerCase().includes(searchTerm.toLowerCase()),
+    )
+    setFilteredCustomers(filtered)
+  }, [customers, searchTerm])
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      contactPerson: "",
-      email: "",
-      phone: "",
-      address: "",
-    })
-    setEditingCustomer(null)
-  }
+  const loadCustomers = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch("/api/customers")
+      const data = await response.json()
 
-  const handleAddCustomer = () => {
-    resetForm()
-    setShowAddDialog(true)
-  }
-
-  const handleEditCustomer = (customer: Customer) => {
-    setFormData({
-      name: customer.name,
-      contactPerson: customer.contactPerson,
-      email: customer.email,
-      phone: customer.phone || "",
-      address: customer.address || "",
-    })
-    setEditingCustomer(customer)
-    setShowAddDialog(true)
+      if (data.success) {
+        setCustomers(data.customers)
+        setFilteredCustomers(data.customers)
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load customers",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error loading customers:", error)
+      toast({
+        title: "Error",
+        description: "Failed to connect to database",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitting(true)
 
     try {
       const url = editingCustomer ? `/api/customers/${editingCustomer.id}` : "/api/customers"
-
       const method = editingCustomer ? "PUT" : "POST"
 
       const response = await fetch(url, {
@@ -154,22 +116,46 @@ export default function KlantenPage() {
 
       const data = await response.json()
 
-      if (response.ok) {
-        await loadCustomers()
-        setShowAddDialog(false)
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: editingCustomer ? "Customer updated successfully" : "Customer created successfully",
+        })
+        setIsDialogOpen(false)
         resetForm()
+        loadCustomers()
       } else {
-        setError(data.error || "Failed to save customer")
+        toast({
+          title: "Error",
+          description: data.error || "Failed to save customer",
+          variant: "destructive",
+        })
       }
-    } catch (err) {
-      console.error("Error saving customer:", err)
-      setError("Failed to save customer")
-    } finally {
-      setSubmitting(false)
+    } catch (error) {
+      console.error("Error saving customer:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save customer",
+        variant: "destructive",
+      })
     }
   }
 
-  const handleDeleteCustomer = async (customer: Customer) => {
+  const handleEdit = (customer: Customer) => {
+    setEditingCustomer(customer)
+    setFormData({
+      name: customer.name,
+      contact_person: customer.contact_person || "",
+      email: customer.email || "",
+      phone: customer.phone || "",
+      address: customer.address || "",
+      subscription_type: customer.subscription_type,
+      status: customer.status,
+    })
+    setIsDialogOpen(true)
+  }
+
+  const handleDelete = async (customer: Customer) => {
     if (!confirm(`Are you sure you want to delete ${customer.name}?`)) {
       return
     }
@@ -179,201 +165,330 @@ export default function KlantenPage() {
         method: "DELETE",
       })
 
-      if (response.ok) {
-        await loadCustomers()
+      const data = await response.json()
+
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: "Customer deleted successfully",
+        })
+        loadCustomers()
       } else {
-        const data = await response.json()
-        setError(data.error || "Failed to delete customer")
+        toast({
+          title: "Error",
+          description: data.error || "Failed to delete customer",
+          variant: "destructive",
+        })
       }
-    } catch (err) {
-      console.error("Error deleting customer:", err)
-      setError("Failed to delete customer")
+    } catch (error) {
+      console.error("Error deleting customer:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete customer",
+        variant: "destructive",
+      })
     }
   }
 
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      contact_person: "",
+      email: "",
+      phone: "",
+      address: "",
+      subscription_type: "basic",
+      status: "active",
+    })
+    setEditingCustomer(null)
+  }
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false)
+    resetForm()
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Klanten Beheer</h1>
-          <p className="text-muted-foreground">Beheer organisaties en hun contactgegevens</p>
-        </div>
-        <Button onClick={handleAddCustomer}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nieuwe Klant
-        </Button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totaal Klanten</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : customers.length}</div>
-            <p className="text-xs text-muted-foreground">Actieve organisaties</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gefilterd</CardTitle>
-            <Search className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? <Skeleton className="h-8 w-16" /> : filteredCustomers.length}
-            </div>
-            <p className="text-xs text-muted-foreground">Zoekresultaten</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Status</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? (
-                <Skeleton className="h-8 w-20" />
-              ) : (
-                <Badge variant="outline" className="text-green-600">
-                  Actief
-                </Badge>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">Systeem status</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Error Alert */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>{error}</span>
-            <Button variant="outline" size="sm" onClick={loadCustomers}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Zoeken</CardTitle>
-          <CardDescription>Zoek klanten op naam, contactpersoon of e-mailadres</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Zoek klanten..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+    <RoleGuard requiredRole={[UserRole.SUPER_ADMIN, UserRole.ADMIN]}>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+              <Building2 className="h-8 w-8" />
+              Customer Management
+            </h1>
+            <p className="text-muted-foreground">Manage all customers and their subscriptions</p>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Customers Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Klanten Overzicht</CardTitle>
-          <CardDescription>
-            {loading ? "Laden..." : `${filteredCustomers.length} van ${customers.length} klanten`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : filteredCustomers.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Geen klanten gevonden</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm ? "Geen klanten gevonden voor uw zoekopdracht." : "Er zijn nog geen klanten toegevoegd."}
-              </p>
-              {!searchTerm && (
-                <Button onClick={handleAddCustomer}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Eerste Klant Toevoegen
-                </Button>
-              )}
-            </div>
-          ) : (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Customer
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>{editingCustomer ? "Edit Customer" : "Add New Customer"}</DialogTitle>
+                <DialogDescription>
+                  {editingCustomer ? "Update customer information" : "Enter the details for the new customer"}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                      Name *
+                    </Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="col-span-3"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="contact_person" className="text-right">
+                      Contact Person
+                    </Label>
+                    <Input
+                      id="contact_person"
+                      value={formData.contact_person}
+                      onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="email" className="text-right">
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="phone" className="text-right">
+                      Phone
+                    </Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="address" className="text-right">
+                      Address
+                    </Label>
+                    <Textarea
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="subscription_type" className="text-right">
+                      Subscription
+                    </Label>
+                    <Select
+                      value={formData.subscription_type}
+                      onValueChange={(value) => setFormData({ ...formData, subscription_type: value })}
+                    >
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="basic">Basic</SelectItem>
+                        <SelectItem value="premium">Premium</SelectItem>
+                        <SelectItem value="enterprise">Enterprise</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="status" className="text-right">
+                      Status
+                    </Label>
+                    <Select
+                      value={formData.status}
+                      onValueChange={(value) => setFormData({ ...formData, status: value })}
+                    >
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={handleDialogClose}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">{editingCustomer ? "Update" : "Create"} Customer</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Search */}
+        <div className="flex items-center space-x-2">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search customers..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{customers.length}</div>
+              <p className="text-xs text-muted-foreground">All registered customers</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active</CardTitle>
+              <Building2 className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{customers.filter((c) => c.status === "active").length}</div>
+              <p className="text-xs text-muted-foreground">Currently active</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Premium</CardTitle>
+              <Building2 className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {customers.filter((c) => c.subscription_type === "premium").length}
+              </div>
+              <p className="text-xs text-muted-foreground">Premium subscriptions</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Enterprise</CardTitle>
+              <Building2 className="h-4 w-4 text-purple-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {customers.filter((c) => c.subscription_type === "enterprise").length}
+              </div>
+              <p className="text-xs text-muted-foreground">Enterprise accounts</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Customers Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Customers</CardTitle>
+            <CardDescription>
+              Showing {filteredCustomers.length} of {customers.length} customers
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Organisatie</TableHead>
-                  <TableHead>Contactpersoon</TableHead>
+                  <TableHead>Customer</TableHead>
                   <TableHead>Contact</TableHead>
-                  <TableHead>Locatie</TableHead>
-                  <TableHead className="text-right">Acties</TableHead>
+                  <TableHead>Subscription</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCustomers.map((customer) => (
                   <TableRow key={customer.id}>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{customer.name}</div>
-                        <div className="text-sm text-muted-foreground">ID: {customer.id}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
                       <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        {customer.contactPerson}
+                        <Building2 className="h-4 w-4" />
+                        <div>
+                          <div className="font-medium">{customer.name}</div>
+                          {customer.address && (
+                            <div className="text-sm text-muted-foreground flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {customer.address.split(",")[0]}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Mail className="h-3 w-3 text-muted-foreground" />
-                          {customer.email}
-                        </div>
+                        {customer.contact_person && (
+                          <div className="text-sm font-medium">{customer.contact_person}</div>
+                        )}
+                        {customer.email && (
+                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            {customer.email}
+                          </div>
+                        )}
                         {customer.phone && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Phone className="h-3 w-3 text-muted-foreground" />
+                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
                             {customer.phone}
                           </div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {customer.address ? (
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-3 w-3 text-muted-foreground" />
-                          <span className="truncate max-w-32">{customer.address}</span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">Geen adres</span>
-                      )}
+                      <Badge
+                        variant={
+                          customer.subscription_type === "enterprise"
+                            ? "default"
+                            : customer.subscription_type === "premium"
+                              ? "secondary"
+                              : "outline"
+                        }
+                      >
+                        {customer.subscription_type}
+                      </Badge>
                     </TableCell>
+                    <TableCell>
+                      <Badge variant={customer.status === "active" ? "default" : "secondary"}>{customer.status}</Badge>
+                    </TableCell>
+                    <TableCell>{new Date(customer.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEditCustomer(customer)}>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(customer)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteCustomer(customer)}
-                          className="text-red-600 hover:text-red-700"
-                        >
+                        <Button variant="outline" size="sm" onClick={() => handleDelete(customer)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -382,92 +497,9 @@ export default function KlantenPage() {
                 ))}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Add/Edit Customer Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>{editingCustomer ? "Klant Bewerken" : "Nieuwe Klant Toevoegen"}</DialogTitle>
-            <DialogDescription>
-              {editingCustomer ? "Bewerk de gegevens van de klant." : "Voeg een nieuwe klant toe aan het systeem."}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Organisatie Naam *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Bijv. Acme Corporation"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="contactPerson">Contactpersoon *</Label>
-                <Input
-                  id="contactPerson"
-                  value={formData.contactPerson}
-                  onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-                  placeholder="Bijv. Jan de Vries"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">E-mailadres *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="bijv. jan@acme.com"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="phone">Telefoonnummer</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="Bijv. +31 6 12345678"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="address">Adres</Label>
-                <Textarea
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Bijv. Hoofdstraat 123, 1234 AB Amsterdam"
-                  rows={3}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
-                Annuleren
-              </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    {editingCustomer ? "Bijwerken..." : "Toevoegen..."}
-                  </>
-                ) : editingCustomer ? (
-                  "Bijwerken"
-                ) : (
-                  "Toevoegen"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </RoleGuard>
   )
 }

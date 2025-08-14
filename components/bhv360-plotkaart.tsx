@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { ZoomIn, ZoomOut, RotateCcw, Download, Edit3, Save, X, Plus } from "lucide-react"
+import { ZoomIn, ZoomOut, RotateCcw, Download, Edit3, Save, X, Plus, Building2 } from "lucide-react"
+import { useCustomer } from "@/components/customer-context"
 import {
   type Voorziening,
   getVoorzieningen,
@@ -61,6 +62,7 @@ const SAFETY_ICONS = {
 }
 
 export function BHV360Plotkaart() {
+  const { selectedCustomer } = useCustomer()
   const [zoom, setZoom] = useState(1)
   const [isEditMode, setIsEditMode] = useState(false)
   const [voorzieningen, setVoorzieningen] = useState<Voorziening[]>([])
@@ -197,11 +199,49 @@ export function BHV360Plotkaart() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header met klant branding */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">BHV360 Plotkaart</h1>
-          <p className="text-gray-600 mt-1">Interactieve plattegrond met veiligheidsvoorzieningen</p>
+        <div className="flex items-center space-x-4">
+          {/* BHV360 Logo */}
+          <img
+            src="/images/bhv360-logo.png"
+            alt="BHV360"
+            className="h-10 w-auto"
+            onError={(e) => {
+              e.currentTarget.src = "/placeholder.svg?height=40&width=100&text=BHV360"
+            }}
+          />
+          <div className="h-8 w-px bg-gray-300" />
+          {/* Klant informatie */}
+          {selectedCustomer ? (
+            <div className="flex items-center space-x-3">
+              {selectedCustomer.logo ? (
+                <img
+                  src={selectedCustomer.logo || "/placeholder.svg"}
+                  alt={selectedCustomer.name}
+                  className="h-8 w-auto max-w-[100px]"
+                  onError={(e) => {
+                    e.currentTarget.src =
+                      "/placeholder.svg?height=32&width=64&text=" +
+                      encodeURIComponent(selectedCustomer.name.substring(0, 3))
+                  }}
+                />
+              ) : (
+                <div className="h-8 w-12 bg-gray-100 rounded flex items-center justify-center">
+                  <Building2 className="h-5 w-5 text-gray-400" />
+                </div>
+              )}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{selectedCustomer.name}</h1>
+                <p className="text-sm text-gray-600">Interactieve BHV Plotkaart</p>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">BHV360 Plotkaart</h1>
+              <p className="text-gray-600 mt-1">Interactieve plattegrond met veiligheidsvoorzieningen</p>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -243,7 +283,7 @@ export function BHV360Plotkaart() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                Plattegrond
+                {selectedCustomer ? `${selectedCustomer.name} - Plattegrond` : "Plattegrond"}
                 {isEditMode && (
                   <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                     <Edit3 className="w-3 h-3 mr-1" />
@@ -272,6 +312,17 @@ export function BHV360Plotkaart() {
               >
                 {/* Gebouw outline */}
                 <div className="absolute inset-4 border-2 border-gray-400 bg-white rounded">
+                  {/* Klant naam in het midden */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-2" />
+                      <h2 className="text-xl font-bold text-gray-600">
+                        {selectedCustomer ? selectedCustomer.name : "Selecteer een klant"}
+                      </h2>
+                      {selectedCustomer && <p className="text-sm text-gray-500 mt-1">{selectedCustomer.address}</p>}
+                    </div>
+                  </div>
+
                   {/* Kamers */}
                   <div className="absolute top-4 left-4 w-32 h-24 border border-gray-300 bg-blue-50 rounded flex items-center justify-center text-xs font-medium">
                     Receptie
@@ -444,6 +495,7 @@ export function BHV360Plotkaart() {
         voorziening={selectedVoorziening}
         onSave={handleSaveVoorziening}
         mode={modalMode}
+        onDelete={handleDeleteVoorziening}
       />
     </div>
   )

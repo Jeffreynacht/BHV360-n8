@@ -1,197 +1,163 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
-interface Customer {
+export interface Customer {
   id: string
   name: string
+  address: string
   contactPerson: string
   email: string
   phone: string
-  address: string
-  city?: string
-  postalCode?: string
   isActive: boolean
-  modules: string[]
-  userCount: number
-  buildingCount: number
-  createdAt: string
-  updatedAt: string
-  notes?: string
+  logo?: string
+  branding?: {
+    primaryColor?: string
+    secondaryColor?: string
+    customDomain?: string
+  }
 }
 
 interface CustomerContextType {
-  customers: Customer[]
   selectedCustomer: Customer | null
   setSelectedCustomer: (customer: Customer | null) => void
-  addCustomer: (customer: Omit<Customer, "id" | "createdAt" | "updatedAt">) => Promise<Customer>
-  updateCustomer: (id: string, customer: Partial<Customer>) => Promise<Customer | null>
-  deleteCustomer: (id: string) => Promise<boolean>
-  refreshCustomers: () => Promise<void>
+  customers: Customer[]
   isLoading: boolean
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined)
 
-// Demo klanten data
-const initialCustomers: Customer[] = [
+// Demo customers met branding
+const DEMO_CUSTOMERS: Customer[] = [
   {
-    id: "1",
+    id: "demo-bedrijf-bv",
     name: "Demo Bedrijf BV",
+    address: "Hoofdstraat 123, 1234 AB Amsterdam",
     contactPerson: "Jan Janssen",
     email: "jan@demobedrijf.nl",
-    phone: "06-12345678",
-    address: "Hoofdstraat 1",
-    city: "Amsterdam",
-    postalCode: "1234 AB",
+    phone: "+31 20 123 4567",
     isActive: true,
-    modules: ["plotkaart", "bhv-management", "incident-reporting", "rapportages"],
-    userCount: 25,
-    buildingCount: 3,
-    createdAt: "2024-01-15T10:00:00Z",
-    updatedAt: "2024-01-15T10:00:00Z",
-    notes: "Hoofdkantoor met 3 vestigingen",
+    logo: "/placeholder.svg?height=40&width=120&text=Demo+BV",
+    branding: {
+      primaryColor: "#2563eb",
+      secondaryColor: "#64748b",
+      customDomain: "demo.bhv360.nl",
+    },
   },
   {
-    id: "2",
-    name: "Acme Corporation",
+    id: "test-company-ltd",
+    name: "Test Company Ltd",
+    address: "Testlaan 456, 5678 CD Rotterdam",
     contactPerson: "Piet Pietersen",
-    email: "piet@acme.nl",
-    phone: "06-87654321",
-    address: "Industrieweg 50",
-    city: "Rotterdam",
-    postalCode: "5678 CD",
+    email: "piet@testcompany.nl",
+    phone: "+31 10 987 6543",
     isActive: true,
-    modules: ["plotkaart", "nfc-tags", "bhv-management"],
-    userCount: 12,
-    buildingCount: 1,
-    createdAt: "2024-01-20T14:30:00Z",
-    updatedAt: "2024-01-20T14:30:00Z",
-    notes: "Productielocatie met NFC integratie",
+    logo: "/placeholder.svg?height=40&width=120&text=Test+Co",
+    branding: {
+      primaryColor: "#059669",
+      secondaryColor: "#6b7280",
+    },
   },
   {
-    id: "3",
+    id: "zorgcentrum-boomgaard",
     name: "Zorgcentrum De Boomgaard",
-    contactPerson: "Dr. Sarah van Dijk",
-    email: "s.vandijk@boomgaard.nl",
-    phone: "020-1234567",
-    address: "Zorgplein 15",
-    city: "Utrecht",
-    postalCode: "3500 AB",
+    address: "Zorgstraat 789, 3500 EF Utrecht",
+    contactPerson: "Dr. Peter van der Berg",
+    email: "p.vandenberg@boomgaard.nl",
+    phone: "+31 30 555 7890",
     isActive: true,
-    modules: ["plotkaart", "bhv-management", "incident-reporting", "ehbo-voorraad"],
-    userCount: 45,
-    buildingCount: 2,
-    createdAt: "2024-02-01T09:15:00Z",
-    updatedAt: "2024-02-01T09:15:00Z",
-    notes: "Zorginstelling met speciale BHV eisen",
+    logo: "/placeholder.svg?height=40&width=120&text=Zorg+BG",
+    branding: {
+      primaryColor: "#dc2626",
+      secondaryColor: "#991b1b",
+    },
+  },
+  {
+    id: "innovatie-hub-tech",
+    name: "Innovatie Hub Tech",
+    address: "Techpark 101, 2600 GH Delft",
+    contactPerson: "Sarah van der Meer",
+    email: "s.vandermeer@innovatiehub.nl",
+    phone: "+31 15 278 9012",
+    isActive: true,
+    logo: "/placeholder.svg?height=40&width=120&text=IH+Tech",
+    branding: {
+      primaryColor: "#7c3aed",
+      secondaryColor: "#5b21b6",
+    },
+  },
+  {
+    id: "groene-energie-coop",
+    name: "Groene Energie Coöperatie",
+    address: "Windmolenweg 25, 8000 AB Zwolle",
+    contactPerson: "Mark Groenewegen",
+    email: "m.groenewegen@groeneenergie.coop",
+    phone: "+31 38 456 7890",
+    isActive: true,
+    logo: "/placeholder.svg?height=40&width=120&text=GE+Coop",
+    branding: {
+      primaryColor: "#16a34a",
+      secondaryColor: "#15803d",
+    },
   },
 ]
 
-export function CustomerProvider({ children }: { children: React.ReactNode }) {
-  const [customers, setCustomers] = useState<Customer[]>([])
+export function CustomerProvider({ children }: { children: ReactNode }) {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [customers, setCustomers] = useState<Customer[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Laad klanten uit localStorage of gebruik initiële data
-    const storedCustomers = localStorage.getItem("bhv360-customers")
-    if (storedCustomers) {
-      try {
-        const parsedCustomers = JSON.parse(storedCustomers)
-        setCustomers(parsedCustomers)
-        // Auto-selecteer eerste klant als er geen geselecteerd is
-        if (parsedCustomers.length > 0 && !selectedCustomer) {
-          const storedSelected = localStorage.getItem("bhv360-selected-customer")
-          if (storedSelected) {
-            const parsedSelected = JSON.parse(storedSelected)
-            setSelectedCustomer(parsedSelected)
-          } else {
-            setSelectedCustomer(parsedCustomers[0])
-          }
+    // Simulate loading customers
+    const loadCustomers = async () => {
+      setIsLoading(true)
+
+      // Check localStorage for saved customers
+      const savedCustomers = localStorage.getItem("bhv360-customers")
+      if (savedCustomers) {
+        try {
+          const parsedCustomers = JSON.parse(savedCustomers)
+          setCustomers(parsedCustomers)
+        } catch (error) {
+          console.error("Error parsing saved customers:", error)
+          setCustomers(DEMO_CUSTOMERS)
+          localStorage.setItem("bhv360-customers", JSON.stringify(DEMO_CUSTOMERS))
         }
-      } catch (error) {
-        console.error("Fout bij het parsen van opgeslagen klanten:", error)
-        setCustomers(initialCustomers)
-        setSelectedCustomer(initialCustomers[0])
+      } else {
+        setCustomers(DEMO_CUSTOMERS)
+        localStorage.setItem("bhv360-customers", JSON.stringify(DEMO_CUSTOMERS))
       }
-    } else {
-      setCustomers(initialCustomers)
-      setSelectedCustomer(initialCustomers[0])
+
+      // Check for saved selected customer
+      const savedSelectedId = localStorage.getItem("bhv360-selected-customer-id")
+      if (savedSelectedId) {
+        const customer = DEMO_CUSTOMERS.find((c) => c.id === savedSelectedId)
+        if (customer) {
+          setSelectedCustomer(customer)
+        }
+      }
+
+      setIsLoading(false)
     }
-    setIsLoading(false)
+
+    loadCustomers()
   }, [])
 
-  // Sla klanten op in localStorage wanneer klanten veranderen
-  useEffect(() => {
-    if (customers.length > 0) {
-      localStorage.setItem("bhv360-customers", JSON.stringify(customers))
+  const handleSetSelectedCustomer = (customer: Customer | null) => {
+    setSelectedCustomer(customer)
+    if (customer) {
+      localStorage.setItem("bhv360-selected-customer-id", customer.id)
+    } else {
+      localStorage.removeItem("bhv360-selected-customer-id")
     }
-  }, [customers])
-
-  // Sla geselecteerde klant op in localStorage
-  useEffect(() => {
-    if (selectedCustomer) {
-      localStorage.setItem("bhv360-selected-customer", JSON.stringify(selectedCustomer))
-    }
-  }, [selectedCustomer])
-
-  const addCustomer = async (customerData: Omit<Customer, "id" | "createdAt" | "updatedAt">): Promise<Customer> => {
-    const newCustomer: Customer = {
-      ...customerData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-
-    setCustomers((prev) => [...prev, newCustomer])
-    return newCustomer
-  }
-
-  const updateCustomer = async (id: string, customerData: Partial<Customer>): Promise<Customer | null> => {
-    const updatedCustomers = customers.map((customer) =>
-      customer.id === id ? { ...customer, ...customerData, updatedAt: new Date().toISOString() } : customer,
-    )
-
-    setCustomers(updatedCustomers)
-
-    const updatedCustomer = updatedCustomers.find((c) => c.id === id)
-    if (updatedCustomer && selectedCustomer?.id === id) {
-      setSelectedCustomer(updatedCustomer)
-    }
-
-    return updatedCustomer || null
-  }
-
-  const deleteCustomer = async (id: string): Promise<boolean> => {
-    setCustomers((prev) => prev.filter((customer) => customer.id !== id))
-
-    if (selectedCustomer?.id === id) {
-      const remainingCustomers = customers.filter((c) => c.id !== id)
-      setSelectedCustomer(remainingCustomers.length > 0 ? remainingCustomers[0] : null)
-    }
-
-    return true
-  }
-
-  const refreshCustomers = async (): Promise<void> => {
-    setIsLoading(true)
-    // Simuleer API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsLoading(false)
   }
 
   return (
     <CustomerContext.Provider
       value={{
-        customers,
         selectedCustomer,
-        setSelectedCustomer,
-        addCustomer,
-        updateCustomer,
-        deleteCustomer,
-        refreshCustomers,
+        setSelectedCustomer: handleSetSelectedCustomer,
+        customers,
         isLoading,
       }}
     >
@@ -203,12 +169,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
 export function useCustomer() {
   const context = useContext(CustomerContext)
   if (context === undefined) {
-    throw new Error("useCustomer moet gebruikt worden binnen een CustomerProvider")
+    throw new Error("useCustomer must be used within a CustomerProvider")
   }
   return context
-}
-
-// Backwards compatibility
-export function useCustomers() {
-  return useCustomer()
 }

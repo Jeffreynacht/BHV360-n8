@@ -4,6 +4,7 @@ import type * as React from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
+import { useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useCustomer } from "@/components/customer-context"
 import {
@@ -231,6 +232,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, logout } = useAuth()
   const { selectedCustomer, customers } = useCustomer()
   const { state } = useSidebar()
+  const [logoError, setLogoError] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -253,13 +255,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-blue-600 text-white">
-                  <Image
-                    src="/images/bhv360-logo.png"
-                    alt="BHV360 Logo"
-                    width={32}
-                    height={32}
-                    className="rounded-lg"
-                  />
+                  {!logoError ? (
+                    <Image
+                      src="/images/bhv360-logo.png"
+                      alt="BHV360 Logo"
+                      width={32}
+                      height={32}
+                      className="rounded-lg"
+                      onError={() => setLogoError(true)}
+                    />
+                  ) : (
+                    <Shield className="h-5 w-5" />
+                  )}
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">BHV360</span>
