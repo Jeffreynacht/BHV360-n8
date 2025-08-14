@@ -1,5 +1,5 @@
 "use client"
-
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,230 +8,230 @@ import {
   Users,
   MapPin,
   AlertTriangle,
-  Building2,
-  Heart,
-  ArrowLeft,
+  BarChart3,
+  UserCheck,
   Play,
+  ArrowLeft,
+  Clock,
+  Star,
   Eye,
-  MousePointer,
+  Smartphone,
 } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
 
 export default function DemoOverviewPage() {
-  const demoModules = [
+  const demos = [
     {
+      id: "bhv-status",
+      title: "BHV Team Dashboard",
+      description: "Complete overzicht van uw BHV team, aanwezigheid, certificeringen en status monitoring",
       icon: Shield,
-      title: "BHV Status Dashboard",
-      description: "Bekijk real-time BHV aanwezigheid en status van alle medewerkers",
-      color: "text-red-600",
-      url: "/demo/bhv-status",
-      features: ["Live status updates", "Certificering tracking", "Beschikbaarheid overzicht"],
+      color: "bg-blue-500",
+      duration: "5-10 min",
+      difficulty: "Beginner",
+      features: ["Team overzicht", "Certificaat tracking", "Aanwezigheid monitoring", "Status dashboard"],
+      path: "/demo/bhv-status",
     },
     {
+      id: "plotkaart-editor",
+      title: "Interactieve Plotkaarten",
+      description: "Ervaar hoe eenvoudig het is om digitale plattegronden te maken met BHV voorzieningen",
       icon: MapPin,
-      title: "Plotkaart Editor",
-      description: "Interactieve editor voor het maken en bewerken van veiligheidsplattegronden",
-      color: "text-blue-600",
-      url: "/demo/plotkaart-editor",
-      features: ["Drag & drop interface", "Veiligheidsiconen", "Real-time preview"],
+      color: "bg-green-500",
+      duration: "10-15 min",
+      difficulty: "Gemiddeld",
+      features: ["Plattegrond upload", "Voorziening markering", "Interactieve navigatie", "Print functionaliteit"],
+      path: "/demo/plotkaart-editor",
     },
     {
+      id: "incident-simulator",
+      title: "Incident Management",
+      description: "Simuleer een noodsituatie en zie hoe BHV360 automatisch procedures activeert",
       icon: AlertTriangle,
-      title: "Incident Simulator",
-      description: "Simuleer noodsituaties en bekijk hoe het systeem reageert",
-      color: "text-orange-600",
-      url: "/demo/incident-simulator",
-      features: ["Noodmelding simulatie", "Escalatie procedures", "Communicatie flows"],
+      color: "bg-red-500",
+      duration: "15-20 min",
+      difficulty: "Geavanceerd",
+      features: ["Incident simulatie", "Automatische workflows", "Team mobilisatie", "Real-time monitoring"],
+      path: "/demo/incident-simulator",
     },
     {
-      icon: Users,
-      title: "Gebruikersbeheer",
-      description: "Beheer gebruikers, rollen en certificeringen",
-      color: "text-green-600",
-      url: "/demo/gebruikers-demo",
-      features: ["Rollenbeleid", "Certificering tracking", "Gebruikersgroepen"],
+      id: "visitor-registration",
+      title: "Bezoeker Registratie",
+      description: "Professionele bezoeker check-in met veiligheidscheck en evacuatielijsten",
+      icon: UserCheck,
+      color: "bg-purple-500",
+      duration: "5-8 min",
+      difficulty: "Beginner",
+      features: ["Digitale check-in", "Host notificaties", "Veiligheidscheck", "Evacuatie lijsten"],
+      path: "/visitor-registration",
     },
     {
-      icon: Building2,
-      title: "Multi-locatie Beheer",
-      description: "Schakel tussen verschillende locaties en gebouwen",
-      color: "text-purple-600",
-      url: "/demo/multi-locatie",
-      features: ["Locatie switching", "Centraal dashboard", "Locatie-specifieke data"],
+      id: "analytics-dashboard",
+      title: "Analytics & Rapportage",
+      description: "Uitgebreide dashboards met KPI's, trends en compliance rapportages",
+      icon: BarChart3,
+      color: "bg-orange-500",
+      duration: "8-12 min",
+      difficulty: "Gemiddeld",
+      features: ["Executive dashboards", "KPI tracking", "Trend analyse", "Compliance reports"],
+      path: "/beheer/rapportages",
     },
     {
-      icon: Heart,
-      title: "EHBO Monitoring",
-      description: "Monitor EHBO voorraad en AED status",
-      color: "text-pink-600",
-      url: "/demo/ehbo-monitoring",
-      features: ["Voorraad tracking", "Onderhoudsschema's", "Vervaldatum alerts"],
+      id: "mobile-app",
+      title: "Mobiele App",
+      description: "Complete mobiele ervaring voor BHV'ers en medewerkers onderweg",
+      icon: Smartphone,
+      color: "bg-indigo-500",
+      duration: "6-10 min",
+      difficulty: "Beginner",
+      features: ["iOS & Android", "Offline functionaliteit", "Push notificaties", "QR scanning"],
+      path: "/mobile-app",
     },
   ]
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "Beginner":
+        return "bg-green-100 text-green-800"
+      case "Gemiddeld":
+        return "bg-yellow-100 text-yellow-800"
+      case "Geavanceerd":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center space-x-4">
               <Link href="/" className="flex items-center text-blue-600 hover:text-blue-700">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Terug naar homepage
+                Terug naar home
               </Link>
             </div>
             <div className="flex items-center space-x-3">
-              <Image
-                src="/images/bhv360-logo.png"
-                alt="BHV360 Logo"
-                width={32}
-                height={32}
-                className="rounded-lg shadow-sm"
-              />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">BHV360 Demo</h1>
-                <p className="text-xs text-gray-600">Interactieve demonstratie</p>
-              </div>
+              <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                🎮 Interactieve Demo's
+              </Badge>
+              <h1 className="text-2xl font-bold text-gray-900">BHV360 Demo Center</h1>
             </div>
             <Link href="/login">
-              <Button>Inloggen</Button>
+              <Button>
+                <Eye className="mr-2 h-4 w-4" />
+                Volledige Versie
+              </Button>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <Badge variant="secondary" className="mb-4">
-            🎮 Interactieve Demo
-          </Badge>
-          <h1 className="text-4xl font-bold text-gray-900 mb-6">
-            Ontdek de kracht van{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">BHV360</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            Ervaar <span className="text-blue-600">BHV360</span> in Actie
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Probeer alle functies van BHV360 in deze interactieve demo. Geen registratie vereist - begin direct met
-            verkennen!
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+            Ontdek alle mogelijkheden van BHV360 met onze interactieve demo's. Geen registratie vereist - start direct
+            met verkennen.
           </p>
-          <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-gray-500">
-            <div className="flex items-center">
-              <Eye className="h-4 w-4 text-blue-500 mr-2" />
-              Bekijk real-time data
-            </div>
-            <div className="flex items-center">
-              <MousePointer className="h-4 w-4 text-green-500 mr-2" />
-              Interactieve elementen
-            </div>
-            <div className="flex items-center">
-              <Play className="h-4 w-4 text-purple-500 mr-2" />
-              Live simulaties
-            </div>
+          <div className="flex justify-center space-x-1 mb-4">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+            ))}
           </div>
+          <p className="text-gray-500">Beoordeeld met 4.8/5 sterren door 500+ organisaties</p>
         </div>
-      </section>
 
-      {/* Demo Modules */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {demoModules.map((module, index) => {
-              const IconComponent = module.icon
-              return (
-                <Card
-                  key={index}
-                  className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-0 shadow-lg group"
-                >
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <div className="p-3 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl group-hover:scale-110 transition-transform">
-                        <IconComponent className={`h-7 w-7 ${module.color}`} />
-                      </div>
-                      <CardTitle className="text-xl">{module.title}</CardTitle>
+        {/* Demo Cards */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          {demos.map((demo, index) => (
+            <Card key={demo.id} className="hover:shadow-xl transition-all duration-300 group">
+              <CardHeader>
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-3 ${demo.color} rounded-lg text-white`}>
+                    <demo.icon className="h-8 w-8" />
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="outline" className={getDifficultyColor(demo.difficulty)}>
+                      {demo.difficulty}
+                    </Badge>
+                  </div>
+                </div>
+                <CardTitle className="text-xl group-hover:text-blue-600 transition-colors">{demo.title}</CardTitle>
+                <CardDescription className="text-base">{demo.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 mr-1" />
+                      {demo.duration}
                     </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <CardDescription className="text-base mb-4 leading-relaxed">{module.description}</CardDescription>
-                    <ul className="space-y-2 mb-6">
-                      {module.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-center text-sm text-gray-600">
-                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3 flex-shrink-0"></div>
+                    <div className="flex items-center">
+                      <Users className="h-4 w-4 mr-1" />
+                      Demo
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm text-gray-700">Wat u gaat zien:</h4>
+                    <ul className="space-y-1">
+                      {demo.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="text-sm text-gray-600 flex items-center">
+                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></div>
                           {feature}
                         </li>
                       ))}
                     </ul>
-                    <Link href={module.url}>
-                      <Button className="w-full group-hover:bg-blue-600 transition-colors">
-                        <Play className="mr-2 h-4 w-4" />
-                        Start Demo
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        </div>
-      </section>
+                  </div>
 
-      {/* Quick Access */}
-      <section className="py-16 bg-white/50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">Snel aan de slag</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-4">Volledige Demo Tour</h3>
-              <p className="text-gray-600 mb-4">Bekijk alle modules in één gestructureerde tour met uitleg en tips.</p>
-              <Link href="/demo/guided-tour">
-                <Button className="w-full">
-                  <Play className="mr-2 h-4 w-4" />
-                  Start Guided Tour
-                </Button>
-              </Link>
+                  <Link href={demo.path}>
+                    <Button className="w-full group-hover:bg-blue-700 transition-colors">
+                      <Play className="mr-2 h-4 w-4" />
+                      Start Demo
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
             </Card>
-            <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-4">Direct Inloggen</h3>
-              <p className="text-gray-600 mb-4">
-                Klaar om te beginnen? Log in met een demo account en verken het volledige platform.
-              </p>
+          ))}
+        </div>
+
+        {/* CTA Section */}
+        <div className="text-center">
+          <div className="bg-gradient-to-r from-blue-600 to-green-600 text-white py-12 px-8 rounded-2xl">
+            <h2 className="text-3xl font-bold mb-4">Klaar voor de Volledige Ervaring?</h2>
+            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+              Deze demo's tonen slechts een fractie van wat BHV360 kan. Ontdek alle functies met een gratis 30-dagen
+              proefperiode.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/login">
-                <Button variant="outline" className="w-full bg-transparent">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Naar Login
+                <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3">
+                  <Eye className="mr-2 h-5 w-5" />
+                  Start Gratis Proef
                 </Button>
               </Link>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <Image src="/images/bhv360-logo.png" alt="BHV360 Logo" width={32} height={32} className="rounded" />
-            <span className="text-xl font-bold">BHV360</span>
-          </div>
-          <p className="text-gray-400 mb-6">
-            Ontdek hoe BHV360 uw veiligheidsorganisatie kan transformeren. Probeer alle functies gratis uit.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/login">
-              <Button variant="secondary">Start Gratis Trial</Button>
-            </Link>
-            <Link href="/">
               <Button
+                size="lg"
                 variant="outline"
-                className="text-white border-white hover:bg-white hover:text-gray-900 bg-transparent"
+                className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 bg-transparent"
+                onClick={() => (window.location.href = "mailto:demo@BHV360.nl")}
               >
-                Terug naar Homepage
+                Persoonlijke Demo Aanvragen
               </Button>
-            </Link>
+            </div>
+            <p className="text-sm text-blue-200 mt-6">
+              ✓ Geen creditcard vereist ✓ Volledige functionaliteit ✓ Nederlandse support
+            </p>
           </div>
         </div>
-      </footer>
+      </div>
     </div>
   )
 }

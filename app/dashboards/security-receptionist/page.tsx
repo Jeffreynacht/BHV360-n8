@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { PresenceOverview } from "@/components/presence-overview"
+import { MessageComposer } from "@/components/messaging/message-composer"
 import {
   Users,
   UserPlus,
@@ -23,6 +25,8 @@ import {
   Shield,
   Bell,
   RefreshCw,
+  MessageSquare,
+  Mail,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -36,6 +40,7 @@ type Visitor = {
   purpose: string
   host: string
   phone: string
+  email?: string
   arrivalTime: string
   departureTime?: string
   status: VisitorStatus
@@ -53,6 +58,7 @@ type Contractor = {
   lastName: string
   company: string
   phone: string
+  email?: string
   licensePlate?: string
   workLocation: string
   workDescription: string
@@ -82,6 +88,7 @@ export default function SecurityReceptionistDashboard() {
         purpose: "Vergadering",
         host: "Marie Jansen",
         phone: "06-12345678",
+        email: "john.smith@abcconsulting.com",
         arrivalTime: "09:30",
         status: "arrived",
         photo: "/placeholder.svg?height=100&width=100",
@@ -94,6 +101,7 @@ export default function SecurityReceptionistDashboard() {
         purpose: "Presentatie",
         host: "Piet de Vries",
         phone: "06-87654321",
+        email: "sarah.johnson@xyzcorp.com",
         arrivalTime: "10:15",
         status: "arrived",
         registeredAt: "2024-01-15T10:10:00Z",
@@ -105,6 +113,7 @@ export default function SecurityReceptionistDashboard() {
         purpose: "Onderhoud",
         host: "Lisa van Dam",
         phone: "06-11223344",
+        email: "mike.wilson@techsolutions.com",
         arrivalTime: "08:45",
         departureTime: "11:30",
         status: "departed",
@@ -119,6 +128,7 @@ export default function SecurityReceptionistDashboard() {
         lastName: "Jansen",
         company: "ElektroTech BV",
         phone: "06-12345678",
+        email: "piet@elektrotech.nl",
         licensePlate: "12-ABC-3",
         workLocation: "Verdieping 2 - Serverruimte",
         workDescription: "Onderhoud UPS systemen",
@@ -133,6 +143,7 @@ export default function SecurityReceptionistDashboard() {
         lastName: "de Vries",
         company: "CleanPro Services",
         phone: "06-87654321",
+        email: "marie@cleanpro.nl",
         workLocation: "Gehele gebouw",
         workDescription: "Ramen schoonmaken",
         expectedDuration: "6 uur",
@@ -146,6 +157,7 @@ export default function SecurityReceptionistDashboard() {
         lastName: "Bakker",
         company: "HVAC Solutions",
         phone: "06-55443322",
+        email: "tom@hvacsolutions.nl",
         licensePlate: "99-XYZ-1",
         workLocation: "Verdieping 1 - Technische ruimte",
         workDescription: "Airco onderhoud",
@@ -173,6 +185,7 @@ export default function SecurityReceptionistDashboard() {
           purpose: "Afspraak",
           host: "Demo Host",
           phone: "06-00000000",
+          email: "demo@example.com",
           arrivalTime: new Date().toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" }),
           status: "registered",
           registeredAt: new Date().toISOString(),
@@ -191,6 +204,7 @@ export default function SecurityReceptionistDashboard() {
           lastName: "Monteur",
           company: "Demo Bedrijf",
           phone: "06-00000000",
+          email: "demo@example.com",
           workLocation: "Demo Locatie",
           workDescription: "Demo Werk",
           expectedDuration: "2 uur",
@@ -254,6 +268,35 @@ export default function SecurityReceptionistDashboard() {
     .sort((a, b) => new Date(b.registeredAt).getTime() - new Date(a.registeredAt).getTime())
     .slice(0, 5) // Laatste 5 registraties
 
+  // Convert to messageable format
+  const messageableVisitors = visitors
+    .filter((v) => v.status === "arrived")
+    .map((v) => ({
+      id: v.id,
+      name: v.name,
+      type: "visitor" as const,
+      phone: v.phone,
+      email: v.email,
+      company: v.company,
+      location: "In het gebouw",
+      host: v.host,
+      purpose: v.purpose,
+    }))
+
+  const messageableContractors = contractors
+    .filter((c) => c.status === "checked_in" || c.status === "working")
+    .map((c) => ({
+      id: c.id,
+      name: `${c.firstName} ${c.lastName}`,
+      type: "contractor" as const,
+      phone: c.phone,
+      email: c.email,
+      company: c.company,
+      location: c.workLocation,
+    }))
+
+  const allMessageablePeople = [...messageableVisitors, ...messageableContractors]
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -272,10 +315,23 @@ export default function SecurityReceptionistDashboard() {
             </Badge>
           </div>
         </div>
-        <Button variant="outline" onClick={() => setLastUpdate(new Date())}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Vernieuwen
-        </Button>
+        <div className="flex items-center space-x-2">
+          {allMessageablePeople.length > 0 && (
+            <MessageComposer
+              recipients={allMessageablePeople}
+              trigger={
+                <Button>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Bericht Sturen ({allMessageablePeople.length})
+                </Button>
+              }
+            />
+          )}
+          <Button variant="outline" onClick={() => setLastUpdate(new Date())}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Vernieuwen
+          </Button>
+        </div>
       </div>
 
       {/* Quick Stats */}
@@ -323,11 +379,11 @@ export default function SecurityReceptionistDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Alerts</p>
-                <p className="text-2xl font-bold text-orange-600">2</p>
-                <p className="text-xs text-muted-foreground">Aandacht vereist</p>
+                <p className="text-sm font-medium text-muted-foreground">Berichten Vandaag</p>
+                <p className="text-2xl font-bold text-orange-600">12</p>
+                <p className="text-xs text-muted-foreground">Verzonden</p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-orange-500" />
+              <MessageSquare className="h-8 w-8 text-orange-500" />
             </div>
           </CardContent>
         </Card>
@@ -412,11 +468,12 @@ export default function SecurityReceptionistDashboard() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overzicht</TabsTrigger>
+          <TabsTrigger value="presence">Aanwezigheid</TabsTrigger>
           <TabsTrigger value="visitors">Bezoekers</TabsTrigger>
           <TabsTrigger value="contractors">Monteurs</TabsTrigger>
-          <TabsTrigger value="alerts">Alerts</TabsTrigger>
+          <TabsTrigger value="messaging">Berichten</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -535,9 +592,20 @@ export default function SecurityReceptionistDashboard() {
                     <p className="text-xs text-gray-600">Tom Bakker - HVAC Solutions - 16:00</p>
                   </div>
                 </div>
+                <div className="flex items-center space-x-3 p-3 bg-orange-50 rounded-lg">
+                  <MessageSquare className="h-5 w-5 text-orange-600" />
+                  <div>
+                    <p className="text-sm font-medium">Bericht verzonden</p>
+                    <p className="text-xs text-gray-600">Welkomstbericht naar 3 bezoekers - 14:30</p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="presence" className="space-y-4">
+          <PresenceOverview showMessaging={true} />
         </TabsContent>
 
         <TabsContent value="visitors" className="space-y-4">
@@ -557,6 +625,17 @@ export default function SecurityReceptionistDashboard() {
                 Nieuwe Bezoeker
               </Button>
             </Link>
+            {messageableVisitors.length > 0 && (
+              <MessageComposer
+                recipients={messageableVisitors}
+                trigger={
+                  <Button variant="outline">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Bericht naar Bezoekers ({messageableVisitors.length})
+                  </Button>
+                }
+              />
+            )}
           </div>
 
           <Card>
@@ -595,6 +674,7 @@ export default function SecurityReceptionistDashboard() {
                           <div className="flex items-center space-x-2 mt-1">
                             <Phone className="h-3 w-3 text-gray-400" />
                             <span className="text-xs text-gray-500">{visitor.phone}</span>
+                            {visitor.email && <Mail className="h-3 w-3 text-blue-400" />}
                           </div>
                         </div>
                       </div>
@@ -612,10 +692,34 @@ export default function SecurityReceptionistDashboard() {
                             </p>
                           )}
                         </div>
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4 mr-1" />
-                          Details
-                        </Button>
+                        <div className="flex space-x-1">
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            Details
+                          </Button>
+                          {visitor.status === "arrived" && (visitor.phone || visitor.email) && (
+                            <MessageComposer
+                              recipients={[
+                                {
+                                  id: visitor.id,
+                                  name: visitor.name,
+                                  type: "visitor",
+                                  phone: visitor.phone,
+                                  email: visitor.email,
+                                  company: visitor.company,
+                                  location: "In het gebouw",
+                                  host: visitor.host,
+                                  purpose: visitor.purpose,
+                                },
+                              ]}
+                              trigger={
+                                <Button variant="ghost" size="sm">
+                                  <MessageSquare className="h-4 w-4" />
+                                </Button>
+                              }
+                            />
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -641,6 +745,17 @@ export default function SecurityReceptionistDashboard() {
                 Nieuwe Monteur
               </Button>
             </Link>
+            {messageableContractors.length > 0 && (
+              <MessageComposer
+                recipients={messageableContractors}
+                trigger={
+                  <Button variant="outline">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Bericht naar Monteurs ({messageableContractors.length})
+                  </Button>
+                }
+              />
+            )}
           </div>
 
           <Card>
@@ -687,6 +802,7 @@ export default function SecurityReceptionistDashboard() {
                               <Phone className="h-3 w-3 text-gray-400" />
                               <span className="text-xs text-gray-500">{contractor.phone}</span>
                             </div>
+                            {contractor.email && <Mail className="h-3 w-3 text-blue-400" />}
                             {contractor.licensePlate && (
                               <div className="flex items-center space-x-1">
                                 <Car className="h-3 w-3 text-gray-400" />
@@ -713,10 +829,33 @@ export default function SecurityReceptionistDashboard() {
                             </p>
                           )}
                         </div>
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4 mr-1" />
-                          Details
-                        </Button>
+                        <div className="flex space-x-1">
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            Details
+                          </Button>
+                          {(contractor.status === "checked_in" || contractor.status === "working") &&
+                            (contractor.phone || contractor.email) && (
+                              <MessageComposer
+                                recipients={[
+                                  {
+                                    id: contractor.id,
+                                    name: `${contractor.firstName} ${contractor.lastName}`,
+                                    type: "contractor",
+                                    phone: contractor.phone,
+                                    email: contractor.email,
+                                    company: contractor.company,
+                                    location: contractor.workLocation,
+                                  },
+                                ]}
+                                trigger={
+                                  <Button variant="ghost" size="sm">
+                                    <MessageSquare className="h-4 w-4" />
+                                  </Button>
+                                }
+                              />
+                            )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -725,38 +864,138 @@ export default function SecurityReceptionistDashboard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="alerts" className="space-y-4">
+        <TabsContent value="messaging" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <AlertTriangle className="h-5 w-5 text-orange-600" />
-                <span>Actieve Alerts</span>
+                <MessageSquare className="h-5 w-5" />
+                <span>Berichten Centrum</span>
               </CardTitle>
-              <CardDescription>Items die aandacht vereisen</CardDescription>
+              <CardDescription>Verstuur berichten naar bezoekers en monteurs</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
-                  <div className="flex items-start space-x-3">
-                    <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
-                    <div>
-                      <h4 className="font-semibold text-orange-800 mb-2">Monteur overschrijdt verwachte tijd</h4>
-                      <p className="text-sm text-orange-700">
-                        Piet Jansen (ElektroTech BV) is al 5 uur bezig, verwachte duur was 4 uur
-                      </p>
-                      <p className="text-xs text-orange-600 mt-1">Locatie: Verdieping 2 - Serverruimte</p>
-                    </div>
+            <CardContent className="space-y-6">
+              {/* Quick Message Actions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-2">Bezoekers ({messageableVisitors.length})</h3>
+                  <p className="text-sm text-gray-600 mb-3">Stuur berichten naar aanwezige bezoekers</p>
+                  {messageableVisitors.length > 0 ? (
+                    <MessageComposer
+                      recipients={messageableVisitors}
+                      trigger={
+                        <Button className="w-full">
+                          <Users className="h-4 w-4 mr-2" />
+                          Bericht naar Alle Bezoekers
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <Button disabled className="w-full">
+                      <Users className="h-4 w-4 mr-2" />
+                      Geen bezoekers aanwezig
+                    </Button>
+                  )}
+                </Card>
+
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-2">Monteurs ({messageableContractors.length})</h3>
+                  <p className="text-sm text-gray-600 mb-3">Stuur berichten naar actieve monteurs</p>
+                  {messageableContractors.length > 0 ? (
+                    <MessageComposer
+                      recipients={messageableContractors}
+                      trigger={
+                        <Button className="w-full">
+                          <Building className="h-4 w-4 mr-2" />
+                          Bericht naar Alle Monteurs
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <Button disabled className="w-full">
+                      <Building className="h-4 w-4 mr-2" />
+                      Geen monteurs actief
+                    </Button>
+                  )}
+                </Card>
+              </div>
+
+              {/* Combined Messaging */}
+              {allMessageablePeople.length > 0 && (
+                <div className="text-center">
+                  <MessageComposer
+                    recipients={allMessageablePeople}
+                    trigger={
+                      <Button size="lg">
+                        <MessageSquare className="h-5 w-5 mr-2" />
+                        Bericht naar Iedereen ({allMessageablePeople.length})
+                      </Button>
+                    }
+                  />
+                </div>
+              )}
+
+              {/* Message Templates Preview */}
+              <div>
+                <h3 className="font-semibold mb-3">Beschikbare Sjablonen</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="p-3 border rounded-lg">
+                    <h4 className="font-medium text-sm">Welkomstbericht</h4>
+                    <p className="text-xs text-gray-600">Voor nieuwe bezoekers</p>
+                  </div>
+                  <div className="p-3 border rounded-lg">
+                    <h4 className="font-medium text-sm">Uitcheck herinnering</h4>
+                    <p className="text-xs text-gray-600">Vergeten uit te checken</p>
+                  </div>
+                  <div className="p-3 border rounded-lg">
+                    <h4 className="font-medium text-sm">Locatie wijziging</h4>
+                    <p className="text-xs text-gray-600">Werklocatie aangepast</p>
+                  </div>
+                  <div className="p-3 border rounded-lg">
+                    <h4 className="font-medium text-sm">Noodinformatie</h4>
+                    <p className="text-xs text-gray-600">Belangrijke mededelingen</p>
+                  </div>
+                  <div className="p-3 border rounded-lg">
+                    <h4 className="font-medium text-sm">Afspraak herinnering</h4>
+                    <p className="text-xs text-gray-600">Meeting reminder</p>
+                  </div>
+                  <div className="p-3 border rounded-lg">
+                    <h4 className="font-medium text-sm">Werk voltooid</h4>
+                    <p className="text-xs text-gray-600">Bedankt voor werkzaamheden</p>
                   </div>
                 </div>
+              </div>
 
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-semibold text-green-800 mb-2">Dagelijkse Controles:</h4>
-                  <ul className="text-sm text-green-700 space-y-1">
-                    <li>• Controleer alle uitgecheckte personen</li>
-                    <li>• Verifieer werkvergunningen van monteurs</li>
-                    <li>• Update aanwezigheidsregistratie</li>
-                    <li>• Rapporteer afwijkingen aan management</li>
-                  </ul>
+              {/* Recent Messages */}
+              <div>
+                <h3 className="font-semibold mb-3">Recente Berichten</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium">Welkomstbericht verzonden</p>
+                      <p className="text-xs text-gray-600">Naar 3 bezoekers • 14:30</p>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      Email + SMS
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium">Locatie wijziging</p>
+                      <p className="text-xs text-gray-600">Naar Piet Jansen • 13:15</p>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      SMS
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium">Uitcheck herinnering</p>
+                      <p className="text-xs text-gray-600">Naar 2 bezoekers • 12:45</p>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      Email
+                    </Badge>
+                  </div>
                 </div>
               </div>
             </CardContent>

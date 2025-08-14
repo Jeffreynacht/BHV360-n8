@@ -24,13 +24,12 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { EmailLink } from "@/components/ui/email-link"
 import {
-  Trash2,
   Edit,
   UserPlus,
   Mail,
   Phone,
-  Building,
   Shield,
   Upload,
   X,
@@ -41,11 +40,19 @@ import {
   Calendar,
   Star,
   AlertTriangle,
+  CheckCircle,
+  ArrowRight,
+  Play,
+  Map,
+  SearchIcon,
+  Filter,
+  Download,
+  MapPin,
+  Settings,
 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { BHV360Logo } from "@/components/bhv360-logo"
-import { Map, CheckCircle, ArrowRight, Play } from "lucide-react"
 import { RBACService, type UserRole } from "@/lib/rbac/roles"
 
 type User = {
@@ -89,7 +96,128 @@ type User = {
     saturday: { start: string; end: string; present: boolean }
     sunday: { start: string; end: string; present: boolean }
   }
+  status?: string
+  certifications?: string[]
+  avatar?: string
+  limitations?: string
 }
+
+// Mock data voor gebruikers
+const mockUsers = [
+  {
+    id: 1,
+    name: "Jan Jansen",
+    email: "j.jansen@example.com",
+    phone: "+31 6 12345678",
+    role: "BHV Coördinator",
+    department: "Facilitair",
+    status: "Actief",
+    lastLogin: "2024-01-15",
+    certifications: ["BHV Basis", "EHBO", "AED"],
+    avatar: "/placeholder-user.jpg",
+    bhvRoles: ["Coordinator BHV"],
+    active: true,
+    emergencyContact: { name: "", phone: "", relation: "" },
+    certificates: {},
+  },
+  {
+    id: 2,
+    name: "Maria de Vries",
+    email: "m.devries@example.com",
+    phone: "+31 6 87654321",
+    role: "BHV'er",
+    department: "HR",
+    status: "Actief",
+    lastLogin: "2024-01-14",
+    certifications: ["BHV Basis", "EHBO"],
+    avatar: "/placeholder-user.jpg",
+    bhvRoles: ["BHV"],
+    active: true,
+    emergencyContact: { name: "", phone: "", relation: "" },
+    certificates: {},
+  },
+  {
+    id: 3,
+    name: "Peter Bakker",
+    email: "p.bakker@example.com",
+    phone: "+31 6 11223344",
+    role: "Ploegleider",
+    department: "Operations",
+    status: "Inactief",
+    lastLogin: "2024-01-10",
+    certifications: ["BHV Basis", "EHBO", "AED", "Ontruiming"],
+    avatar: "/placeholder-user.jpg",
+    bhvRoles: ["Ploegleider"],
+    active: false,
+    emergencyContact: { name: "", phone: "", relation: "" },
+    certificates: {},
+  },
+  {
+    id: 4,
+    name: "Lisa van der Berg",
+    email: "l.vandenberg@example.com",
+    phone: "+31 6 55667788",
+    role: "Medewerker",
+    department: "IT",
+    status: "Actief",
+    lastLogin: "2024-01-15",
+    certifications: [],
+    avatar: "/placeholder-user.jpg",
+    bhvRoles: [],
+    active: true,
+    emergencyContact: { name: "", phone: "", relation: "" },
+    certificates: {},
+  },
+  {
+    id: 5,
+    name: "Tom Hendriks",
+    email: "t.hendriks@example.com",
+    phone: "+31 6 99887766",
+    role: "BHV'er",
+    department: "Productie",
+    status: "Actief",
+    lastLogin: "2024-01-13",
+    certifications: ["BHV Basis"],
+    avatar: "/placeholder-user.jpg",
+    bhvRoles: ["BHV"],
+    active: true,
+    emergencyContact: { name: "", phone: "", relation: "" },
+    certificates: {},
+  },
+]
+
+const mockMindervalidenUsers = [
+  {
+    id: 6,
+    name: "Anna Smit",
+    email: "a.smit@example.com",
+    phone: "+31 6 44556677",
+    department: "Administratie",
+    limitations: "Rolstoel gebruiker",
+    evacuationPlan: "Lift naar begane grond, verzamelpunt A",
+    emergencyContact: "Familie: +31 6 12345678",
+    notes: "Heeft hulp nodig bij evacuatie",
+    avatar: "/placeholder-user.jpg",
+    bhvRoles: [],
+    active: true,
+    certificates: {},
+  },
+  {
+    id: 7,
+    name: "Robert de Jong",
+    email: "r.dejong@example.com",
+    phone: "+31 6 33445566",
+    department: "Marketing",
+    limitations: "Slechtziend",
+    evacuationPlan: "Begeleiding via hoofdroute, verzamelpunt B",
+    emergencyContact: "Partner: +31 6 87654321",
+    notes: "Heeft geleidehond, kent routes goed",
+    avatar: "/placeholder-user.jpg",
+    bhvRoles: [],
+    active: true,
+    certificates: {},
+  },
+]
 
 const features = [
   {
@@ -199,6 +327,9 @@ export default function GebruikersPage() {
     }
   }>({})
 
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedTab, setSelectedTab] = useState("all")
+
   // Check of huidige gebruiker BHV rollen mag toekennen
   const canAssignBHVRoles = user ? RBACService.canAssignBHVRoles(user.role as UserRole) : false
 
@@ -236,6 +367,9 @@ export default function GebruikersPage() {
             saturday: { start: "", end: "", present: false },
             sunday: { start: "", end: "", present: false },
           },
+          status: "Actief",
+          certifications: ["BHV Basis", "EHBO", "AED"],
+          avatar: "/placeholder-user.jpg",
         },
         {
           id: 2,
@@ -267,6 +401,9 @@ export default function GebruikersPage() {
             saturday: { start: "", end: "", present: false },
             sunday: { start: "", end: "", present: false },
           },
+          status: "Actief",
+          certifications: ["BHV Basis", "EHBO"],
+          avatar: "/placeholder-user.jpg",
         },
         {
           id: 3,
@@ -297,6 +434,9 @@ export default function GebruikersPage() {
             saturday: { start: "", end: "", present: false },
             sunday: { start: "", end: "", present: false },
           },
+          status: "Actief",
+          certifications: ["BHV Basis"],
+          avatar: "/placeholder-user.jpg",
         },
         {
           id: 4,
@@ -326,6 +466,9 @@ export default function GebruikersPage() {
             saturday: { start: "", end: "", present: false },
             sunday: { start: "", end: "", present: false },
           },
+          status: "Inactief",
+          certifications: ["EHBO"],
+          avatar: "/placeholder-user.jpg",
         },
         {
           id: 5,
@@ -360,6 +503,9 @@ export default function GebruikersPage() {
             saturday: { start: "", end: "", present: false },
             sunday: { start: "", end: "", present: false },
           },
+          status: "Actief",
+          certifications: [],
+          avatar: "/placeholder-user.jpg",
         },
         {
           id: 6,
@@ -396,6 +542,9 @@ export default function GebruikersPage() {
             saturday: { start: "", end: "", present: false },
             sunday: { start: "", end: "", present: false },
           },
+          status: "Actief",
+          certifications: [],
+          avatar: "/placeholder-user.jpg",
         },
         // Sandra Beveiliging - GEEN BHV rechten standaard
         {
@@ -424,6 +573,9 @@ export default function GebruikersPage() {
             saturday: { start: "06:00", end: "14:00", present: true },
             sunday: { start: "", end: "", present: false },
           },
+          status: "Actief",
+          certifications: [],
+          avatar: "/placeholder-user.jpg",
         },
       ])
     }
@@ -587,6 +739,44 @@ export default function GebruikersPage() {
   const mindervalideUsers = users.filter(
     (user) => user.accessibility?.isMindervalide || user.accessibility?.isTijdelijkMindervalide,
   )
+
+  const filteredUsersNew = mockUsers.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.department.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
+
+  const filteredMindervalidenUsers = mockMindervalidenUsers.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.department.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Actief":
+        return "bg-green-100 text-green-800"
+      case "Inactief":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getRoleIconNew = (role: string) => {
+    switch (role) {
+      case "BHV Coördinator":
+        return <Shield className="h-4 w-4 text-blue-600" />
+      case "Ploegleider":
+        return <Users className="h-4 w-4 text-purple-600" />
+      case "BHV'er":
+        return <AlertTriangle className="h-4 w-4 text-orange-600" />
+      default:
+        return <Users className="h-4 w-4 text-gray-600" />
+    }
+  }
 
   if (!selectedCustomer) {
     return (
@@ -805,11 +995,16 @@ export default function GebruikersPage() {
                 <div className="space-y-2 text-gray-400">
                   <div className="flex items-center">
                     <Phone className="h-4 w-4 mr-2" />
-                    <span>+31 20 123 4567</span>
+                    <span>033-4614303</span>
                   </div>
                   <div className="flex items-center">
                     <Mail className="h-4 w-4 mr-2" />
-                    <span>info@bhv360.nl</span>
+                    <EmailLink
+                      email="info@BHV360.nl"
+                      subject="Informatie BHV360"
+                      body="Hallo,%0A%0AIk zou graag meer informatie ontvangen over BHV360.%0A%0AMet vriendelijke groet,"
+                      className="text-gray-400 hover:text-white"
+                    />
                   </div>
                 </div>
               </div>
@@ -824,494 +1019,415 @@ export default function GebruikersPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Gebruikersbeheer - {selectedCustomer.name}</h1>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Nieuwe Gebruiker
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Nieuwe Gebruiker Toevoegen</DialogTitle>
-              <DialogDescription>Vul de gegevens in om een nieuwe gebruiker aan te maken.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-6 py-4">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="flex flex-col items-center space-y-2">
-                  <div className="relative">
-                    {previewUrl ? (
-                      <div className="relative">
-                        <img
-                          src={previewUrl || "/placeholder.svg"}
-                          alt="Preview"
-                          className="h-32 w-32 rounded-full object-cover border-2 border-gray-200"
-                        />
-                        <button
-                          onClick={clearSelectedFile}
-                          className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="h-32 w-32 rounded-full bg-gray-200 flex items-center justify-center">
-                        <Upload className="h-8 w-8 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor="photo" className="cursor-pointer text-sm text-blue-600">
-                      Foto uploaden
-                    </Label>
-                    <Input id="photo" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                  </div>
-                  <p className="text-xs text-gray-500">Max. 5MB (JPG, PNG)</p>
-                </div>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Naam</Label>
-                    <Input id="name" placeholder="Volledige naam" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-mailadres</Label>
-                    <Input id="email" type="email" placeholder="email@voorbeeld.nl" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Telefoonnummer</Label>
-                    <Input id="phone" placeholder="06-12345678" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="role">Hoofdrol</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecteer een rol" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="bhv-coordinator">BHV Coordinator</SelectItem>
-                      <SelectItem value="ploegleider">Ploegleider</SelectItem>
-                      <SelectItem value="bhv">BHV'er</SelectItem>
-                      <SelectItem value="ehbo">EHBO'er</SelectItem>
-                      <SelectItem value="ontruimer">Ontruimer</SelectItem>
-                      <SelectItem value="security-receptionist">Security/Receptionist</SelectItem>
-                      <SelectItem value="user">Gebruiker</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="department">Afdeling</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecteer een afdeling" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="IT">IT</SelectItem>
-                      <SelectItem value="HR">HR</SelectItem>
-                      <SelectItem value="Facilitair">Facilitair</SelectItem>
-                      <SelectItem value="Beveiliging">Beveiliging</SelectItem>
-                      <SelectItem value="Receptie">Receptie</SelectItem>
-                      <SelectItem value="Marketing">Marketing</SelectItem>
-                      <SelectItem value="Verkoop">Verkoop</SelectItem>
-                      <SelectItem value="Finance">Finance</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* BHV Rollen sectie - alleen zichtbaar voor admin/bhv-coordinator */}
-              {canAssignBHVRoles && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>BHV Rollen & Certificaten</Label>
-                    <Badge variant="outline" className="text-xs">
-                      <Shield className="h-3 w-3 mr-1" />
-                      Alleen Admin/BHV Coordinator
-                    </Badge>
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Gebruikers Beheer - {selectedCustomer.name}</h1>
+          <p className="text-gray-600 mt-1">Beheer alle gebruikers en hun toegangsrechten</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Nieuwe Gebruiker
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Nieuwe Gebruiker Toevoegen</DialogTitle>
+                <DialogDescription>Vul de gegevens in om een nieuwe gebruiker aan te maken.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-6 py-4">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="relative">
+                      {previewUrl ? (
+                        <div className="relative">
+                          <img
+                            src={previewUrl || "/placeholder.svg"}
+                            alt="Preview"
+                            className="h-32 w-32 rounded-full object-cover border-2 border-gray-200"
+                          />
+                          <button
+                            onClick={clearSelectedFile}
+                            className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="h-32 w-32 rounded-full bg-gray-200 flex items-center justify-center">
+                          <Upload className="h-8 w-8 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="photo" className="cursor-pointer text-sm text-blue-600">
+                        Foto uploaden
+                      </Label>
+                      <Input id="photo" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                    </div>
+                    <p className="text-xs text-gray-500">Max. 5MB (JPG, PNG)</p>
                   </div>
                   <div className="space-y-4">
-                    {[
-                      { id: "coordinator-bhv", label: "Coordinator BHV", icon: Star, role: "coordinator" },
-                      { id: "ploegleider", label: "Ploegleider", icon: Shield, role: "ploegleider" },
-                      { id: "bhv", label: "BHV", icon: Shield, role: "bhv" },
-                      { id: "ehbo", label: "EHBO", icon: Heart, role: "ehbo" },
-                      { id: "ontruimer", label: "Ontruimer", icon: Users, role: "ontruiming" },
-                    ].map(({ id, label, icon: Icon, role }) => (
-                      <div key={id} className="space-y-3">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id={id}
-                            checked={selectedCertificates[role] || false}
-                            onCheckedChange={(checked) => handleCertificateToggle(role, checked as boolean)}
-                          />
-                          <Label htmlFor={id} className="text-sm flex items-center">
-                            <Icon className="h-3 w-3 mr-1" />
-                            {label}
-                          </Label>
-                        </div>
-
-                        {selectedCertificates[role] && (
-                          <div className="ml-6 p-4 bg-gray-50 rounded-lg space-y-3">
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className="space-y-2">
-                                <Label htmlFor={`${role}-expiry`} className="text-sm">
-                                  Verloopdatum
-                                </Label>
-                                <Input
-                                  id={`${role}-expiry`}
-                                  type="date"
-                                  onChange={(e) => handleCertificateDataChange(role, "expiryDate", e.target.value)}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`${role}-level`} className="text-sm">
-                                  Niveau
-                                </Label>
-                                <Select onValueChange={(value) => handleCertificateDataChange(role, "level", value)}>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Selecteer niveau" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="basis">Basis</SelectItem>
-                                    <SelectItem value="diploma">Diploma</SelectItem>
-                                    <SelectItem value="herhalingscursus">Herhalingscursus</SelectItem>
-                                    <SelectItem value="instructeur">Instructeur</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor={`${role}-number`} className="text-sm">
-                                Certificaatnummer
-                              </Label>
-                              <Input
-                                id={`${role}-number`}
-                                placeholder="Bijv. BHV-2024-001"
-                                onChange={(e) => handleCertificateDataChange(role, "certificateNumber", e.target.value)}
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor={`${role}-file`} className="text-sm">
-                                Certificaat uploaden
-                              </Label>
-                              <div className="flex items-center space-x-2">
-                                <Input
-                                  id={`${role}-file`}
-                                  type="file"
-                                  accept=".pdf,.jpg,.jpeg,.png"
-                                  onChange={(e) => handleCertificateFileChange(role, e)}
-                                  className="flex-1"
-                                />
-                                {certificateFiles[role] && (
-                                  <Badge variant="outline" className="text-green-600">
-                                    <Upload className="h-3 w-3 mr-1" />
-                                    Geüpload
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-xs text-gray-500">PDF, JPG of PNG - Max. 10MB</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Waarschuwing voor niet-geautoriseerde gebruikers */}
-              {!canAssignBHVRoles && (
-                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <AlertTriangle className="h-5 w-5 text-orange-600" />
-                    <div>
-                      <h4 className="font-semibold text-orange-800">BHV Rollen Toekenning</h4>
-                      <p className="text-sm text-orange-700">
-                        Alleen Admin en BHV Coördinatoren kunnen BHV rollen toekennen aan gebruikers.
-                      </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Naam</Label>
+                      <Input id="name" placeholder="Volledige naam" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">E-mailadres</Label>
+                      <Input id="email" type="email" placeholder="email@voorbeeld.nl" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Telefoonnummer</Label>
+                      <Input id="phone" placeholder="06-12345678" />
                     </div>
                   </div>
                 </div>
-              )}
 
-              <div className="space-y-4">
-                <Label>Noodcontact</Label>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="emergency-name">Naam</Label>
-                    <Input id="emergency-name" placeholder="Naam noodcontact" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="emergency-phone">Telefoon</Label>
-                    <Input id="emergency-phone" placeholder="06-12345678" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="emergency-relation">Relatie</Label>
+                    <Label htmlFor="role">Hoofdrol</Label>
                     <Select>
                       <SelectTrigger>
-                        <SelectValue placeholder="Relatie" />
+                        <SelectValue placeholder="Selecteer een rol" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="partner">Partner</SelectItem>
-                        <SelectItem value="echtgenoot">Echtgenoot</SelectItem>
-                        <SelectItem value="echtgenote">Echtgenote</SelectItem>
-                        <SelectItem value="ouder">Ouder</SelectItem>
-                        <SelectItem value="kind">Kind</SelectItem>
-                        <SelectItem value="broer">Broer</SelectItem>
-                        <SelectItem value="zus">Zus</SelectItem>
-                        <SelectItem value="vriend">Vriend</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="bhv-coordinator">BHV Coordinator</SelectItem>
+                        <SelectItem value="ploegleider">Ploegleider</SelectItem>
+                        <SelectItem value="bhv">BHV'er</SelectItem>
+                        <SelectItem value="ehbo">EHBO'er</SelectItem>
+                        <SelectItem value="ontruimer">Ontruimer</SelectItem>
+                        <SelectItem value="security-receptionist">Security/Receptionist</SelectItem>
+                        <SelectItem value="user">Gebruiker</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Afdeling</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecteer een afdeling" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="IT">IT</SelectItem>
+                        <SelectItem value="HR">HR</SelectItem>
+                        <SelectItem value="Facilitair">Facilitair</SelectItem>
+                        <SelectItem value="Beveiliging">Beveiliging</SelectItem>
+                        <SelectItem value="Receptie">Receptie</SelectItem>
+                        <SelectItem value="Marketing">Marketing</SelectItem>
+                        <SelectItem value="Verkoop">Verkoop</SelectItem>
+                        <SelectItem value="Finance">Finance</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-4">
-                <Label>Toegankelijkheid</Label>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="mindervalide" />
-                    <Label htmlFor="mindervalide">Mindervalide</Label>
+                {/* BHV Rollen sectie - alleen zichtbaar voor admin/bhv-coordinator */}
+                {canAssignBHVRoles && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label>BHV Rollen & Certificaten</Label>
+                      <Badge variant="outline" className="text-xs">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Alleen Admin/BHV Coordinator
+                      </Badge>
+                    </div>
+                    <div className="space-y-4">
+                      {[
+                        { id: "coordinator-bhv", label: "Coordinator BHV", icon: Star, role: "coordinator" },
+                        { id: "ploegleider", label: "Ploegleider", icon: Shield, role: "ploegleider" },
+                        { id: "bhv", label: "BHV", icon: Shield, role: "bhv" },
+                        { id: "ehbo", label: "EHBO", icon: Heart, role: "ehbo" },
+                        { id: "ontruimer", label: "Ontruimer", icon: Users, role: "ontruiming" },
+                      ].map(({ id, label, icon: Icon, role }) => (
+                        <div key={id} className="space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={id}
+                              checked={selectedCertificates[role] || false}
+                              onCheckedChange={(checked) => handleCertificateToggle(role, checked as boolean)}
+                            />
+                            <Label htmlFor={id} className="text-sm flex items-center">
+                              <Icon className="h-3 w-3 mr-1" />
+                              {label}
+                            </Label>
+                          </div>
+
+                          {selectedCertificates[role] && (
+                            <div className="ml-6 p-4 bg-gray-50 rounded-lg space-y-3">
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-2">
+                                  <Label htmlFor={`${role}-expiry`} className="text-sm">
+                                    Verloopdatum
+                                  </Label>
+                                  <Input
+                                    id={`${role}-expiry`}
+                                    type="date"
+                                    onChange={(e) => handleCertificateDataChange(role, "expiryDate", e.target.value)}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor={`${role}-level`} className="text-sm">
+                                    Niveau
+                                  </Label>
+                                  <Select onValueChange={(value) => handleCertificateDataChange(role, "level", value)}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Selecteer niveau" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="basis">Basis</SelectItem>
+                                      <SelectItem value="diploma">Diploma</SelectItem>
+                                      <SelectItem value="herhalingscursus">Herhalingscursus</SelectItem>
+                                      <SelectItem value="instructeur">Instructeur</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor={`${role}-number`} className="text-sm">
+                                  Certificaatnummer
+                                </Label>
+                                <Input
+                                  id={`${role}-number`}
+                                  placeholder="Bijv. BHV-2024-001"
+                                  onChange={(e) =>
+                                    handleCertificateDataChange(role, "certificateNumber", e.target.value)
+                                  }
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor={`${role}-file`} className="text-sm">
+                                  Certificaat uploaden
+                                </Label>
+                                <div className="flex items-center space-x-2">
+                                  <Input
+                                    id={`${role}-file`}
+                                    type="file"
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    onChange={(e) => handleCertificateFileChange(role, e)}
+                                    className="flex-1"
+                                  />
+                                  {certificateFiles[role] && (
+                                    <Badge variant="outline" className="text-green-600">
+                                      <Upload className="h-3 w-3 mr-1" />
+                                      Geüpload
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500">PDF, JPG of PNG - Max. 10MB</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="tijdelijk-mindervalide" />
-                    <Label htmlFor="tijdelijk-mindervalide">Tijdelijk mindervalide</Label>
+                )}
+
+                {/* Waarschuwing voor niet-geautoriseerde gebruikers */}
+                {!canAssignBHVRoles && (
+                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <AlertTriangle className="h-5 w-5 text-orange-600" />
+                      <div>
+                        <h4 className="font-semibold text-orange-800">BHV Rollen Toekenning</h4>
+                        <p className="text-sm text-orange-700">
+                          Alleen Admin en BHV Coördinatoren kunnen BHV rollen toekennen aan gebruikers.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="assistance">Benodigde hulp</Label>
-                    <Textarea id="assistance" placeholder="Beschrijf welke hulp nodig is..." />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="evacuation-plan">Evacuatieplan</Label>
-                    <Textarea id="evacuation-plan" placeholder="Specifiek evacuatieplan..." />
+                )}
+
+                <div className="space-y-4">
+                  <Label>Noodcontact</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="emergency-name">Naam</Label>
+                      <Input id="emergency-name" placeholder="Naam noodcontact" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="emergency-phone">Telefoon</Label>
+                      <Input id="emergency-phone" placeholder="06-12345678" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="emergency-relation">Relatie</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Relatie" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="partner">Partner</SelectItem>
+                          <SelectItem value="echtgenoot">Echtgenoot</SelectItem>
+                          <SelectItem value="echtgenote">Echtgenote</SelectItem>
+                          <SelectItem value="ouder">Ouder</SelectItem>
+                          <SelectItem value="kind">Kind</SelectItem>
+                          <SelectItem value="broer">Broer</SelectItem>
+                          <SelectItem value="zus">Zus</SelectItem>
+                          <SelectItem value="vriend">Vriend</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch id="active" defaultChecked />
-                <Label htmlFor="active">Actief</Label>
+                <div className="space-y-4">
+                  <Label>Toegankelijkheid</Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="mindervalide" />
+                      <Label htmlFor="mindervalide">Mindervalide</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="tijdelijk-mindervalide" />
+                      <Label htmlFor="tijdelijk-mindervalide">Tijdelijk mindervalide</Label>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="assistance">Benodigde hulp</Label>
+                      <Textarea id="assistance" placeholder="Beschrijf welke hulp nodig is..." />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="evacuation-plan">Evacuatieplan</Label>
+                      <Textarea id="evacuation-plan" placeholder="Specifiek evacuatieplan..." />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch id="active" defaultChecked />
+                  <Label htmlFor="active">Actief</Label>
+                </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                Annuleren
-              </Button>
-              <Button onClick={handleAddUser}>Toevoegen</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  Annuleren
+                </Button>
+                <Button onClick={handleAddUser}>Toevoegen</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Zoek gebruikers..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <Button variant="outline">
+              <Filter className="mr-2 h-4 w-4" />
+              Filters
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="alle-gebruikers">Alle Gebruikers</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="alle-gebruikers">Alle Gebruikers ({mockUsers.length})</TabsTrigger>
           <TabsTrigger value="bhv-overzicht">BHV Overzicht</TabsTrigger>
           <TabsTrigger value="certificaten">Certificaten</TabsTrigger>
-          <TabsTrigger value="mindervaliden">Mindervaliden</TabsTrigger>
+          <TabsTrigger value="mindervaliden">Mindervaliden ({mockMindervalidenUsers.length})</TabsTrigger>
           <TabsTrigger value="roosters">Roosters</TabsTrigger>
         </TabsList>
 
         <TabsContent value="alle-gebruikers" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Alle Gebruikers</CardTitle>
-                  <CardDescription>Beheer alle gebruikers van {selectedCustomer.name}</CardDescription>
-                </div>
-                <div className="flex space-x-2">
-                  <Input
-                    placeholder="Zoeken op naam, e-mail, afdeling..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-64"
-                  />
-                  <Select value={filterRole} onValueChange={setFilterRole}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Filter rol" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Alle rollen</SelectItem>
-                      <SelectItem value="Coordinator BHV">Coordinator BHV</SelectItem>
-                      <SelectItem value="Ploegleider">Ploegleider</SelectItem>
-                      <SelectItem value="BHV">BHV'er</SelectItem>
-                      <SelectItem value="EHBO">EHBO'er</SelectItem>
-                      <SelectItem value="Ontruimer">Ontruimer</SelectItem>
-                      <SelectItem value="Gebruiker">Gebruiker</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={filterDepartment} onValueChange={setFilterDepartment}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Filter afdeling" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Alle afdelingen</SelectItem>
-                      <SelectItem value="IT">IT</SelectItem>
-                      <SelectItem value="HR">HR</SelectItem>
-                      <SelectItem value="Facilitair">Facilitair</SelectItem>
-                      <SelectItem value="Beveiliging">Beveiliging</SelectItem>
-                      <SelectItem value="Receptie">Receptie</SelectItem>
-                      <SelectItem value="Marketing">Marketing</SelectItem>
-                      <SelectItem value="Verkoop">Verkoop</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-2 font-medium">Gebruiker</th>
-                      <th className="text-left py-3 px-2 font-medium">Contact</th>
-                      <th className="text-left py-3 px-2 font-medium">Rol</th>
-                      <th className="text-left py-3 px-2 font-medium">Afdeling</th>
-                      <th className="text-left py-3 px-2 font-medium">BHV Rollen</th>
-                      <th className="text-left py-3 px-2 font-medium">Certificaten</th>
-                      <th className="text-left py-3 px-2 font-medium">Status</th>
-                      <th className="text-left py-3 px-2 font-medium">Toegankelijkheid</th>
-                      <th className="text-left py-3 px-2 font-medium">Acties</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.map((user) => (
-                      <tr key={user.id} className="border-b">
-                        <td className="py-3 px-2">
-                          <div className="flex items-center space-x-3">
-                            <Avatar>
-                              <AvatarImage src={user.photoUrl || "/placeholder.svg"} alt={user.name} />
-                              <AvatarFallback>
-                                {user.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{user.name}</span>
+          <div className="grid gap-4">
+            {filteredUsersNew.map((user) => (
+              <Card key={user.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                        <AvatarFallback>
+                          {user.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-semibold text-lg">{user.name}</h3>
+                          {getRoleIconNew(user.role)}
+                          <Badge variant="outline">{user.role}</Badge>
+                          <Badge className={getStatusColor(user.status)}>{user.status}</Badge>
+                        </div>
+                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                          <div className="flex items-center space-x-1">
+                            <Mail className="h-4 w-4" />
+                            <EmailLink
+                              email={user.email}
+                              subject={`Contact via BHV360 - ${user.name}`}
+                              body={`Hallo ${user.name},\n\n[Uw bericht hier]\n\nMet vriendelijke groet,`}
+                              className="hover:text-blue-600 hover:underline"
+                            >
+                              {user.email}
+                            </EmailLink>
                           </div>
-                        </td>
-                        <td className="py-3 px-2">
-                          <div className="space-y-1">
-                            <div className="flex items-center text-sm">
-                              <Mail className="h-3 w-3 mr-1 text-gray-500" />
-                              <span>{user.email}</span>
-                            </div>
-                            <div className="flex items-center text-sm">
-                              <Phone className="h-3 w-3 mr-1 text-gray-500" />
-                              <span>{user.phone}</span>
-                            </div>
+                          <div className="flex items-center space-x-1">
+                            <Phone className="h-4 w-4" />
+                            <a href={`tel:${user.phone}`} className="hover:text-blue-600 hover:underline">
+                              {user.phone}
+                            </a>
                           </div>
-                        </td>
-                        <td className="py-3 px-2">
-                          <div className="flex items-center">
-                            <Shield className="h-4 w-4 mr-1 text-blue-500" />
-                            <span>{user.role}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-2">
-                          <div className="flex items-center">
-                            <Building className="h-4 w-4 mr-1 text-gray-500" />
+                          <div className="flex items-center space-x-1">
+                            <MapPin className="h-4 w-4" />
                             <span>{user.department}</span>
                           </div>
-                        </td>
-                        <td className="py-3 px-2">
-                          <div className="flex flex-wrap gap-1">
-                            {user.bhvRoles.map((role, index) => (
-                              <Badge key={index} className={getBHVRoleBadgeColor(role)}>
-                                <div className="flex items-center space-x-1">
-                                  {getBHVRoleIcon(role)}
-                                  <span>{role}</span>
-                                </div>
-                              </Badge>
-                            ))}
-                            {user.bhvRoles.length === 0 && <Badge variant="outline">Geen BHV rol</Badge>}
-                          </div>
-                        </td>
-                        <td className="py-3 px-2">
-                          <div className="space-y-1">
-                            {Object.entries(user.certificates || {}).map(([certType, cert]) => {
-                              const status = getCertificateStatus(cert)
-                              return (
-                                <div key={certType} className="flex items-center space-x-2">
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-xs ${
-                                      status.color === "green"
-                                        ? "bg-green-50 text-green-700 border-green-200"
-                                        : status.color === "orange"
-                                          ? "bg-orange-50 text-orange-700 border-orange-200"
-                                          : status.color === "red"
-                                            ? "bg-red-50 text-red-700 border-red-200"
-                                            : "bg-gray-50 text-gray-700 border-gray-200"
-                                    }`}
-                                  >
-                                    {certType.toUpperCase()}: {status.text}
-                                  </Badge>
-                                  {cert && <span className="text-xs text-muted-foreground">{cert.expiryDate}</span>}
-                                </div>
-                              )
-                            })}
-                            {Object.keys(user.certificates || {}).length === 0 && (
-                              <Badge variant="outline" className="text-xs bg-gray-50 text-gray-500">
-                                Geen certificaten
-                              </Badge>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3 px-2">
-                          <Badge variant={user.active ? "default" : "secondary"}>
-                            {user.active ? "Actief" : "Inactief"}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-2">
-                          <div className="flex items-center space-x-1">
-                            {user.accessibility?.isMindervalide && (
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                                <Wheelchair className="h-3 w-3 mr-1" />
-                                Mindervalide
-                              </Badge>
-                            )}
-                            {user.accessibility?.isTijdelijkMindervalide && (
-                              <Badge variant="outline" className="bg-orange-50 text-orange-700">
-                                <Clock className="h-3 w-3 mr-1" />
-                                Tijdelijk
-                              </Badge>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3 px-2">
-                          <div className="flex space-x-2">
-                            <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            {(user.accessibility?.isMindervalide || user.accessibility?.isTijdelijkMindervalide) && (
-                              <Button variant="ghost" size="icon" onClick={() => handleAccessibilityEdit(user)}>
-                                <Wheelchair className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-right text-sm">
+                        <p className="text-gray-600">Laatste login:</p>
+                        <p className="font-medium">{user.lastLogin}</p>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  {user.certifications && user.certifications.length > 0 && (
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium">Certificeringen:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {user.certifications.map((cert, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {cert}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </TabsContent>
 
         <TabsContent value="bhv-overzicht" className="space-y-4">
@@ -1658,7 +1774,13 @@ export default function GebruikersPage() {
                           <div>
                             <h3 className="font-semibold">{user.name}</h3>
                             <p className="text-sm text-muted-foreground">
-                              {user.department} • {user.email}
+                              {user.department} •{" "}
+                              <EmailLink
+                                email={user.email}
+                                subject={`Contact via BHV360 - ${user.name}`}
+                                body={`Hallo ${user.name},%0A%0A[Uw bericht hier]%0A%0AMet vriendelijke groet,`}
+                                className="text-blue-600 hover:underline"
+                              />
                             </p>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -2058,6 +2180,57 @@ export default function GebruikersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Statistics Cards */}
+      <div className="grid md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Users className="h-8 w-8 text-blue-600" />
+              <div>
+                <p className="text-2xl font-bold">{mockUsers.length}</p>
+                <p className="text-sm text-gray-600">Totaal Gebruikers</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Shield className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="text-2xl font-bold">{mockUsers.filter((u) => u.role.includes("BHV")).length}</p>
+                <p className="text-sm text-gray-600">BHV Team</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="text-2xl font-bold">{mockUsers.filter((u) => u.status === "Actief").length}</p>
+                <p className="text-sm text-gray-600">Actieve Gebruikers</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-8 w-8 text-orange-600" />
+              <div>
+                <p className="text-2xl font-bold">{mockMindervalidenUsers.length}</p>
+                <p className="text-sm text-gray-600">Speciale Zorg</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

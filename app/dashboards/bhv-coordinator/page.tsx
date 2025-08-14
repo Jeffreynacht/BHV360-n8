@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/contexts/auth-context"
 import { useCustomer } from "@/components/customer-context"
+import { PresenceOverview } from "@/components/presence-overview"
+import { MessageComposer } from "@/components/messaging/message-composer"
 import Link from "next/link"
 import {
   Shield,
@@ -27,6 +29,7 @@ import {
   Eye,
   Download,
   Zap,
+  MessageSquare,
 } from "lucide-react"
 
 export default function BHVCoordinatorDashboard() {
@@ -154,6 +157,14 @@ export default function BHVCoordinatorDashboard() {
       user: "Lisa van der Berg",
       status: "success",
     },
+    {
+      id: 5,
+      type: "message_sent",
+      message: "Bericht verzonden naar 5 bezoekers",
+      time: "08:45",
+      user: "Jan Pietersen",
+      status: "info",
+    },
   ]
 
   const getActivityIcon = (type: string) => {
@@ -166,6 +177,8 @@ export default function BHVCoordinatorDashboard() {
         return <UserPlus className="h-4 w-4" />
       case "inspection":
         return <CheckCircle className="h-4 w-4" />
+      case "message_sent":
+        return <MessageSquare className="h-4 w-4" />
       default:
         return <Activity className="h-4 w-4" />
     }
@@ -186,6 +199,30 @@ export default function BHVCoordinatorDashboard() {
     }
   }
 
+  // Mock messageable people for demo
+  const messageablePeople = [
+    {
+      id: "vis-1",
+      name: "John Smith",
+      type: "visitor" as const,
+      phone: "06-11111111",
+      email: "john.smith@abccompany.com",
+      company: "ABC Company",
+      location: "Verdieping 2, Vergaderzaal 2.08",
+      host: "Jan Jansen",
+      purpose: "Leverancier",
+    },
+    {
+      id: "con-1",
+      name: "Piet Monteur",
+      type: "contractor" as const,
+      phone: "06-12345678",
+      email: "piet@elektrotech.nl",
+      company: "ElektroTech BV",
+      location: "Verdieping 2, Serverruimte",
+    },
+  ]
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -196,10 +233,23 @@ export default function BHVCoordinatorDashboard() {
             Welkom terug, {user?.name} • {selectedCustomer?.name || "Geen klant geselecteerd"}
           </p>
         </div>
-        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-          <Shield className="h-3 w-3 mr-1" />
-          BHV Coördinator
-        </Badge>
+        <div className="flex items-center space-x-2">
+          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+            <Shield className="h-3 w-3 mr-1" />
+            BHV Coördinator
+          </Badge>
+          {messageablePeople.length > 0 && (
+            <MessageComposer
+              recipients={messageablePeople}
+              trigger={
+                <Button variant="outline">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Bericht Sturen
+                </Button>
+              }
+            />
+          )}
+        </div>
       </div>
 
       {/* Stats Overview */}
@@ -250,6 +300,9 @@ export default function BHVCoordinatorDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Presence Overview */}
+      <PresenceOverview compact={true} showMessaging={true} />
 
       {/* Quick Actions */}
       <Card>

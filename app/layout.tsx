@@ -2,14 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
-import { SidebarProvider } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/app-sidebar"
-import { AuthProvider } from "@/contexts/auth-context"
-import { CustomerProvider } from "@/components/customer-context"
-import { DataProvider } from "@/contexts/data-context"
-import ErrorBoundary from "@/components/error-boundary"
+import ClientLayout from "./client-layout"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -32,23 +25,7 @@ export default function RootLayout({
   return (
     <html lang="nl" suppressHydrationWarning>
       <body className={inter.className}>
-        <ErrorBoundary>
-          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-            <AuthProvider>
-              <CustomerProvider>
-                <DataProvider>
-                  <SidebarProvider>
-                    <div className="flex min-h-screen w-full">
-                      <AppSidebar />
-                      <main className="flex-1 overflow-auto">{children}</main>
-                    </div>
-                  </SidebarProvider>
-                </DataProvider>
-              </CustomerProvider>
-            </AuthProvider>
-            <Toaster />
-          </ThemeProvider>
-        </ErrorBoundary>
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   )
