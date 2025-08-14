@@ -1,504 +1,409 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
 import {
   Shield,
-  Map,
   Users,
-  AlertTriangle,
-  FileText,
-  Settings,
+  Building2,
+  Clock,
+  Star,
   ArrowRight,
   CheckCircle,
-  Clock,
-  Building,
-  Star,
-  Zap,
+  MapPin,
+  AlertTriangle,
+  Heart,
+  FileText,
   Globe,
   Award,
   TrendingUp,
   Phone,
   Mail,
-  Lock,
-  Heart,
-  Activity,
-  BarChart3,
-  Play,
   ExternalLink,
 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
-// Simple inline BHV360 Logo component to avoid import issues
-function BHV360Logo({
-  size = "md",
-  variant = "default",
-  showText = true,
-  className = "",
-}: {
-  size?: "sm" | "md" | "lg" | "xl"
-  variant?: "default" | "white" | "dark"
-  showText?: boolean
-  className?: string
-}) {
-  const sizeClasses = {
-    sm: "h-8 w-auto",
-    md: "h-10 w-auto",
-    lg: "h-12 w-auto",
-    xl: "h-16 w-auto",
-  }
-
-  // Use the actual BHV360 logo image
-  const logoSrc = "/images/bhv360-logo-full.png"
-
-  return (
-    <div className={`flex items-center ${className}`}>
-      <img
-        src={logoSrc || "/placeholder.svg?height=64&width=200&text=BHV360"}
-        alt="BHV360 Logo"
-        className={`${sizeClasses[size]} object-contain`}
-      />
-      {showText && variant !== "default" && (
-        <div className="ml-3">
-          <div
-            className={`font-bold ${variant === "white" ? "text-white" : "text-gray-900"} ${
-              size === "sm" ? "text-lg" : size === "md" ? "text-xl" : size === "lg" ? "text-2xl" : "text-3xl"
-            }`}
-          >
-            BHV360
-          </div>
-          <div className={`text-sm ${variant === "white" ? "text-blue-100" : "text-gray-600"}`}>
-            Veiligheid Platform
-          </div>
-        </div>
-      )}
+// Inline BHV360 Logo Component
+const BHV360Logo = ({ className = "h-8 w-auto" }: { className?: string }) => (
+  <div className="flex items-center space-x-2">
+    <Image
+      src="/images/bhv360-logo-full.png"
+      alt="BHV360 Logo"
+      width={120}
+      height={32}
+      className={className}
+      onError={(e) => {
+        // Fallback to text logo if image fails
+        const target = e.target as HTMLImageElement
+        target.style.display = "none"
+        const nextSibling = target.nextElementSibling as HTMLElement
+        if (nextSibling) {
+          nextSibling.classList.remove("hidden")
+        }
+      }}
+    />
+    <div className="hidden">
+      <div className="flex items-center space-x-1">
+        <Shield className="h-6 w-6 text-red-600" />
+        <span className="text-xl font-bold text-gray-900">BHV360</span>
+      </div>
     </div>
-  )
-}
+  </div>
+)
 
 export default function HomePage() {
-  const router = useRouter()
   const [currentDemo, setCurrentDemo] = useState(0)
-  const [autoRedirectCountdown, setAutoRedirectCountdown] = useState(10)
+  const [countdown, setCountdown] = useState(10)
 
-  // Auto-redirect countdown
+  const demos = [
+    {
+      title: "Plotkaart Editor",
+      description: "Interactieve plattegronden met BHV voorzieningen",
+      icon: MapPin,
+      color: "bg-blue-500",
+    },
+    {
+      title: "Incident Management",
+      description: "Real-time incident tracking en communicatie",
+      icon: AlertTriangle,
+      color: "bg-red-500",
+    },
+    {
+      title: "BHV Status Dashboard",
+      description: "Live overzicht van BHV'ers en hun beschikbaarheid",
+      icon: Users,
+      color: "bg-green-500",
+    },
+    {
+      title: "AED Monitoring",
+      description: "Automatische monitoring van AED status",
+      icon: Heart,
+      color: "bg-purple-500",
+    },
+  ]
+
+  const modules = [
+    {
+      name: "Plotkaart Editor Pro",
+      description: "Geavanceerde plattegrond editor met 3D visualisatie",
+      price: "€25/maand",
+      popular: true,
+      features: ["3D Visualisatie", "CAD Import", "Real-time Updates"],
+    },
+    {
+      name: "Incident Response Suite",
+      description: "Complete incident management en communicatie",
+      price: "€35/maand",
+      popular: false,
+      features: ["SMS Alerts", "Push Notifications", "Escalatie Matrix"],
+    },
+    {
+      name: "Compliance Tracker",
+      description: "Automatische compliance monitoring en rapportage",
+      price: "€20/maand",
+      popular: false,
+      features: ["Auto Rapporten", "Audit Trail", "Certificering"],
+    },
+  ]
+
+  const testimonials = [
+    {
+      name: "Jan van der Berg",
+      company: "Provincie Noord-Brabant",
+      role: "BHV Coördinator",
+      content: "BHV360 heeft onze BHV organisatie volledig getransformeerd. De real-time inzichten zijn onmisbaar.",
+      rating: 5,
+    },
+    {
+      name: "Maria Janssen",
+      company: "Ziekenhuis Amphia",
+      role: "Facility Manager",
+      content: "De automatische AED monitoring heeft ons al meerdere keren geholpen. Uitstekende software!",
+      rating: 5,
+    },
+    {
+      name: "Peter de Vries",
+      company: "Shell Nederland",
+      role: "HSE Manager",
+      content: "Eindelijk een BHV systeem dat écht werkt. De compliance rapportage bespaart ons uren werk.",
+      rating: 5,
+    },
+  ]
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      setAutoRedirectCountdown((prev) => {
+    const demoInterval = setInterval(() => {
+      setCurrentDemo((prev) => (prev + 1) % demos.length)
+    }, 3000)
+
+    const countdownInterval = setInterval(() => {
+      setCountdown((prev) => {
         if (prev <= 1) {
-          router.push("/dashboard")
+          window.location.href = "/dashboard"
           return 0
         }
         return prev - 1
       })
     }, 1000)
 
-    return () => clearInterval(timer)
-  }, [router])
-
-  // Demo carousel
-  const demos = [
-    {
-      title: "Interactieve Plotkaart",
-      description: "Real-time overzicht van alle BHV voorzieningen",
-      image: "/placeholder.svg?height=300&width=500&text=Plotkaart+Demo",
-      href: "/plotkaart",
-    },
-    {
-      title: "BHV Status Dashboard",
-      description: "Live monitoring van BHV'ers en hun beschikbaarheid",
-      image: "/placeholder.svg?height=300&width=500&text=BHV+Status+Demo",
-      href: "/bhv-aanwezigheid",
-    },
-    {
-      title: "Incident Management",
-      description: "Snelle incident registratie en opvolging",
-      image: "/placeholder.svg?height=300&width=500&text=Incident+Demo",
-      href: "/incidenten",
-    },
-    {
-      title: "Noodprocedures",
-      description: "Stap-voor-stap procedures met checklists",
-      image: "/placeholder.svg?height=300&width=500&text=Procedures+Demo",
-      href: "/bhv/procedures",
-    },
-  ]
-
-  useEffect(() => {
-    const demoTimer = setInterval(() => {
-      setCurrentDemo((prev) => (prev + 1) % demos.length)
-    }, 4000)
-
-    return () => clearInterval(demoTimer)
+    return () => {
+      clearInterval(demoInterval)
+      clearInterval(countdownInterval)
+    }
   }, [demos.length])
 
-  const features = [
-    {
-      icon: Map,
-      title: "Plotkaart Beheer",
-      description: "Interactieve plattegronden met BHV voorzieningen",
-      href: "/plotkaart",
-      status: "active",
-      demo: true,
-    },
-    {
-      icon: Shield,
-      title: "BHV Coördinatie",
-      description: "Real-time overzicht van BHV'ers en hun status",
-      href: "/bhv",
-      status: "active",
-      demo: true,
-    },
-    {
-      icon: AlertTriangle,
-      title: "Incident Management",
-      description: "Snelle respons en documentatie van incidenten",
-      href: "/incidenten",
-      status: "active",
-      demo: true,
-    },
-    {
-      icon: Users,
-      title: "Gebruikersbeheer",
-      description: "Beheer van gebruikers en autorisaties",
-      href: "/beheer/gebruikers",
-      status: "active",
-      demo: false,
-    },
-    {
-      icon: FileText,
-      title: "Rapportages",
-      description: "Uitgebreide rapportage en compliance tracking",
-      href: "/beheer/rapportages",
-      status: "active",
-      demo: false,
-    },
-    {
-      icon: Settings,
-      title: "Systeembeheer",
-      description: "Configuratie en onderhoud van het platform",
-      href: "/beheer",
-      status: "active",
-      demo: false,
-    },
-  ]
-
-  const stats = [
-    { label: "Actieve Organisaties", value: "500+", icon: Building, color: "text-blue-600" },
-    { label: "BHV'ers Online", value: "12,000+", icon: Shield, color: "text-green-600" },
-    { label: "Beheerde Gebouwen", value: "1,200+", icon: Map, color: "text-purple-600" },
-    { label: "Incidenten Afgehandeld", value: "25,000+", icon: AlertTriangle, color: "text-orange-600" },
-  ]
-
-  const complianceItems = [
-    { name: "AVG/GDPR Compliant", icon: Lock, status: "certified" },
-    { name: "ISO 27001 Gecertificeerd", icon: Award, status: "certified" },
-    { name: "NEN 3011 Conform", icon: Shield, status: "certified" },
-    { name: "Arbo-wet Compliant", icon: CheckCircle, status: "certified" },
-    { name: "BHV Richtlijnen", icon: Heart, status: "certified" },
-    { name: "99.9% Uptime SLA", icon: Activity, status: "guaranteed" },
-  ]
-
-  const testimonials = [
-    {
-      name: "Marie van der Berg",
-      role: "BHV Coördinator",
-      company: "TechCorp Nederland",
-      quote: "BHV360 heeft onze veiligheidsprocedures volledig getransformeerd. Real-time inzicht in alle BHV'ers!",
-      rating: 5,
-    },
-    {
-      name: "Piet Janssen",
-      role: "Facility Manager",
-      company: "Zorggroep Zuid",
-      quote: "De plotkaart functie is fantastisch. Eindelijk overzicht van alle voorzieningen in één systeem.",
-      rating: 5,
-    },
-    {
-      name: "Lisa de Vries",
-      role: "Veiligheidsmanager",
-      company: "Industriepark West",
-      quote: "Compliance rapportage is nu een fluitje van een cent. Besparen uren werk per maand!",
-      rating: 5,
-    },
-  ]
+  const currentDemoData = demos[currentDemo]
+  const IconComponent = currentDemoData.icon
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-red-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-green-600 text-white">
-        <div className="container mx-auto px-4 py-8">
+      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <BHV360Logo size="xl" variant="white" />
-              <div>
-                <h1 className="text-4xl font-bold">BHV360 Platform</h1>
-                <p className="text-blue-100 text-lg">Nederland's #1 BHV Management Systeem</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                v2.0 Live
+            <BHV360Logo className="h-8 w-auto" />
+            <div className="flex items-center space-x-4">
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Clock className="h-3 w-3 mr-1" />
+                Auto-redirect in {countdown}s
               </Badge>
-              <Badge variant="secondary" className="bg-green-500/20 text-white border-green-300/30">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Gecertificeerd
-              </Badge>
+              <Button asChild>
+                <Link href="/dashboard">
+                  Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Auto-redirect notice */}
-        <Card className="mb-8 border-blue-200 bg-gradient-to-r from-blue-50 to-green-50">
-          <CardContent className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5 text-blue-600" />
-              <span className="text-blue-800">
-                Automatische doorverwijzing naar dashboard in {autoRedirectCountdown} seconden...
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={() => router.push("/dashboard")} className="bg-blue-600 hover:bg-blue-700">
-                Nu naar Dashboard
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setAutoRedirectCountdown(60)}
-                className="border-blue-300 text-blue-700"
-              >
-                Meer tijd
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Hero Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto text-center">
+          <div className="max-w-4xl mx-auto">
+            <BHV360Logo className="h-16 w-auto mx-auto mb-8" />
+            <h1 className="text-5xl font-bold text-gray-900 mb-6">
+              De Toekomst van <span className="text-red-600">BHV Management</span>
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+              BHV360 is het meest geavanceerde platform voor Bedrijfshulpverlening. Van interactieve plotkaarten tot
+              real-time incident management - alles wat je nodig hebt voor professionele BHV organisatie.
+            </p>
 
-        {/* Hero Demo Section */}
-        <div className="mb-12">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Zie BHV360 in Actie</h2>
-            <p className="text-gray-600 text-lg">Ontdek onze krachtige modules met live demo's</p>
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+              <div className="bg-white rounded-lg p-6 shadow-sm border">
+                <div className="text-3xl font-bold text-blue-600 mb-2">500+</div>
+                <div className="text-gray-600">Tevreden Klanten</div>
+              </div>
+              <div className="bg-white rounded-lg p-6 shadow-sm border">
+                <div className="text-3xl font-bold text-green-600 mb-2">99.9%</div>
+                <div className="text-gray-600">Uptime Garantie</div>
+              </div>
+              <div className="bg-white rounded-lg p-6 shadow-sm border">
+                <div className="text-3xl font-bold text-purple-600 mb-2">24/7</div>
+                <div className="text-gray-600">Support</div>
+              </div>
+              <div className="bg-white rounded-lg p-6 shadow-sm border">
+                <div className="text-3xl font-bold text-red-600 mb-2">ISO</div>
+                <div className="text-gray-600">Gecertificeerd</div>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="bg-red-600 hover:bg-red-700" asChild>
+                <Link href="/dashboard">
+                  Start Gratis Trial <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/demo/overview">
+                  Bekijk Demo <ExternalLink className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Live Demo Carousel */}
+      <section className="py-16 px-4 bg-white">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Live Demo Showcase</h2>
+            <p className="text-gray-600">Zie onze modules in actie</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            {/* Demo Carousel */}
-            <div className="relative">
-              <Card className="overflow-hidden shadow-xl">
-                <div className="relative h-80">
-                  <img
-                    src={demos[currentDemo].image || "/placeholder.svg"}
-                    alt={demos[currentDemo].title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute bottom-4 left-4 text-white">
-                    <h3 className="text-xl font-bold mb-2">{demos[currentDemo].title}</h3>
-                    <p className="text-gray-200">{demos[currentDemo].description}</p>
+          <div className="max-w-4xl mx-auto">
+            <Card className="overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-lg ${currentDemoData.color}`}>
+                    <IconComponent className="h-6 w-6 text-white" />
                   </div>
-                  <Button
-                    className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white"
-                    size="sm"
-                    onClick={() => router.push(demos[currentDemo].href)}
-                  >
-                    <Play className="h-4 w-4 mr-1" />
-                    Live Demo
+                  <div>
+                    <CardTitle className="text-white">{currentDemoData.title}</CardTitle>
+                    <CardDescription className="text-blue-100">{currentDemoData.description}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="bg-gray-100 rounded-lg h-64 flex items-center justify-center">
+                  <div className="text-center">
+                    <IconComponent className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Demo van {currentDemoData.title}</p>
+                    <Button className="mt-4" asChild>
+                      <Link href="/demo/overview">Volledige Demo Bekijken</Link>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Demo Navigation */}
+            <div className="flex justify-center mt-6 space-x-2">
+              {demos.map((_, index) => (
+                <button
+                  key={index}
+                  className={`w-3 h-3 rounded-full transition-colors ${
+                    index === currentDemo ? "bg-blue-600" : "bg-gray-300"
+                  }`}
+                  onClick={() => setCurrentDemo(index)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Module Marketplace */}
+      <section className="py-16 px-4 bg-gray-50">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Populaire Modules</h2>
+            <p className="text-gray-600">Kies de modules die perfect bij jouw organisatie passen</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {modules.map((module, index) => (
+              <Card key={index} className={`relative ${module.popular ? "ring-2 ring-blue-500" : ""}`}>
+                {module.popular && (
+                  <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-blue-500">Populair</Badge>
+                )}
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    {module.name}
+                    <span className="text-lg font-bold text-green-600">{module.price}</span>
+                  </CardTitle>
+                  <CardDescription>{module.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 mb-6">
+                    {module.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                        <span className="text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button className="w-full" variant={module.popular ? "default" : "outline"}>
+                    Module Activeren
                   </Button>
-                </div>
-              </Card>
-
-              {/* Demo Navigation */}
-              <div className="flex justify-center mt-4 gap-2">
-                {demos.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentDemo(index)}
-                    className={`w-3 h-3 rounded-full transition-colors ${
-                      index === currentDemo ? "bg-blue-600" : "bg-gray-300"
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Quick Stats & Benefits */}
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Waarom BHV360?</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <span>Real-time monitoring van alle BHV voorzieningen</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <span>Automatische compliance rapportage</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <span>Mobiele app voor onderweg</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <span>24/7 support en 99.9% uptime</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">500+</div>
-                  <div className="text-sm text-gray-600">Tevreden Klanten</div>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">99.9%</div>
-                  <div className="text-sm text-gray-600">Uptime Garantie</div>
-                </div>
-              </div>
-
-              <Button
-                size="lg"
-                className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
-                onClick={() => router.push("/beheer/module-marketplace")}
-              >
-                <Zap className="h-5 w-5 mr-2" />
-                Bekijk Alle Modules
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon
-            return (
-              <Card key={index} className="border-l-4 border-l-blue-500 hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">{stat.label}</p>
-                      <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
-                    </div>
-                    <Icon className={`h-8 w-8 ${stat.color}`} />
-                  </div>
                 </CardContent>
               </Card>
-            )
-          })}
-        </div>
-
-        {/* Features Grid */}
-        <div className="mb-12">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Complete BHV Oplossing</h2>
-            <p className="text-gray-600 text-lg">Alles wat je nodig hebt voor professioneel BHV management</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => {
-              const Icon = feature.icon
-              return (
-                <Card
-                  key={index}
-                  className="hover:shadow-lg transition-all cursor-pointer group hover:scale-105"
-                  onClick={() => router.push(feature.href)}
-                >
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <Icon className="h-8 w-8 text-blue-600 group-hover:text-green-600 transition-colors" />
-                      <div className="flex gap-2">
-                        {feature.demo && (
-                          <Badge variant="outline" className="text-blue-600 border-blue-600">
-                            <Play className="h-3 w-3 mr-1" />
-                            Demo
-                          </Badge>
-                        )}
-                        <Badge variant="outline" className="text-green-600 border-green-600">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          {feature.status}
-                        </Badge>
-                      </div>
-                    </div>
-                    <CardTitle className="group-hover:text-blue-600 transition-colors">{feature.title}</CardTitle>
-                    <CardDescription>{feature.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button variant="ghost" className="w-full group-hover:bg-blue-50">
-                      {feature.demo ? "Live Demo" : "Openen"}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              )
-            })}
+            ))}
           </div>
         </div>
+      </section>
 
-        {/* Compliance & Certifications */}
-        <Card className="mb-12 bg-gradient-to-r from-green-50 to-blue-50">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-gray-900 flex items-center justify-center gap-2">
-              <Award className="h-6 w-6 text-green-600" />
-              Compliance & Certificeringen
-            </CardTitle>
-            <CardDescription className="text-lg">
-              BHV360 voldoet aan alle Nederlandse en Europese veiligheidsnormen
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {complianceItems.map((item, index) => {
-                const Icon = item.icon
-                return (
-                  <div key={index} className="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm">
-                    <Icon className="h-6 w-6 text-green-600" />
-                    <div>
-                      <div className="font-semibold text-gray-900">{item.name}</div>
-                      <Badge
-                        variant="outline"
-                        className={
-                          item.status === "certified"
-                            ? "text-green-600 border-green-600"
-                            : "text-blue-600 border-blue-600"
-                        }
-                      >
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        {item.status === "certified" ? "Gecertificeerd" : "Gegarandeerd"}
-                      </Badge>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Pricing Models */}
+      <section className="py-16 px-4 bg-white">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Flexibele Prijsmodellen</h2>
+            <p className="text-gray-600">Kies het model dat het beste bij jouw organisatie past</p>
+          </div>
 
-        {/* Testimonials */}
-        <div className="mb-12">
-          <div className="text-center mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <Card className="text-center">
+              <CardHeader>
+                <Users className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                <CardTitle>Per Gebruiker</CardTitle>
+                <CardDescription>Ideaal voor groeiende teams</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-blue-600 mb-2">€6-25</div>
+                <div className="text-gray-600 mb-4">per gebruiker/maand</div>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Basis: €6/gebruiker</li>
+                  <li>• Professional: €15/gebruiker</li>
+                  <li>• Enterprise: €25/gebruiker</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center ring-2 ring-blue-500">
+              <CardHeader>
+                <Building2 className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                <CardTitle>Per Gebouw</CardTitle>
+                <CardDescription>Perfect voor meerdere locaties</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-600 mb-2">€35-150</div>
+                <div className="text-gray-600 mb-4">per gebouw/maand</div>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Klein gebouw: €35/maand</li>
+                  <li>• Middelgroot: €75/maand</li>
+                  <li>• Groot complex: €150/maand</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardHeader>
+                <Globe className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+                <CardTitle>Per Organisatie</CardTitle>
+                <CardDescription>Voor enterprise klanten</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-purple-600 mb-2">€120-800</div>
+                <div className="text-gray-600 mb-4">vast tarief/maand</div>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Starter: €120/maand</li>
+                  <li>• Business: €350/maand</li>
+                  <li>• Enterprise: €800/maand</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Customer Testimonials */}
+      <section className="py-16 px-4 bg-gray-50">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Wat Onze Klanten Zeggen</h2>
-            <p className="text-gray-600 text-lg">Meer dan 500 organisaties vertrouwen op BHV360</p>
+            <p className="text-gray-600">Meer dan 500 organisaties vertrouwen op BHV360</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {testimonials.map((testimonial, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
+              <Card key={index} className="bg-white">
                 <CardHeader>
-                  <div className="flex items-center gap-1 mb-2">
+                  <div className="flex items-center space-x-1 mb-2">
                     {[...Array(testimonial.rating)].map((_, i) => (
                       <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                     ))}
                   </div>
-                  <CardDescription className="text-base italic">"{testimonial.quote}"</CardDescription>
+                  <CardDescription className="text-gray-700 italic">"{testimonial.content}"</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div>
+                  <div className="border-t pt-4">
                     <div className="font-semibold text-gray-900">{testimonial.name}</div>
                     <div className="text-sm text-gray-600">{testimonial.role}</div>
                     <div className="text-sm text-blue-600">{testimonial.company}</div>
@@ -508,333 +413,192 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+      </section>
 
-        {/* Module Marketplace Preview */}
-        <Card className="mb-12">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-gray-900 flex items-center justify-center gap-2">
-              <Globe className="h-6 w-6 text-blue-600" />
-              Module Marketplace
-            </CardTitle>
-            <CardDescription className="text-lg">Ontdek onze uitgebreide collectie van BHV modules</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="popular" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="popular">Populair</TabsTrigger>
-                <TabsTrigger value="new">Nieuw</TabsTrigger>
-                <TabsTrigger value="enterprise">Enterprise</TabsTrigger>
-              </TabsList>
+      {/* Quick Actions */}
+      <section className="py-16 px-4 bg-white">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Snelle Toegang</h2>
+            <p className="text-gray-600">Direct naar de meest gebruikte functies</p>
+          </div>
 
-              <TabsContent value="popular" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <Card className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          Noodprocedures
-                        </CardTitle>
-                        <Badge className="bg-red-100 text-red-700">
-                          <Star className="h-3 w-3 mr-1" />
-                          #1
-                        </Badge>
-                      </div>
-                      <CardDescription>Interactieve procedures met checklists</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-600">
-                          <div>Per gebruiker: €12/maand</div>
-                          <div>Per gebouw: €75/maand</div>
-                        </div>
-                        <Button size="sm" variant="outline">
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          Demo
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Map className="h-5 w-5 text-blue-600" />
-                          Plotkaart Pro
-                        </CardTitle>
-                        <Badge className="bg-blue-100 text-blue-700">
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                          Trending
-                        </Badge>
-                      </div>
-                      <CardDescription>Geavanceerde plattegronden met NFC</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-600">
-                          <div>Per gebouw: €45/maand</div>
-                          <div>Enterprise: €200/maand</div>
-                        </div>
-                        <Button size="sm" variant="outline">
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          Demo
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Shield className="h-5 w-5 text-green-600" />
-                          BHV Dashboard
-                        </CardTitle>
-                        <Badge className="bg-green-100 text-green-700">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Stabiel
-                        </Badge>
-                      </div>
-                      <CardDescription>Complete BHV coördinatie suite</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-600">
-                          <div>Per gebruiker: €18/maand</div>
-                          <div>Per organisatie: €250/maand</div>
-                        </div>
-                        <Button size="sm" variant="outline">
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          Demo
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="new" className="space-y-4">
-                <div className="text-center py-8">
-                  <Zap className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Nieuwe Modules Binnenkort</h3>
-                  <p className="text-gray-600">AI-powered incident voorspelling en automatische rapportage</p>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="enterprise" className="space-y-4">
-                <div className="text-center py-8">
-                  <Building className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Enterprise Oplossingen</h3>
-                  <p className="text-gray-600">White-label, API toegang en custom integraties</p>
-                  <Button className="mt-4">
-                    <Phone className="h-4 w-4 mr-2" />
-                    Contact Sales
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
-
-            <div className="text-center mt-6">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
-                onClick={() => router.push("/beheer/module-marketplace")}
-              >
-                <Globe className="h-5 w-5 mr-2" />
-                Volledige Marketplace Bekijken
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card className="mb-12">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-blue-600" />
-              Snelle Acties
-            </CardTitle>
-            <CardDescription>Veelgebruikte functies voor dagelijks BHV beheer</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Button
-                variant="outline"
-                className="h-20 flex-col gap-2 bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-blue-200"
-                onClick={() => router.push("/plotkaart")}
-              >
-                <Map className="h-6 w-6 text-blue-600" />
-                <span className="text-sm">Plotkaart Bekijken</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-20 flex-col gap-2 bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-200"
-                onClick={() => router.push("/incidenten")}
-              >
-                <AlertTriangle className="h-6 w-6 text-red-600" />
-                <span className="text-sm">Incident Melden</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-20 flex-col gap-2 bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border-green-200"
-                onClick={() => router.push("/bhv-aanwezigheid")}
-              >
-                <Users className="h-6 w-6 text-green-600" />
-                <span className="text-sm">BHV Status</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-20 flex-col gap-2 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 border-purple-200"
-                onClick={() => router.push("/beheer/rapportages")}
-              >
-                <BarChart3 className="h-6 w-6 text-purple-600" />
-                <span className="text-sm">Rapportages</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* CTA Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-green-600 rounded-2xl text-white p-12 text-center mb-12">
-          <BHV360Logo size="lg" variant="white" className="justify-center mb-6" />
-          <h2 className="text-3xl font-bold mb-4">Klaar om BHV360 te Ervaren?</h2>
-          <p className="text-xl mb-8 opacity-90">Sluit je aan bij meer dan 500 organisaties die vertrouwen op BHV360</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              variant="secondary"
-              className="bg-white text-blue-600 hover:bg-gray-100"
-              onClick={() => router.push("/beheer/module-marketplace")}
-            >
-              <Globe className="h-5 w-5 mr-2" />
-              Bekijk Modules
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            <Button variant="outline" className="h-20 flex-col space-y-2 bg-transparent" asChild>
+              <Link href="/plotkaart">
+                <MapPin className="h-6 w-6" />
+                <span>Plotkaart</span>
+              </Link>
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="text-white border-white hover:bg-white hover:text-blue-600 bg-transparent"
-              onClick={() => router.push("/dashboard")}
-            >
-              <ArrowRight className="h-5 w-5 mr-2" />
-              Start Dashboard
+            <Button variant="outline" className="h-20 flex-col space-y-2 bg-transparent" asChild>
+              <Link href="/incidenten">
+                <AlertTriangle className="h-6 w-6" />
+                <span>Incidenten</span>
+              </Link>
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="text-white border-white hover:bg-white hover:text-blue-600 bg-transparent"
-              onClick={() => router.push("/demo/overview")}
-            >
-              <Play className="h-5 w-5 mr-2" />
-              Live Demo's
+            <Button variant="outline" className="h-20 flex-col space-y-2 bg-transparent" asChild>
+              <Link href="/bhv-aanwezigheid">
+                <Users className="h-6 w-6" />
+                <span>BHV Status</span>
+              </Link>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col space-y-2 bg-transparent" asChild>
+              <Link href="/aed-monitoring">
+                <Heart className="h-6 w-6" />
+                <span>AED Monitor</span>
+              </Link>
             </Button>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Compliance & Security */}
+      <section className="py-16 px-4 bg-blue-50">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Compliance & Beveiliging</h2>
+            <p className="text-gray-600">Voldoet aan alle Nederlandse en Europese standaarden</p>
+          </div>
+
+          <div className="flex flex-wrap justify-center items-center gap-8 max-w-4xl mx-auto">
+            <Badge variant="outline" className="px-6 py-3 text-lg bg-white">
+              <Shield className="h-5 w-5 mr-2" />
+              AVG Compliant
+            </Badge>
+            <Badge variant="outline" className="px-6 py-3 text-lg bg-white">
+              <Award className="h-5 w-5 mr-2" />
+              ISO 27001
+            </Badge>
+            <Badge variant="outline" className="px-6 py-3 text-lg bg-white">
+              <FileText className="h-5 w-5 mr-2" />
+              NEN 3011
+            </Badge>
+            <Badge variant="outline" className="px-6 py-3 text-lg bg-white">
+              <TrendingUp className="h-5 w-5 mr-2" />
+              SOC 2 Type II
+            </Badge>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="bg-gray-50 border-t">
-        <div className="container mx-auto px-4 py-8">
+      <footer className="bg-gray-900 text-white py-12 px-4">
+        <div className="container mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <BHV360Logo size="md" className="mb-4" />
-              <p className="text-gray-600 text-sm">
-                Nederland's meest vertrouwde BHV management platform. Meer dan 500 organisaties vertrouwen op onze
-                oplossingen.
+              <BHV360Logo className="h-8 w-auto mb-4 brightness-0 invert" />
+              <p className="text-gray-400 mb-4">
+                Het meest geavanceerde platform voor professionele Bedrijfshulpverlening.
               </p>
+              <div className="flex space-x-4">
+                <Button size="sm" variant="outline" className="text-white border-gray-600 bg-transparent" asChild>
+                  <Link href="tel:+31850606060">
+                    <Phone className="h-4 w-4 mr-2" />
+                    085-060 60 60
+                  </Link>
+                </Button>
+                <Button size="sm" variant="outline" className="text-white border-gray-600 bg-transparent" asChild>
+                  <Link href="mailto:info@bhv360.nl">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Contact
+                  </Link>
+                </Button>
+              </div>
             </div>
+
             <div>
-              <h4 className="font-semibold text-gray-900 mb-4">Product</h4>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <h3 className="font-semibold mb-4">Product</h3>
+              <ul className="space-y-2 text-gray-400">
                 <li>
-                  <Link href="/beheer/module-marketplace" className="hover:text-blue-600">
-                    Module Marketplace
+                  <Link href="/plotkaart" className="hover:text-white">
+                    Plotkaart Editor
                   </Link>
                 </li>
                 <li>
-                  <Link href="/demo/overview" className="hover:text-blue-600">
-                    Live Demo's
+                  <Link href="/incidenten" className="hover:text-white">
+                    Incident Management
                   </Link>
                 </li>
                 <li>
-                  <Link href="/beheer/rapportages" className="hover:text-blue-600">
-                    Rapportages
+                  <Link href="/aed-monitoring" className="hover:text-white">
+                    AED Monitoring
                   </Link>
                 </li>
                 <li>
-                  <Link href="/mobile-app" className="hover:text-blue-600">
+                  <Link href="/mobile-app" className="hover:text-white">
                     Mobile App
                   </Link>
                 </li>
               </ul>
             </div>
+
             <div>
-              <h4 className="font-semibold text-gray-900 mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <h3 className="font-semibold mb-4">Ondersteuning</h3>
+              <ul className="space-y-2 text-gray-400">
                 <li>
-                  <Link href="/help" className="hover:text-blue-600">
+                  <Link href="/help" className="hover:text-white">
                     Help Center
                   </Link>
                 </li>
                 <li>
-                  <Link href="/video-tutorials" className="hover:text-blue-600">
+                  <Link href="/video-tutorials" className="hover:text-white">
                     Video Tutorials
                   </Link>
                 </li>
                 <li>
-                  <Link href="/system-health" className="hover:text-blue-600">
-                    System Status
+                  <Link href="/setup-demo" className="hover:text-white">
+                    Demo Aanvragen
                   </Link>
                 </li>
-                <li className="flex items-center gap-1">
-                  <Phone className="h-3 w-3" />
-                  <span>+31 20 123 4567</span>
+                <li>
+                  <Link href="/integrations" className="hover:text-white">
+                    Integraties
+                  </Link>
                 </li>
               </ul>
             </div>
+
             <div>
-              <h4 className="font-semibold text-gray-900 mb-4">Bedrijf</h4>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <h3 className="font-semibold mb-4">Bedrijf</h3>
+              <ul className="space-y-2 text-gray-400">
                 <li>
-                  <Link href="/gratis-bhv-software" className="hover:text-blue-600">
+                  <Link href="/gratis-bhv-software" className="hover:text-white">
                     Gratis Versie
                   </Link>
                 </li>
                 <li>
-                  <Link href="/partner" className="hover:text-blue-600">
-                    Partners
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/white-label" className="hover:text-blue-600">
+                  <Link href="/white-label" className="hover:text-white">
                     White Label
                   </Link>
                 </li>
-                <li className="flex items-center gap-1">
-                  <Mail className="h-3 w-3" />
-                  <span>info@bhv360.nl</span>
+                <li>
+                  <Link href="/partner" className="hover:text-white">
+                    Partner Worden
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/system-health" className="hover:text-white">
+                    Status Page
+                  </Link>
                 </li>
               </ul>
             </div>
           </div>
-          <div className="border-t mt-8 pt-8 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <BHV360Logo size="sm" showText={false} />
-              <span className="text-sm text-gray-600">© 2024 BHV360 Platform - Alle rechten voorbehouden</span>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <span className="flex items-center gap-1">
-                <CheckCircle className="h-3 w-3 text-green-500" />
-                99.9% Uptime
-              </span>
-              <span className="flex items-center gap-1">
-                <Lock className="h-3 w-3 text-blue-500" />
-                AVG Compliant
-              </span>
-              <span className="flex items-center gap-1">
-                <Award className="h-3 w-3 text-purple-500" />
-                ISO 27001
-              </span>
+
+          <Separator className="my-8 bg-gray-700" />
+
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400 text-sm">© 2024 BHV360. Alle rechten voorbehouden.</p>
+            <div className="flex space-x-6 text-sm text-gray-400 mt-4 md:mt-0">
+              <Link href="/privacy" className="hover:text-white">
+                Privacy
+              </Link>
+              <Link href="/terms" className="hover:text-white">
+                Voorwaarden
+              </Link>
+              <Link href="/cookies" className="hover:text-white">
+                Cookies
+              </Link>
             </div>
           </div>
         </div>
