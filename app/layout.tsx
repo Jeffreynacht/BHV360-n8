@@ -1,19 +1,13 @@
 import type React from "react"
-import type { Metadata } from "next"
+import "@/app/globals.css"
 import { Inter } from "next/font/google"
-import "./globals.css"
-import ClientLayout from "./client-layout"
+import { ThemeProvider } from "@/components/theme-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
-export const metadata: Metadata = {
-  title: "BHV360 - Professional Safety Management Platform",
-  description:
-    "Complete BHV management system with real-time monitoring, incident management, and compliance reporting. Powered by BHV360's innovative blue and green safety technology.",
-  keywords: "BHV360, BHV, safety management, emergency response, incident management, compliance, blue green safety",
-  authors: [{ name: "BHV360 Team" }],
-  viewport: "width=device-width, initial-scale=1",
-  themeColor: "#2563eb", // Blue-600
+export const metadata = {
+  title: "BHV Plotkaart Provinciehuis Noord-Brabant",
+  description: "Bedrijfshulpverlening plotkaart voor het Provinciehuis Noord-Brabant",
     generator: 'v0.app'
 }
 
@@ -23,9 +17,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="nl" suppressHydrationWarning>
+    <html lang="nl">
       <body className={inter.className}>
-        <ClientLayout>{children}</ClientLayout>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )
