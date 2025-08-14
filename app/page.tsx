@@ -12,13 +12,14 @@ import {
   BarChart3,
   Heart,
   Building2,
-  CheckCircle,
   Star,
+  Check,
   ArrowRight,
-  Zap,
+  Sparkles,
   Clock,
   Award,
   Globe,
+  Zap,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -29,7 +30,7 @@ const features = [
     title: "BHV Management",
     description: "Complete BHV organisatie en coördinatie met real-time status updates",
     icon: Shield,
-    cta: "Bekijk live BHV status dashboard",
+    action: "Bekijk live BHV status dashboard",
     href: "/bhv",
   },
   {
@@ -37,7 +38,7 @@ const features = [
     title: "Interactieve Plotkaarten",
     description: "Digitale veiligheidsplattegronden met drag & drop editor",
     icon: MapPin,
-    cta: "Probeer de plotkaart editor",
+    action: "Probeer de plotkaart editor",
     href: "/plotkaart",
   },
   {
@@ -45,7 +46,7 @@ const features = [
     title: "Incident Management",
     description: "Snelle registratie en automatische escalatie van incidenten",
     icon: AlertTriangle,
-    cta: "Simuleer een noodmelding",
+    action: "Simuleer een noodmelding",
     href: "/incidenten",
   },
   {
@@ -53,7 +54,7 @@ const features = [
     title: "Gebruikersbeheer",
     description: "Geavanceerd rollenbeleid en certificering tracking",
     icon: Users,
-    cta: "Bekijk gebruikersrollen",
+    action: "Bekijk gebruikersrollen",
     href: "/gebruikers",
   },
   {
@@ -61,15 +62,15 @@ const features = [
     title: "Multi-locatie Support",
     description: "Centraal beheer van meerdere gebouwen en vestigingen",
     icon: Building2,
-    cta: "Schakel tussen locaties",
-    href: "/klanten",
+    action: "Schakel tussen locaties",
+    href: "/beheer",
   },
   {
     id: "ehbo-monitoring",
     title: "EHBO & AED Monitoring",
     description: "Automatische tracking van voorraad en onderhoudsschema's",
     icon: Heart,
-    cta: "Bekijk voorraad status",
+    action: "Bekijk voorraad status",
     href: "/ehbo-voorraad",
   },
   {
@@ -77,7 +78,7 @@ const features = [
     title: "Analytics",
     description: "Uitgebreide rapportages en inzichten",
     icon: BarChart3,
-    cta: "Bekijk rapportages",
+    action: "Bekijk rapportages",
     href: "/beheer/rapportages",
   },
 ]
@@ -162,13 +163,13 @@ const pricingPlans = [
 ]
 
 export default function HomePage() {
-  const [activeFeature, setActiveFeature] = useState(0)
+  const [currentFeature, setCurrentFeature] = useState(0)
   const [countdown, setCountdown] = useState(10)
   const router = useRouter()
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveFeature((prev) => (prev + 1) % features.length)
+      setCurrentFeature((prev) => (prev + 1) % features.length)
     }, 4000)
 
     return () => clearInterval(interval)
@@ -188,8 +189,8 @@ export default function HomePage() {
     return () => clearInterval(timer)
   }, [router])
 
-  const currentFeature = features[activeFeature]
-  const IconComponent = currentFeature.icon
+  const feature = features[currentFeature]
+  const FeatureIcon = feature.icon
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -202,11 +203,11 @@ export default function HomePage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">BHV360</h1>
-              <p className="text-xs text-gray-600">Professional BHV Management</p>
+              <p className="text-xs text-gray-500">Professional BHV Management</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
               <Clock className="h-3 w-3 mr-1" />
               Auto-redirect in {countdown}s
             </Badge>
@@ -221,12 +222,12 @@ export default function HomePage() {
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
           <Badge className="mb-6 bg-gradient-to-r from-blue-600 to-green-600 text-white">
-            <Zap className="h-4 w-4 mr-2" />
+            <Sparkles className="h-4 w-4 mr-2" />
             Nieuw: AI-powered incident detectie
           </Badge>
 
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            De toekomst van{" "}
+            De toekomst van <br />
             <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
               BHV Management
             </span>{" "}
@@ -244,60 +245,67 @@ export default function HomePage() {
               className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
               asChild
             >
-              <Link href="/preview">
+              <Link href="/demo">
+                <Zap className="h-5 w-5 mr-2" />
                 Bekijk Live Demo
-                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link href="/login">Start Gratis Trial</Link>
+              <Link href="/login">
+                Start Gratis Trial
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Link>
             </Button>
           </div>
 
           {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center gap-6 mb-16">
-            <Badge variant="outline" className="px-4 py-2">
-              <Award className="h-4 w-4 mr-2 text-blue-600" />
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-600">
+            <div className="flex items-center">
+              <Award className="h-4 w-4 mr-2 text-green-600" />
               ISO 27001 Compliant
-            </Badge>
-            <Badge variant="outline" className="px-4 py-2">
-              <Shield className="h-4 w-4 mr-2 text-green-600" />
+            </div>
+            <div className="flex items-center">
+              <Shield className="h-4 w-4 mr-2 text-blue-600" />
               AVG Compliant
-            </Badge>
-            <Badge variant="outline" className="px-4 py-2">
+            </div>
+            <div className="flex items-center">
               <Globe className="h-4 w-4 mr-2 text-orange-600" />
               Nederlandse Support
-            </Badge>
+            </div>
           </div>
+        </div>
+      </section>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-            <div className="text-center">
+      {/* Stats Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div>
               <div className="text-3xl font-bold text-blue-600 mb-2">500+</div>
-              <div className="text-sm text-gray-600">Actieve Organisaties</div>
-              <div className="text-xs text-gray-500">Vertrouwen op BHV360</div>
+              <div className="text-gray-600">Actieve Organisaties</div>
+              <div className="text-sm text-gray-500">Vertrouwen op BHV360</div>
             </div>
-            <div className="text-center">
+            <div>
               <div className="text-3xl font-bold text-green-600 mb-2">10,000+</div>
-              <div className="text-sm text-gray-600">BHV-ers Beheerd</div>
-              <div className="text-xs text-gray-500">Gecertificeerde professionals</div>
+              <div className="text-gray-600">BHV-ers Beheerd</div>
+              <div className="text-sm text-gray-500">Gecertificeerde professionals</div>
             </div>
-            <div className="text-center">
+            <div>
               <div className="text-3xl font-bold text-orange-600 mb-2">25,000+</div>
-              <div className="text-sm text-gray-600">Incidenten Afgehandeld</div>
-              <div className="text-xs text-gray-500">Succesvol geregistreerd</div>
+              <div className="text-gray-600">Incidenten Afgehandeld</div>
+              <div className="text-sm text-gray-500">Succesvol geregistreerd</div>
             </div>
-            <div className="text-center">
+            <div>
               <div className="text-3xl font-bold text-purple-600 mb-2">99.9%</div>
-              <div className="text-sm text-gray-600">Uptime Garantie</div>
-              <div className="text-xs text-gray-500">Betrouwbare service</div>
+              <div className="text-gray-600">Uptime Garantie</div>
+              <div className="text-sm text-gray-500">Betrouwbare service</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-white">
+      <section className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Alles wat u nodig heeft</h2>
@@ -310,23 +318,26 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Feature Display */}
             <div className="order-2 lg:order-1">
-              <Card className="border-2 border-blue-100 shadow-xl">
+              <Card className="p-8 border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-green-50">
                 <CardHeader className="pb-4">
-                  <div className="flex items-center space-x-3 mb-4">
+                  <div className="flex items-center space-x-4 mb-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
-                      <IconComponent className="h-6 w-6 text-white" />
+                      <FeatureIcon className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <CardTitle className="text-xl">{currentFeature.title}</CardTitle>
+                      <CardTitle className="text-2xl text-gray-900">{feature.title}</CardTitle>
                     </div>
                   </div>
-                  <CardDescription className="text-base">{currentFeature.description}</CardDescription>
+                  <CardDescription className="text-lg text-gray-600">{feature.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button className="w-full" asChild>
-                    <Link href={currentFeature.href}>
-                      {currentFeature.cta}
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                  <Button
+                    className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
+                    asChild
+                  >
+                    <Link href={feature.href}>
+                      {feature.action}
+                      <ArrowRight className="h-4 w-4 ml-2" />
                     </Link>
                   </Button>
                 </CardContent>
@@ -334,32 +345,28 @@ export default function HomePage() {
             </div>
 
             {/* Feature List */}
-            <div className="order-1 lg:order-2 space-y-3">
-              {features.map((feature, index) => {
-                const FeatureIcon = feature.icon
+            <div className="order-1 lg:order-2 space-y-4">
+              {features.map((feat, index) => {
+                const Icon = feat.icon
                 return (
                   <div
-                    key={feature.id}
+                    key={feat.id}
                     className={`p-4 rounded-lg cursor-pointer transition-all duration-300 ${
-                      index === activeFeature
-                        ? "bg-gradient-to-r from-blue-50 to-green-50 border-2 border-blue-200"
-                        : "bg-gray-50 hover:bg-gray-100 border-2 border-transparent"
+                      index === currentFeature
+                        ? "bg-gradient-to-r from-blue-600 to-green-600 text-white shadow-lg"
+                        : "bg-white hover:bg-gray-50 border border-gray-200"
                     }`}
-                    onClick={() => setActiveFeature(index)}
+                    onClick={() => setCurrentFeature(index)}
                   >
                     <div className="flex items-center space-x-3">
-                      <div
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          index === activeFeature
-                            ? "bg-gradient-to-br from-blue-600 to-green-600 text-white"
-                            : "bg-white text-gray-600"
-                        }`}
-                      >
-                        <FeatureIcon className="h-5 w-5" />
-                      </div>
+                      <Icon className={`h-5 w-5 ${index === currentFeature ? "text-white" : "text-gray-600"}`} />
                       <div>
-                        <h3 className="font-semibold text-gray-900">{feature.title}</h3>
-                        <p className="text-sm text-gray-600">{feature.description}</p>
+                        <h3 className={`font-semibold ${index === currentFeature ? "text-white" : "text-gray-900"}`}>
+                          {feat.title}
+                        </h3>
+                        <p className={`text-sm ${index === currentFeature ? "text-blue-100" : "text-gray-600"}`}>
+                          {feat.description}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -371,8 +378,8 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 px-4 bg-gradient-to-br from-blue-50 to-green-50">
-        <div className="container mx-auto">
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Wat onze klanten zeggen</h2>
             <p className="text-xl text-gray-600">Ontdek waarom organisaties kiezen voor BHV360</p>
@@ -380,14 +387,14 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <Card key={index} className="bg-white shadow-lg">
-                <CardContent className="p-6">
+              <Card key={index} className="p-6 bg-white">
+                <CardContent className="pt-0">
                   <div className="flex mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
                       <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                     ))}
                   </div>
-                  <p className="text-gray-700 mb-4 italic">"{testimonial.content}"</p>
+                  <blockquote className="text-gray-700 mb-4">"{testimonial.content}"</blockquote>
                   <div>
                     <div className="font-semibold text-gray-900">{testimonial.name}</div>
                     <div className="text-sm text-gray-600">{testimonial.role}</div>
@@ -401,21 +408,16 @@ export default function HomePage() {
       </section>
 
       {/* Pricing */}
-      <section className="py-20 px-4 bg-white">
+      <section className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Transparante prijzen</h2>
             <p className="text-xl text-gray-600">Kies het plan dat perfect past bij uw organisatie</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8">
             {pricingPlans.map((plan, index) => (
-              <Card
-                key={index}
-                className={`relative ${
-                  plan.popular ? "border-2 border-blue-500 shadow-xl scale-105" : "border border-gray-200 shadow-lg"
-                }`}
-              >
+              <Card key={index} className={`relative ${plan.popular ? "border-2 border-blue-500 shadow-lg" : ""}`}>
                 {plan.popular && (
                   <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-green-600 text-white">
                     Meest Populair
@@ -423,27 +425,23 @@ export default function HomePage() {
                 )}
                 <CardHeader className="text-center pb-4">
                   <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                    <span className="text-gray-600">{plan.period}</span>
+                  <div className="text-3xl font-bold text-gray-900">
+                    {plan.price}
+                    <span className="text-lg font-normal text-gray-600">{plan.period}</span>
                   </div>
-                  <CardDescription className="mt-2">{plan.description}</CardDescription>
+                  <CardDescription>{plan.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <ul className="space-y-3">
                     {plan.features.map((feature, featureIndex) => (
                       <li key={featureIndex} className="flex items-center">
-                        <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                        <Check className="h-5 w-5 text-green-600 mr-3 flex-shrink-0" />
                         <span className="text-gray-700">{feature}</span>
                       </li>
                     ))}
                   </ul>
                   <Button
-                    className={`w-full mt-6 ${
-                      plan.popular
-                        ? "bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
-                        : ""
-                    }`}
+                    className={`w-full ${plan.popular ? "bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700" : ""}`}
                     variant={plan.popular ? "default" : "outline"}
                     asChild
                   >
@@ -457,16 +455,19 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-green-600 text-white">
-        <div className="container mx-auto text-center">
+      <section className="py-20 bg-gradient-to-r from-blue-600 to-green-600 text-white">
+        <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl font-bold mb-4">Klaar voor de volgende stap?</h2>
-          <p className="text-xl mb-8 max-w-3xl mx-auto opacity-90">
+          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
             Sluit u aan bij honderden organisaties die hun veiligheid hebben getransformeerd met BHV360. Start vandaag
             nog met een gratis 30-dagen trial.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100" asChild>
-              <Link href="/login">Start Gratis Trial</Link>
+              <Link href="/login">
+                Start Gratis Trial
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Link>
             </Button>
             <Button
               size="lg"
@@ -474,47 +475,48 @@ export default function HomePage() {
               className="border-white text-white hover:bg-white hover:text-blue-600 bg-transparent"
               asChild
             >
-              <Link href="/preview">Bekijk Demo</Link>
+              <Link href="/demo">Bekijk Demo</Link>
             </Button>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16 px-4">
-        <div className="container mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+      <footer className="bg-gray-900 text-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
-                  <Shield className="h-6 w-6 text-white" />
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
+                  <Shield className="h-5 w-5 text-white" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold">BHV360</h3>
-                </div>
+                <span className="text-xl font-bold">BHV360</span>
               </div>
               <p className="text-gray-400 mb-4">
                 Het meest geavanceerde BHV management platform van Nederland. Ontwikkeld door veiligheidsprofessionals,
                 voor veiligheidsprofessionals.
               </p>
-              <div className="flex space-x-4">
-                <Badge variant="outline" className="border-gray-600 text-gray-300">
+              <div className="flex space-x-4 text-sm">
+                <Badge variant="outline" className="border-green-600 text-green-400">
+                  <Award className="h-3 w-3 mr-1" />
                   ISO 27001 Compliant
                 </Badge>
-                <Badge variant="outline" className="border-gray-600 text-gray-300">
+                <Badge variant="outline" className="border-blue-600 text-blue-400">
+                  <Shield className="h-3 w-3 mr-1" />
                   AVG Compliant
                 </Badge>
-                <Badge variant="outline" className="border-gray-600 text-gray-300">
+                <Badge variant="outline" className="border-orange-600 text-orange-400">
+                  <Globe className="h-3 w-3 mr-1" />
                   Made in NL
                 </Badge>
               </div>
             </div>
 
             <div>
-              <h4 className="font-semibold mb-4">Platform</h4>
+              <h3 className="font-semibold mb-4">Platform</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <Link href="/preview" className="hover:text-white transition-colors">
+                  <Link href="/demo" className="hover:text-white transition-colors">
                     Live Demo
                   </Link>
                 </li>
@@ -524,12 +526,12 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="#pricing" className="hover:text-white transition-colors">
+                  <Link href="/pricing" className="hover:text-white transition-colors">
                     Prijzen
                   </Link>
                 </li>
                 <li>
-                  <Link href="/docs" className="hover:text-white transition-colors">
+                  <Link href="/api" className="hover:text-white transition-colors">
                     API Documentatie
                   </Link>
                 </li>
@@ -537,7 +539,7 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h4 className="font-semibold mb-4">Support</h4>
+              <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
                   <Link href="/help" className="hover:text-white transition-colors">
@@ -563,26 +565,28 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h4 className="font-semibold mb-4">Contact</h4>
-              <div className="text-gray-400 space-y-2">
-                <p>support@bhv360.nl</p>
-                <p>+31 (0)85 130 5000</p>
-                <p>Maandag - Vrijdag</p>
-                <p>09:00 - 17:00</p>
+              <h3 className="font-semibold mb-4">Contact</h3>
+              <div className="space-y-2 text-gray-400">
+                <p>Email: info@bhv360.nl</p>
+                <p>Telefoon: +31 (0)85 130 5000</p>
+                <p>
+                  Adres: Wilhelminalaan 1<br />
+                  5611 HB Eindhoven
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 mb-4 md:mb-0">© 2024 BHV360. Alle rechten voorbehouden.</p>
-            <div className="flex space-x-6 text-gray-400">
-              <Link href="/privacy" className="hover:text-white transition-colors">
+          <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400">© 2024 BHV360. Alle rechten voorbehouden.</p>
+            <div className="flex space-x-6 mt-4 md:mt-0">
+              <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
                 Privacy
               </Link>
-              <Link href="/terms" className="hover:text-white transition-colors">
+              <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
                 Voorwaarden
               </Link>
-              <Link href="/cookies" className="hover:text-white transition-colors">
+              <Link href="/cookies" className="text-gray-400 hover:text-white transition-colors">
                 Cookies
               </Link>
             </div>
