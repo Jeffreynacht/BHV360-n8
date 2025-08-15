@@ -1,583 +1,429 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Edit3,
-  Save,
-  Eye,
-  RefreshCw,
-  Plus,
-  Trash2,
-  Upload,
-  Globe,
-  Smartphone,
-  Monitor,
-  Settings,
-  ImageIcon,
-  Type,
-  Layout,
-  Palette,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-
-interface ContentSection {
-  id: string
-  name: string
-  type: "hero" | "pricing" | "modules" | "company" | "contact" | "footer"
-  content: any
-  isActive: boolean
-  lastModified: string
-}
+import { Save, Plus, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 
 export default function ContentManagementPage() {
-  const { toast } = useToast()
-  const [activeSection, setActiveSection] = useState<string>("hero")
-  const [isEditing, setIsEditing] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
+  const [isPreviewMode, setIsPreviewMode] = useState(false)
+  const [heroContent, setHeroContent] = useState({
+    title: "Professionele BHV Plotkaarten",
+    subtitle:
+      "Creëer, beheer en deel interactieve evacuatieplattegronden voor optimale bedrijfshulpverlening. Voldoet aan alle Nederlandse veiligheidsnormen.",
+    ctaPrimary: "Start Gratis Trial",
+    ctaSecondary: "Live Demo Bekijken",
+  })
 
-  // Mock content sections
-  const [contentSections, setContentSections] = useState<ContentSection[]>([
+  const [pricingPlans, setPricingPlans] = useState([
     {
-      id: "hero",
-      name: "Hero Sectie",
-      type: "hero",
-      content: {
-        title: "Professioneel BHV Beheer Gemaakt Eenvoudig",
-        subtitle:
-          "Van papieren chaos naar digitale controle. BHV360 maakt veiligheidsmanagement eenvoudig, compliant en effectief voor elke organisatie.",
-        primaryButton: "Bekijk Demo",
-        secondaryButton: "30 Dagen Gratis",
-        backgroundImage: "/images/hero-bg.jpg",
-        benefits: [
-          "100% digitale BHV administratie",
-          "Interactieve plotkaarten met real-time status",
-          "Automatische compliance rapportage",
-          "Mobiele app voor alle BHV'ers",
-          "Instant incident management",
-        ],
-      },
-      isActive: true,
-      lastModified: "2024-01-15 14:30",
+      id: "starter",
+      name: "Starter",
+      price: "€49",
+      period: "/maand",
+      description: "Perfect voor kleine organisaties",
+      features: [
+        "Tot 50 gebruikers",
+        "Basis plotkaarten",
+        "Incident registratie",
+        "Email ondersteuning",
+        "Standaard rapportages",
+      ],
+      popular: false,
     },
     {
-      id: "pricing",
-      name: "Prijzen Sectie",
-      type: "pricing",
-      content: {
-        title: "Transparante Prijzen",
-        subtitle: "Kies het plan dat perfect past bij uw organisatie",
-        plans: [
-          {
-            name: "Starter",
-            price: "€49",
-            period: "/maand",
-            description: "Perfect voor kleine organisaties",
-            features: [
-              "Tot 50 gebruikers",
-              "Basis plotkaarten",
-              "Incident registratie",
-              "Email ondersteuning",
-              "Standaard rapportages",
-            ],
-          },
-          {
-            name: "Professional",
-            price: "€149",
-            period: "/maand",
-            description: "Ideaal voor middelgrote bedrijven",
-            features: [
-              "Tot 250 gebruikers",
-              "Geavanceerde plotkaarten",
-              "Real-time monitoring",
-              "Telefoon ondersteuning",
-              "Custom rapportages",
-              "API integraties",
-              "Multi-locatie support",
-            ],
-            popular: true,
-          },
-          {
-            name: "Enterprise",
-            price: "Op maat",
-            period: "",
-            description: "Voor grote organisaties",
-            features: [
-              "Onbeperkt gebruikers",
-              "White-label oplossing",
-              "Dedicated support",
-              "Custom ontwikkeling",
-              "SLA garanties",
-              "On-premise optie",
-              "Training & consultancy",
-            ],
-          },
-        ],
-      },
-      isActive: true,
-      lastModified: "2024-01-15 12:15",
+      id: "professional",
+      name: "Professional",
+      price: "€149",
+      period: "/maand",
+      description: "Ideaal voor middelgrote bedrijven",
+      features: [
+        "Tot 250 gebruikers",
+        "Geavanceerde plotkaarten",
+        "Real-time monitoring",
+        "Telefoon ondersteuning",
+        "Custom rapportages",
+        "API integraties",
+        "Multi-locatie support",
+      ],
+      popular: true,
     },
     {
-      id: "company",
-      name: "Bedrijfsinfo",
-      type: "company",
-      content: {
-        companyName: "BHV360 B.V.",
-        kvkNumber: "12345678",
-        btwNumber: "NL123456789B01",
-        iban: "NL12 ABCD 0123 4567 89",
-        phone: "033-4614303",
-        email: "info@BHV360.nl",
-        supportEmail: "support@BHV360.nl",
-        website: "www.bhv360.nl",
-        address: {
-          street: "Innovatiestraat 123",
-          city: "3811 AB Amersfoort",
-          country: "Nederland",
-        },
-        postAddress: {
-          street: "Postbus 456",
-          city: "3800 AL Amersfoort",
-          country: "Nederland",
-        },
-        openingHours: {
-          weekdays: "09:00 - 17:30",
-          saturday: "Gesloten",
-          sunday: "Gesloten",
-        },
-      },
-      isActive: true,
-      lastModified: "2024-01-14 16:45",
+      id: "enterprise",
+      name: "Enterprise",
+      price: "Op maat",
+      period: "",
+      description: "Voor grote organisaties",
+      features: [
+        "Onbeperkt gebruikers",
+        "White-label oplossing",
+        "Dedicated support",
+        "Custom ontwikkeling",
+        "SLA garanties",
+        "On-premise optie",
+        "Training & consultancy",
+      ],
+      popular: false,
     },
   ])
 
-  const handleSave = async () => {
-    setIsSaving(true)
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+  const [companyInfo, setCompanyInfo] = useState({
+    phone: "+31 (0)20 123 4567",
+    email: "info@bhv360.nl",
+    address: "Amsterdam, Nederland",
+    description: "Professionele BHV plotkaarten voor een veiligere werkomgeving.",
+  })
 
-      toast({
-        title: "Wijzigingen opgeslagen",
-        description: "De content is succesvol bijgewerkt.",
-      })
-      setIsEditing(false)
-    } catch (error) {
-      toast({
-        title: "Fout bij opslaan",
-        description: "Er is een fout opgetreden bij het opslaan.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSaving(false)
-    }
+  const handleSaveContent = () => {
+    // Hier zou je de content opslaan naar de database
+    toast.success("Content succesvol opgeslagen!")
   }
 
-  const handlePreview = () => {
-    window.open("/", "_blank")
+  const handleAddFeature = (planId: string) => {
+    setPricingPlans((plans) =>
+      plans.map((plan) => (plan.id === planId ? { ...plan, features: [...plan.features, "Nieuwe feature"] } : plan)),
+    )
   }
 
-  const currentSection = contentSections.find((section) => section.id === activeSection)
+  const handleRemoveFeature = (planId: string, featureIndex: number) => {
+    setPricingPlans((plans) =>
+      plans.map((plan) =>
+        plan.id === planId ? { ...plan, features: plan.features.filter((_, index) => index !== featureIndex) } : plan,
+      ),
+    )
+  }
+
+  const handleFeatureChange = (planId: string, featureIndex: number, newValue: string) => {
+    setPricingPlans((plans) =>
+      plans.map((plan) =>
+        plan.id === planId
+          ? {
+              ...plan,
+              features: plan.features.map((feature, index) => (index === featureIndex ? newValue : feature)),
+            }
+          : plan,
+      ),
+    )
+  }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Content Management</h1>
-          <p className="text-muted-foreground">Beheer de inhoud van de homepage en onderliggende pagina's</p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={handlePreview}>
-            <Eye className="mr-2 h-4 w-4" />
-            Preview
-          </Button>
-          <Button onClick={() => setIsEditing(!isEditing)} variant={isEditing ? "destructive" : "default"}>
-            <Edit3 className="mr-2 h-4 w-4" />
-            {isEditing ? "Stop Bewerken" : "Bewerken"}
-          </Button>
-          {isEditing && (
-            <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Content Management</h1>
+            <p className="text-gray-600 mt-2">Beheer de inhoud van de homepage en onderliggende pagina's</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="preview-mode">Preview Mode</Label>
+              <Switch id="preview-mode" checked={isPreviewMode} onCheckedChange={setIsPreviewMode} />
+            </div>
+            <Button onClick={handleSaveContent}>
+              <Save className="h-4 w-4 mr-2" />
               Opslaan
             </Button>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar - Content Sections */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Layout className="h-5 w-5" />
-                <span>Content Secties</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {contentSections.map((section) => (
-                <div
-                  key={section.id}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    activeSection === section.id ? "bg-blue-100 border-blue-300 border" : "bg-gray-50 hover:bg-gray-100"
-                  }`}
-                  onClick={() => setActiveSection(section.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{section.name}</span>
-                    {section.isActive ? (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 text-gray-400" />
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Laatst gewijzigd: {section.lastModified}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Settings className="h-5 w-5" />
-                <span>Snelle Acties</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
-                <Upload className="mr-2 h-4 w-4" />
-                Logo Uploaden
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
-                <ImageIcon className="mr-2 h-4 w-4" />
-                Afbeeldingen Beheren
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
-                <Palette className="mr-2 h-4 w-4" />
-                Kleuren Schema
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
-                <Type className="mr-2 h-4 w-4" />
-                Lettertypen
-              </Button>
-            </CardContent>
-          </Card>
+          </div>
         </div>
 
-        {/* Main Content Editor */}
-        <div className="lg:col-span-3">
-          {currentSection && (
+        <Tabs defaultValue="hero" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="hero">Hero Sectie</TabsTrigger>
+            <TabsTrigger value="features">Features</TabsTrigger>
+            <TabsTrigger value="pricing">Prijzen</TabsTrigger>
+            <TabsTrigger value="contact">Contact</TabsTrigger>
+            <TabsTrigger value="seo">SEO</TabsTrigger>
+          </TabsList>
+
+          {/* Hero Section */}
+          <TabsContent value="hero">
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Edit3 className="h-5 w-5" />
-                      <span>{currentSection.name}</span>
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">Bewerk de inhoud van deze sectie</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor="section-active">Actief</Label>
-                    <Switch id="section-active" checked={currentSection.isActive} disabled={!isEditing} />
-                  </div>
-                </div>
+                <CardTitle>Hero Sectie</CardTitle>
+                <CardDescription>Bewerk de hoofdtekst en call-to-action buttons van de homepage</CardDescription>
               </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="content" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="content">Inhoud</TabsTrigger>
-                    <TabsTrigger value="design">Design</TabsTrigger>
-                    <TabsTrigger value="seo">SEO</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="content" className="space-y-6 mt-6">
-                    {/* Hero Section Editor */}
-                    {currentSection.type === "hero" && (
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="hero-title">Hoofdtitel</Label>
-                          <Input
-                            id="hero-title"
-                            value={currentSection.content.title}
-                            disabled={!isEditing}
-                            className="mt-1"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="hero-subtitle">Ondertitel</Label>
-                          <Textarea
-                            id="hero-subtitle"
-                            value={currentSection.content.subtitle}
-                            disabled={!isEditing}
-                            rows={3}
-                            className="mt-1"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="primary-button">Primaire Knop</Label>
-                            <Input
-                              id="primary-button"
-                              value={currentSection.content.primaryButton}
-                              disabled={!isEditing}
-                              className="mt-1"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="secondary-button">Secundaire Knop</Label>
-                            <Input
-                              id="secondary-button"
-                              value={currentSection.content.secondaryButton}
-                              disabled={!isEditing}
-                              className="mt-1"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <Label>Voordelen</Label>
-                          <div className="space-y-2 mt-2">
-                            {currentSection.content.benefits.map((benefit: string, index: number) => (
-                              <div key={index} className="flex items-center space-x-2">
-                                <Input value={benefit} disabled={!isEditing} className="flex-1" />
-                                {isEditing && (
-                                  <Button variant="outline" size="sm">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
-                              </div>
-                            ))}
-                            {isEditing && (
-                              <Button variant="outline" size="sm">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Voordeel Toevoegen
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Pricing Section Editor */}
-                    {currentSection.type === "pricing" && (
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="pricing-title">Sectie Titel</Label>
-                          <Input
-                            id="pricing-title"
-                            value={currentSection.content.title}
-                            disabled={!isEditing}
-                            className="mt-1"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="pricing-subtitle">Sectie Ondertitel</Label>
-                          <Input
-                            id="pricing-subtitle"
-                            value={currentSection.content.subtitle}
-                            disabled={!isEditing}
-                            className="mt-1"
-                          />
-                        </div>
-                        <div>
-                          <Label>Prijsplannen</Label>
-                          <div className="space-y-4 mt-2">
-                            {currentSection.content.plans.map((plan: any, index: number) => (
-                              <Card key={index} className="p-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>Plan Naam</Label>
-                                    <Input value={plan.name} disabled={!isEditing} className="mt-1" />
-                                  </div>
-                                  <div>
-                                    <Label>Prijs</Label>
-                                    <Input value={plan.price} disabled={!isEditing} className="mt-1" />
-                                  </div>
-                                  <div className="col-span-2">
-                                    <Label>Beschrijving</Label>
-                                    <Input value={plan.description} disabled={!isEditing} className="mt-1" />
-                                  </div>
-                                </div>
-                                {plan.popular && <Badge className="mt-2">Meest Populair</Badge>}
-                              </Card>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Company Info Editor */}
-                    {currentSection.type === "company" && (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="company-name">Bedrijfsnaam</Label>
-                            <Input
-                              id="company-name"
-                              value={currentSection.content.companyName}
-                              disabled={!isEditing}
-                              className="mt-1"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="kvk-number">KvK Nummer</Label>
-                            <Input
-                              id="kvk-number"
-                              value={currentSection.content.kvkNumber}
-                              disabled={!isEditing}
-                              className="mt-1"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="btw-number">BTW Nummer</Label>
-                            <Input
-                              id="btw-number"
-                              value={currentSection.content.btwNumber}
-                              disabled={!isEditing}
-                              className="mt-1"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="iban">IBAN</Label>
-                            <Input
-                              id="iban"
-                              value={currentSection.content.iban}
-                              disabled={!isEditing}
-                              className="mt-1"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="phone">Telefoon</Label>
-                            <Input
-                              id="phone"
-                              value={currentSection.content.phone}
-                              disabled={!isEditing}
-                              className="mt-1"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="email">E-mail</Label>
-                            <Input
-                              id="email"
-                              value={currentSection.content.email}
-                              disabled={!isEditing}
-                              className="mt-1"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="design" className="space-y-6 mt-6">
+              <CardContent className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="hero-title">Hoofdtitel</Label>
+                      <Input
+                        id="hero-title"
+                        value={heroContent.title}
+                        onChange={(e) => setHeroContent((prev) => ({ ...prev, title: e.target.value }))}
+                        placeholder="Hoofdtitel van de hero sectie"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="hero-subtitle">Ondertitel</Label>
+                      <Textarea
+                        id="hero-subtitle"
+                        value={heroContent.subtitle}
+                        onChange={(e) => setHeroContent((prev) => ({ ...prev, subtitle: e.target.value }))}
+                        placeholder="Beschrijving onder de hoofdtitel"
+                        rows={4}
+                      />
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>Achtergrondkleur</Label>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <div className="w-8 h-8 bg-blue-600 rounded border"></div>
-                          <Input value="#3B82F6" disabled={!isEditing} />
-                        </div>
+                        <Label htmlFor="cta-primary">Primaire CTA</Label>
+                        <Input
+                          id="cta-primary"
+                          value={heroContent.ctaPrimary}
+                          onChange={(e) => setHeroContent((prev) => ({ ...prev, ctaPrimary: e.target.value }))}
+                          placeholder="Tekst primaire button"
+                        />
                       </div>
                       <div>
-                        <Label>Tekstkleur</Label>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <div className="w-8 h-8 bg-gray-900 rounded border"></div>
-                          <Input value="#111827" disabled={!isEditing} />
+                        <Label htmlFor="cta-secondary">Secundaire CTA</Label>
+                        <Input
+                          id="cta-secondary"
+                          value={heroContent.ctaSecondary}
+                          onChange={(e) => setHeroContent((prev) => ({ ...prev, ctaSecondary: e.target.value }))}
+                          placeholder="Tekst secundaire button"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {isPreviewMode && (
+                    <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 p-8 rounded-lg">
+                      <div className="text-center">
+                        <h1 className="text-3xl font-bold text-gray-900 mb-4">{heroContent.title}</h1>
+                        <p className="text-gray-600 mb-6">{heroContent.subtitle}</p>
+                        <div className="flex gap-4 justify-center">
+                          <Button size="sm">{heroContent.ctaPrimary}</Button>
+                          <Button size="sm" variant="outline">
+                            {heroContent.ctaSecondary}
+                          </Button>
                         </div>
                       </div>
                     </div>
-                    <div>
-                      <Label>Lettertype</Label>
-                      <Select disabled={!isEditing}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Selecteer lettertype" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="inter">Inter</SelectItem>
-                          <SelectItem value="roboto">Roboto</SelectItem>
-                          <SelectItem value="opensans">Open Sans</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="seo" className="space-y-6 mt-6">
-                    <div>
-                      <Label htmlFor="meta-title">Meta Titel</Label>
-                      <Input
-                        id="meta-title"
-                        placeholder="BHV360 - Professioneel BHV Beheer Software"
-                        disabled={!isEditing}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="meta-description">Meta Beschrijving</Label>
-                      <Textarea
-                        id="meta-description"
-                        placeholder="BHV360 maakt veiligheidsmanagement eenvoudig met digitale plotkaarten, incident management en compliance rapportage."
-                        disabled={!isEditing}
-                        rows={3}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="keywords">Keywords</Label>
-                      <Input
-                        id="keywords"
-                        placeholder="bhv software, plotkaarten, veiligheidsmanagement, incident management"
-                        disabled={!isEditing}
-                        className="mt-1"
-                      />
-                    </div>
-                  </TabsContent>
-                </Tabs>
+                  )}
+                </div>
               </CardContent>
             </Card>
-          )}
-        </div>
-      </div>
+          </TabsContent>
 
-      {/* Preview Panel */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Monitor className="h-5 w-5" />
-            <span>Live Preview</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex space-x-2 mb-4">
-            <Button variant="outline" size="sm">
-              <Monitor className="mr-2 h-4 w-4" />
-              Desktop
-            </Button>
-            <Button variant="outline" size="sm">
-              <Smartphone className="mr-2 h-4 w-4" />
-              Mobile
-            </Button>
-            <Button variant="outline" size="sm">
-              <Globe className="mr-2 h-4 w-4" />
-              Live Site
-            </Button>
-          </div>
-          <div className="border rounded-lg p-4 bg-gray-50 min-h-[300px] flex items-center justify-center">
-            <p className="text-gray-500">Preview wordt hier getoond...</p>
-          </div>
-        </CardContent>
-      </Card>
+          {/* Pricing Section */}
+          <TabsContent value="pricing">
+            <Card>
+              <CardHeader>
+                <CardTitle>Prijzen Sectie</CardTitle>
+                <CardDescription>Beheer de prijsplannen en features</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {pricingPlans.map((plan) => (
+                    <Card key={plan.id} className={`relative ${plan.popular ? "border-blue-500" : ""}`}>
+                      {plan.popular && (
+                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                          <Badge className="bg-blue-500 text-white">Meest Populair</Badge>
+                        </div>
+                      )}
+                      <CardHeader className="text-center">
+                        <div className="space-y-2">
+                          <Input
+                            value={plan.name}
+                            onChange={(e) =>
+                              setPricingPlans((plans) =>
+                                plans.map((p) => (p.id === plan.id ? { ...p, name: e.target.value } : p)),
+                              )
+                            }
+                            className="text-center font-semibold"
+                          />
+                          <div className="flex items-center justify-center space-x-2">
+                            <Input
+                              value={plan.price}
+                              onChange={(e) =>
+                                setPricingPlans((plans) =>
+                                  plans.map((p) => (p.id === plan.id ? { ...p, price: e.target.value } : p)),
+                                )
+                              }
+                              className="text-center text-2xl font-bold w-24"
+                            />
+                            <Input
+                              value={plan.period}
+                              onChange={(e) =>
+                                setPricingPlans((plans) =>
+                                  plans.map((p) => (p.id === plan.id ? { ...p, period: e.target.value } : p)),
+                                )
+                              }
+                              className="text-center w-20"
+                              placeholder="/maand"
+                            />
+                          </div>
+                          <Input
+                            value={plan.description}
+                            onChange={(e) =>
+                              setPricingPlans((plans) =>
+                                plans.map((p) => (p.id === plan.id ? { ...p, description: e.target.value } : p)),
+                              )
+                            }
+                            className="text-center text-sm"
+                          />
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 mb-4">
+                          {plan.features.map((feature, index) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <Input
+                                value={feature}
+                                onChange={(e) => handleFeatureChange(plan.id, index, e.target.value)}
+                                className="text-sm"
+                              />
+                              <Button size="sm" variant="ghost" onClick={() => handleRemoveFeature(plan.id, index)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleAddFeature(plan.id)}
+                            className="w-full"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Feature Toevoegen
+                          </Button>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={plan.popular}
+                            onCheckedChange={(checked) =>
+                              setPricingPlans((plans) =>
+                                plans.map((p) => (p.id === plan.id ? { ...p, popular: checked } : p)),
+                              )
+                            }
+                          />
+                          <Label className="text-sm">Markeer als populair</Label>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Contact Section */}
+          <TabsContent value="contact">
+            <Card>
+              <CardHeader>
+                <CardTitle>Contact Informatie</CardTitle>
+                <CardDescription>Beheer de contactgegevens en bedrijfsinformatie</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="company-phone">Telefoonnummer</Label>
+                      <Input
+                        id="company-phone"
+                        value={companyInfo.phone}
+                        onChange={(e) => setCompanyInfo((prev) => ({ ...prev, phone: e.target.value }))}
+                        placeholder="+31 (0)20 123 4567"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="company-email">Email</Label>
+                      <Input
+                        id="company-email"
+                        type="email"
+                        value={companyInfo.email}
+                        onChange={(e) => setCompanyInfo((prev) => ({ ...prev, email: e.target.value }))}
+                        placeholder="info@bhv360.nl"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="company-address">Adres</Label>
+                      <Input
+                        id="company-address"
+                        value={companyInfo.address}
+                        onChange={(e) => setCompanyInfo((prev) => ({ ...prev, address: e.target.value }))}
+                        placeholder="Amsterdam, Nederland"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="company-description">Bedrijfsomschrijving</Label>
+                      <Textarea
+                        id="company-description"
+                        value={companyInfo.description}
+                        onChange={(e) => setCompanyInfo((prev) => ({ ...prev, description: e.target.value }))}
+                        placeholder="Korte beschrijving van het bedrijf"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+
+                  {isPreviewMode && (
+                    <div className="bg-gray-50 p-6 rounded-lg">
+                      <h3 className="font-semibold mb-4">Preview Contact Sectie</h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">📞</div>
+                          <div>
+                            <p className="font-medium">Telefoon</p>
+                            <p className="text-sm text-gray-600">{companyInfo.phone}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">✉️</div>
+                          <div>
+                            <p className="font-medium">Email</p>
+                            <p className="text-sm text-gray-600">{companyInfo.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">📍</div>
+                          <div>
+                            <p className="font-medium">Adres</p>
+                            <p className="text-sm text-gray-600">{companyInfo.address}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Features Section */}
+          <TabsContent value="features">
+            <Card>
+              <CardHeader>
+                <CardTitle>Features Sectie</CardTitle>
+                <CardDescription>Beheer de feature cards op de homepage</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Feature management komt binnenkort beschikbaar...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* SEO Section */}
+          <TabsContent value="seo">
+            <Card>
+              <CardHeader>
+                <CardTitle>SEO Instellingen</CardTitle>
+                <CardDescription>Beheer meta tags, beschrijvingen en SEO instellingen</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">SEO management komt binnenkort beschikbaar...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   )
 }
