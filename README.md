@@ -276,3 +276,5 @@ echo "4. Run: git push -u origin main"
 echo ""
 echo "🚀 Or run the full deployment script:"
 echo "bash scripts/github-deploy.sh"
+
+Commit changes → Commit directly to the main branch
