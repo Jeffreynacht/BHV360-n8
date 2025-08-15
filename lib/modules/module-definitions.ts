@@ -608,6 +608,68 @@ export const moduleDefinitions: ModuleDefinition[] = [
   },
 ]
 
+export const moduleCategories = [
+  {
+    id: "basis",
+    name: "Basis Modules",
+    description: "Essentiële BHV functionaliteiten voor elke organisatie",
+    color: "bg-blue-50 border-blue-200 text-blue-800",
+    icon: "Shield",
+  },
+  {
+    id: "geavanceerd",
+    name: "Geavanceerde Modules",
+    description: "Professionele tools voor middelgrote tot grote organisaties",
+    color: "bg-green-50 border-green-200 text-green-800",
+    icon: "Zap",
+  },
+  {
+    id: "premium",
+    name: "Premium Modules",
+    description: "Enterprise functionaliteiten met analytics en integraties",
+    color: "bg-purple-50 border-purple-200 text-purple-800",
+    icon: "Crown",
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise Modules",
+    description: "Volledig maatwerk en white-label oplossingen",
+    color: "bg-orange-50 border-orange-200 text-orange-800",
+    icon: "Building",
+  },
+] as const
+
+export const tierDefinitions = [
+  {
+    id: "starter",
+    name: "Starter",
+    description: "Voor kleine organisaties (1-25 medewerkers)",
+    priceRange: "€8-35/maand",
+    features: ["Basis functionaliteiten", "Email support", "Standard SLA"],
+  },
+  {
+    id: "professional",
+    name: "Professional",
+    description: "Voor middelgrote organisaties (25-100 medewerkers)",
+    priceRange: "€35-185/maand",
+    features: ["Geavanceerde tools", "Phone + Email support", "Enhanced SLA"],
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    description: "Voor grote organisaties (100+ medewerkers)",
+    priceRange: "€185-1500/maand",
+    features: ["Enterprise features", "Dedicated support", "Premium SLA"],
+  },
+  {
+    id: "custom",
+    name: "Custom",
+    description: "Volledig maatwerk oplossingen",
+    priceRange: "Op aanvraag",
+    features: ["Maatwerk development", "Dedicated team", "Custom SLA"],
+  },
+] as const
+
 // Utility functions
 export function getModuleById(id: string): ModuleDefinition | undefined {
   return moduleDefinitions.find((module) => module.id === id)
@@ -693,64 +755,12 @@ export function calculateModulePrice(
   }
 }
 
-export const moduleCategories = [
-  {
-    id: "basis",
-    name: "Basis Modules",
-    description: "Essentiële BHV functionaliteiten voor elke organisatie",
-    color: "bg-blue-50 border-blue-200 text-blue-800",
-    icon: "Shield",
-  },
-  {
-    id: "geavanceerd",
-    name: "Geavanceerde Modules",
-    description: "Professionele tools voor middelgrote tot grote organisaties",
-    color: "bg-green-50 border-green-200 text-green-800",
-    icon: "Zap",
-  },
-  {
-    id: "premium",
-    name: "Premium Modules",
-    description: "Enterprise functionaliteiten met analytics en integraties",
-    color: "bg-purple-50 border-purple-200 text-purple-800",
-    icon: "Crown",
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise Modules",
-    description: "Volledig maatwerk en white-label oplossingen",
-    color: "bg-orange-50 border-orange-200 text-orange-800",
-    icon: "Building",
-  },
-] as const
+// Export for compatibility with existing code
+export const AVAILABLE_MODULES = moduleDefinitions
 
-export const tierDefinitions = [
-  {
-    id: "starter",
-    name: "Starter",
-    description: "Voor kleine organisaties (1-25 medewerkers)",
-    priceRange: "€8-35/maand",
-    features: ["Basis functionaliteiten", "Email support", "Standard SLA"],
-  },
-  {
-    id: "professional",
-    name: "Professional",
-    description: "Voor middelgrote organisaties (25-100 medewerkers)",
-    priceRange: "€35-185/maand",
-    features: ["Geavanceerde tools", "Phone + Email support", "Enhanced SLA"],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    description: "Voor grote organisaties (100+ medewerkers)",
-    priceRange: "€185-1500/maand",
-    features: ["Enterprise features", "Dedicated support", "Premium SLA"],
-  },
-  {
-    id: "custom",
-    name: "Custom",
-    description: "Volledig maatwerk oplossingen",
-    priceRange: "Op aanvraag",
-    features: ["Maatwerk development", "Dedicated team", "Custom SLA"],
-  },
-] as const
+// Get core/essential modules
+export function getCoreModules(): ModuleDefinition[] {
+  return moduleDefinitions.filter(
+    (module) => module.category === "basis" && module.implemented && module.visible && module.enabled,
+  )
+}
