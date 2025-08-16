@@ -15,13 +15,13 @@
     "plotkaart",
     "bedrijfshulpverlening"
   ],
-  "homepage": "https://github.com/YOUR_USERNAME/bhv-plotkaart-recreation#readme",
+  "homepage": "https://github.com/Jeffreynacht/BHV360-n8#readme",
   "bugs": {
-    "url": "https://github.com/YOUR_USERNAME/bhv-plotkaart-recreation/issues"
+    "url": "https://github.com/Jeffreynacht/BHV360-n8/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/bhv-plotkaart-recreation.git"
+    "url": "https://github.com/Jeffreynacht/BHV360-n8.git"
   },
   "license": "MIT",
   "author": "BHV360 Team",
@@ -96,6 +96,7 @@
     "jsonwebtoken": "latest",
     "jspdf": "latest",
     "lucide-react": "^0.454.0",
+    "module": "latest",
     "next": "15.2.4",
     "next-auth": "latest",
     "next-themes": "latest",
