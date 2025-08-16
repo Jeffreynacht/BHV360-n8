@@ -1,278 +1,184 @@
-# 🚨 BHV Plotkaart Recreation
+# BHV360 Plotkaart Recreation
 
-Een moderne, gebruiksvriendelijke applicatie voor het beheren van BHV (Bedrijfshulpverlening) plotkaarten en noodprocedures.
+Professional BHV Management Platform with interactive floor plans and emergency response tools.
 
-## 🌟 Features
-
-### 🏢 **Multi-tenant Platform**
-- **White-label oplossing** voor partners
-- **Klantspecifieke branding** en configuratie
-- **Modulaire architectuur** met pay-per-module pricing
-
-### 🗺️ **Interactieve Plotkaarten**
-- **Drag & drop editor** voor eenvoudig bewerken
-- **Real-time updates** voor alle gebruikers
-- **Responsive design** voor alle apparaten
-- **Print-optimized** PDF export
-
-### 👥 **Gebruikersbeheer**
-- **Role-based access control** (RBAC)
-- **Multi-level autorisaties** (Super Admin, Partner Admin, Customer Admin, etc.)
-- **Biometrische authenticatie** ondersteuning
-- **Single Sign-On** integratie
-
-### 📱 **Mobile-First Design**
-- **Progressive Web App** (PWA)
-- **Offline functionaliteit**
-- **Push notificaties**
-- **NFC tag scanning**
-
-### 🚨 **Emergency Features**
-- **Real-time incident management**
-- **Automated alerting** via SMS, email, en push
-- **QR code emergency activation**
-- **Hands-free communication**
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+ 
-- npm 8+
-- PostgreSQL database (Neon/Supabase)
-
-### Installation
+## Quick Start
 
 \`\`\`bash
-# Clone repository
-git clone https://github.com/YOUR_USERNAME/bhv-plotkaart-recreation.git
-cd bhv-plotkaart-recreation
-
 # Install dependencies
-npm install
-
-# Setup environment variables
-cp .env.example .env.local
-# Edit .env.local with your configuration
-
-# Run database migrations
-npm run setup-demo
+pnpm install
 
 # Start development server
-npm run dev
+pnpm dev
+
+# Build for production
+pnpm build
 \`\`\`
 
-Open [http://localhost:3000](http://localhost:3000) in je browser.
+## Deploy to Vercel
 
-## 🏗️ Tech Stack
+### Prerequisites Checklist
 
-- **Framework:** Next.js 15 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS + shadcn/ui
-- **Database:** PostgreSQL (Neon/Supabase)
-- **Authentication:** NextAuth.js
-- **Deployment:** Vercel
-- **State Management:** React Context + Hooks
-
-## 📁 Project Structure
-
-\`\`\`
-bhv-plotkaart-recreation/
-├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes
-│   ├── beheer/            # Admin pages
-│   ├── bhv/               # BHV specific pages
-│   └── dashboards/        # Role-based dashboards
-├── components/            # Reusable components
-│   ├── ui/                # shadcn/ui components
-│   └── ...                # Custom components
-├── lib/                   # Utility functions
-├── scripts/               # Database & deployment scripts
-├── public/                # Static assets
-└── docs/                  # Documentation
-\`\`\`
-
-## 🔧 Configuration
+- [ ] All required environment variables set in Vercel dashboard
+- [ ] PNPM lockfile synchronized (`pnpm-lock.yaml` committed)
+- [ ] Module exports validated (`pnpm run prebuild` passes)
+- [ ] No sensitive `NEXT_PUBLIC_` variables in code
 
 ### Environment Variables
 
-\`\`\`env
-# Database
-DATABASE_URL=your_database_url
-POSTGRES_URL=your_postgres_url
-
-# Authentication
-NEXTAUTH_SECRET=your_secret
-NEXTAUTH_URL=http://localhost:3000
-
-# Supabase (optional)
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
-
-# Site Configuration
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+#### Client-Safe (NEXT_PUBLIC_)
+\`\`\`bash
+NEXT_PUBLIC_SITE_URL=https://your-domain.com
+NEXT_PUBLIC_APP_NAME=BHV360
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 \`\`\`
 
-## 🚀 Deployment
-
-### Vercel (Recommended)
-
+#### Server-Only (NO NEXT_PUBLIC_)
 \`\`\`bash
-# Deploy to GitHub first
-npm run deploy
-
-# Then deploy to Vercel
-# 1. Go to vercel.com/new
-# 2. Import your GitHub repository
-# 3. Configure environment variables
-# 4. Deploy!
+AUTH_SECRET=your_long_random_secret
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+STACK_SECRET_SERVER_KEY=your_stack_server_key
+DATABASE_URL=postgresql://...
 \`\`\`
 
-### Manual Deployment
+### Deployment Steps
 
-\`\`\`bash
-# Build for production
-npm run build
+1. **Validate locally:**
+   \`\`\`bash
+   pnpm run prebuild  # Validates modules & TypeScript
+   pnpm run build     # Tests production build
+   \`\`\`
 
-# Start production server
-npm run start
+2. **Set environment variables in Vercel dashboard**
+   - Add only server-only variables to Vercel
+   - Client variables are in the code (NEXT_PUBLIC_)
+
+3. **Deploy:**
+   \`\`\`bash
+   git push origin main
+   \`\`\`
+
+4. **Monitor build logs for:**
+   - ✅ No "missing export" errors
+   - ✅ No "ERR_PNPM_OUTDATED_LOCKFILE" errors
+   - ✅ No sensitive variable warnings
+   - ✅ Build completes successfully
+
+### Troubleshooting
+
+**Build fails with missing exports:**
+- Run `node scripts/validate-modules.mjs` locally
+- Check `lib/modules/module-definitions.ts` has all required exports
+
+**PNPM lockfile errors:**
+- Run `bash scripts/fix-lockfile.sh`
+- Commit updated `pnpm-lock.yaml`
+
+**Sensitive environment variable warnings:**
+- Remove `NEXT_PUBLIC_` prefix from sensitive variables
+- Move to server-only environment variables
+
+## Project Structure
+
+\`\`\`
+├── app/                    # Next.js App Router pages
+├── components/            # React components
+├── lib/
+│   ├── modules/          # Module system
+│   │   ├── module-definitions.ts  # Core module definitions
+│   │   └── index.ts      # Barrel exports
+│   └── ...
+├── scripts/
+│   ├── validate-modules.mjs      # Module validation
+│   └── fix-lockfile.sh          # Lockfile repair
+├── .env.example          # Environment template
+└── vercel.json          # Vercel configuration
 \`\`\`
 
-## 📊 Demo Accounts
+## Module System
 
-Voor testing zijn er demo accounts beschikbaar:
+The application uses a modular architecture defined in `lib/modules/module-definitions.ts`:
 
-| Role | Email | Password |
-|------|-------|----------|
-| Super Admin | admin@bhv360.nl | demo123 |
-| Partner Admin | partner@bhv360.nl | demo123 |
-| Customer Admin | klant@bhv360.nl | demo123 |
-| BHV Coordinator | bhv@bhv360.nl | demo123 |
-| Employee | medewerker@bhv360.nl | demo123 |
+- **moduleDefinitions**: Array of all available modules
+- **AVAILABLE_MODULES**: Alias for compatibility
+- **calculateModulePrice**: Pricing calculation logic
+- **getVisibleModules**: Filter visible modules
+- **getModuleById**: Find module by ID
+- **getCoreModules**: Get essential modules
 
-## 🧪 Testing
+## Development
 
 \`\`\`bash
-# Run type checking
-npm run type-check
+# Type checking
+pnpm run type-check
 
-# Run linting
-npm run lint
+# Validate modules
+node scripts/validate-modules.mjs
 
 # Test build
-npm run test-build
+pnpm run test-build
+
+# Fix lockfile issues
+bash scripts/fix-lockfile.sh
 \`\`\`
 
-## 📚 Documentation
+## License
 
-- [Setup Guide](./SETUP-CHECKLIST.md)
-- [Deployment Guide](./GITHUB-DEPLOYMENT.md)
-- [API Documentation](./docs/README.md)
-- [Contributing Guidelines](./CONTRIBUTING.md)
-
-## 🤝 Contributing
-
-1. Fork het project
-2. Maak een feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit je changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push naar de branch (`git push origin feature/AmazingFeature`)
-5. Open een Pull Request
-
-## 📄 License
-
-Dit project is gelicenseerd onder de MIT License - zie het [LICENSE](LICENSE) bestand voor details.
-
-## 📞 Support
-
-- **Email:** support@bhv360.nl
-- **Website:** [bhv360.nl](https://bhv360.nl)
-- **Documentation:** [docs.bhv360.nl](https://docs.bhv360.nl)
-
-## 🙏 Acknowledgments
-
-- [Next.js](https://nextjs.org/) voor het geweldige framework
-- [Vercel](https://vercel.com/) voor hosting en deployment
-- [shadcn/ui](https://ui.shadcn.com/) voor de UI components
-- [Tailwind CSS](https://tailwindcss.com/) voor styling
-
----
-
-**Gemaakt met ❤️ door het BHV360 team**
+MIT License - see LICENSE file for details.
 \`\`\`
 
-```shellscript file="scripts/quick-github-setup.sh"
+```shellscript file="scripts/deploy-checklist.sh"
 #!/bin/bash
 
-# 🚀 Quick GitHub Setup Script
-# Dit script helpt je snel een GitHub repository op te zetten
+echo "🚀 Pre-deployment checklist for Vercel..."
 
-echo "🚀 BHV Plotkaart Recreation - Quick GitHub Setup"
-echo "================================================"
-
-# Get GitHub username
-echo "Voer je GitHub username in:"
-read -r github_username
-
-if [ -z "$github_username" ]; then
-    echo "❌ GitHub username is verplicht!"
+# Check if we're in the right directory
+if [ ! -f "package.json" ]; then
+    echo "❌ Error: package.json not found. Run this from the project root."
     exit 1
 fi
 
-# Repository name
-repo_name="bhv-plotkaart-recreation"
-repo_url="https://github.com/$github_username/$repo_name.git"
-
-echo ""
-echo "📋 Setup Summary:"
-echo "GitHub Username: $github_username"
-echo "Repository Name: $repo_name"
-echo "Repository URL: $repo_url"
-echo ""
-
-# Confirm setup
-echo "Wil je doorgaan met deze instellingen? (y/n)"
-read -r confirm
-
-if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
-    echo "❌ Setup geannuleerd"
+echo "1. 🔍 Checking TypeScript compilation..."
+if ! pnpm run type-check; then
+    echo "❌ TypeScript errors found. Fix before deploying."
     exit 1
 fi
+echo "✅ TypeScript compilation passed"
 
-# Initialize git if not already done
-if [ ! -d ".git" ]; then
-    echo "🔧 Initializing Git repository..."
-    git init
+echo "2. 🧩 Validating module exports..."
+if ! node scripts/validate-modules.mjs; then
+    echo "❌ Module validation failed. Check exports in lib/modules/module-definitions.ts"
+    exit 1
 fi
+echo "✅ Module exports validated"
 
-# Add all files
-echo "📁 Adding all files..."
-git add .
+echo "3. 🏗️ Testing production build..."
+if ! pnpm run build; then
+    echo "❌ Build failed. Fix errors before deploying."
+    exit 1
+fi
+echo "✅ Production build successful"
 
-# Initial commit
-echo "💾 Creating initial commit..."
-git commit -m "Initial commit: BHV Plotkaart Recreation - Complete application with all features"
+echo "4. 🔒 Checking environment variable security..."
+if grep -r "NEXT_PUBLIC_.*SECRET\|NEXT_PUBLIC_.*KEY\|NEXT_PUBLIC_.*TOKEN" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --exclude-dir=node_modules .; then
+    echo "❌ Found potentially sensitive NEXT_PUBLIC_ variables. Review and move to server-only."
+    exit 1
+fi
+echo "✅ No sensitive NEXT_PUBLIC_ variables found"
 
-# Add remote
-echo "🔗 Adding GitHub remote..."
-git remote remove origin 2>/dev/null || true
-git remote add origin "$repo_url"
-
-# Update package.json with correct repository URL
-echo "📝 Updating package.json..."
-sed -i.bak "s|YOUR_USERNAME|$github_username|g" package.json
-rm package.json.bak 2>/dev/null || true
-
-# Commit the package.json update
-git add package.json
-git commit -m "Update: Set correct GitHub repository URL in package.json"
+echo "5. 📦 Checking PNPM lockfile..."
+if [ ! -f "pnpm-lock.yaml" ]; then
+    echo "❌ pnpm-lock.yaml not found. Run 'pnpm install' first."
+    exit 1
+fi
+echo "✅ PNPM lockfile present"
 
 echo ""
-echo "✅ Git setup completed!"
+echo "🎉 All checks passed! Ready for deployment."
 echo ""
-echo "🌐 Next steps:"
-echo "1. Go to https://github.com/new"
-echo "2. Create a repository named: $repo_name"
-echo "3. Don't initialize with README, .gitignore, or license"
-echo "4. Run: git push -u origin main"
-echo ""
-echo "🚀 Or run the full deployment script:"
-echo "bash scripts/github-deploy.sh"
+echo "Next steps:"
+echo "1. Commit any remaining changes"
+echo "2. Push to main branch: git push origin main"
+echo "3. Monitor Vercel deployment dashboard"
+echo "4. Verify deployment at your domain"

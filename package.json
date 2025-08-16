@@ -1,8 +1,7 @@
 {
-  "name": "bhv-plotkaart-recreation",
-  "version": "1.0.0",
+  "name": "bhv360-plotkaart",
+  "version": "0.1.0",
   "private": true,
-  "description": "BHV Plotkaart Recreation - Emergency Response Floor Plan System",
   "keywords": [
     "bhv",
     "emergency-response",
@@ -35,7 +34,7 @@
     "lint": "next lint",
     "setup-demo": "node scripts/setup-demo-data.js",
     "start": "next start",
-    "test-build": "pnpm run prebuild && next build",
+    "test-build": "next build",
     "test-db": "node scripts/test-database-connection.js",
     "type-check": "tsc --noEmit",
     "update-lockfile": "pnpm install --lockfile-only"
@@ -96,7 +95,6 @@
     "jsonwebtoken": "latest",
     "jspdf": "latest",
     "lucide-react": "^0.454.0",
-    "module": "latest",
     "next": "15.2.4",
     "next-auth": "latest",
     "next-themes": "latest",
