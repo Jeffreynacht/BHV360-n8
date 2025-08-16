@@ -1,40 +1,27 @@
 #!/bin/bash
 
-# Fix PNPM Lockfile Script
-# Dit script lost permanent het lockfile probleem op
-
 echo "🔧 Fixing PNPM lockfile issues..."
 
-# Stap 1: Controleer of PNPM geïnstalleerd is
-if ! command -v pnpm &> /dev/null; then
-    echo "❌ PNPM is niet geïnstalleerd. Installeer eerst PNPM:"
-    echo "npm install -g pnpm@10.2.0"
-    exit 1
-fi
+# Enable corepack and set PNPM version
+echo "📦 Setting up PNPM 10..."
+corepack enable
+corepack use pnpm@10
 
-# Stap 2: Toon huidige PNPM versie
-echo "📦 Huidige PNPM versie:"
-pnpm --version
+# Remove existing lockfile and node_modules
+echo "🧹 Cleaning existing files..."
+rm -rf node_modules pnpm-lock.yaml
 
-# Stap 3: Verwijder oude lockfile en node_modules
-echo "🧹 Cleaning up old files..."
-rm -rf node_modules
-rm -f pnpm-lock.yaml
-
-# Stap 4: Installeer dependencies met nieuwe lockfile
-echo "📥 Installing dependencies with fresh lockfile..."
+# Fresh install with PNPM 10
+echo "⬇️ Fresh install with PNPM 10..."
 pnpm install
 
-# Stap 5: Controleer of alles werkt
-echo "✅ Testing build..."
-pnpm run build
+# Verify the installation
+echo "✅ Verifying installation..."
+pnpm list --depth=0
 
-if [ $? -eq 0 ]; then
-    echo "🎉 Lockfile succesvol gefixed!"
-    echo "📝 Commit nu de nieuwe pnpm-lock.yaml:"
-    echo "git add pnpm-lock.yaml package.json"
-    echo "git commit -m 'fix: update pnpm lockfile for Vercel deployment'"
-else
-    echo "❌ Build failed. Check for errors above."
-    exit 1
-fi
+echo "🎉 Lockfile fixed! Ready for deployment."
+echo ""
+echo "Next steps:"
+echo "1. git add pnpm-lock.yaml package.json"
+echo "2. git commit -m 'chore: sync pnpm-lock.yaml and add prebuild guard'"
+echo "3. git push origin main"

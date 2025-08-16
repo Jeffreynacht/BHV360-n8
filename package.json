@@ -26,6 +26,7 @@
   "license": "MIT",
   "author": "BHV360 Team",
   "scripts": {
+    "prebuild": "tsc -p tsconfig.json --noEmit && node scripts/validate-modules.mjs",
     "build": "next build",
     "clean-install": "rm -rf node_modules pnpm-lock.yaml && pnpm install",
     "deploy": "bash scripts/github-deploy.sh",
@@ -34,7 +35,7 @@
     "lint": "next lint",
     "setup-demo": "node scripts/setup-demo-data.js",
     "start": "next start",
-    "test-build": "npm run build && npm run start",
+    "test-build": "pnpm run prebuild && next build",
     "test-db": "node scripts/test-database-connection.js",
     "type-check": "tsc --noEmit",
     "update-lockfile": "pnpm install --lockfile-only"
