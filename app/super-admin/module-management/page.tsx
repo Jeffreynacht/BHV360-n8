@@ -33,6 +33,7 @@ import {
   Upload,
 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { toFixedSafe } from "@/helpers/number"
 import {
   moduleDefinitions,
   moduleCategories,
@@ -550,18 +551,13 @@ function ModuleCard({
         {/* Prijsinformatie */}
         <div className="mb-4 p-3 bg-gray-50 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-semibold text-lg text-blue-600">
-              €{typeof priceInfo.price === "number" ? priceInfo.price.toFixed(2) : "0.00"}/maand
-            </span>
+            <span className="font-semibold text-lg text-blue-600">€{toFixedSafe(priceInfo.price)}/maand</span>
             <Badge variant="outline">{priceInfo.model}</Badge>
           </div>
           <p className="text-xs text-gray-600">{priceInfo.explanation}</p>
 
           {module.pricing.setupFee && (
-            <p className="text-xs text-orange-600 mt-1">
-              + €{typeof module.pricing.setupFee === "number" ? (module.pricing.setupFee / 100).toFixed(2) : "0.00"}{" "}
-              setup fee
-            </p>
+            <p className="text-xs text-orange-600 mt-1">+ €{toFixedSafe(module.pricing.setupFee / 100)} setup fee</p>
           )}
         </div>
 
@@ -584,9 +580,9 @@ function ModuleCard({
             {/* Stats */}
             <div className="mb-4 flex items-center gap-4 text-xs text-gray-500">
               <span>
-                ★ {typeof module.rating === "number" ? module.rating.toFixed(1) : "0.0"} ({module.reviews})
+                ★ {toFixedSafe(module.rating, 1)} ({module.reviews})
               </span>
-              <span>Populariteit: {typeof module.popularity === "number" ? module.popularity.toFixed(0) : "0"}%</span>
+              <span>Populariteit: {toFixedSafe(module.popularity, 0)}%</span>
               <span>v{module.version}</span>
             </div>
           </>
@@ -600,18 +596,8 @@ function ModuleCard({
           </Button>
 
           <div className="flex items-center gap-1">
-            <Switch
-              checked={module.visible}
-              onCheckedChange={() => onToggleVisibility(module.id)}
-              disabled={loading}
-              size="sm"
-            />
-            <Switch
-              checked={module.enabled}
-              onCheckedChange={() => onToggleEnabled(module.id)}
-              disabled={loading}
-              size="sm"
-            />
+            <Switch checked={module.visible} onCheckedChange={() => onToggleVisibility(module.id)} disabled={loading} />
+            <Switch checked={module.enabled} onCheckedChange={() => onToggleEnabled(module.id)} disabled={loading} />
           </div>
         </div>
       </CardContent>
@@ -685,21 +671,11 @@ function ModuleTable({
                   </td>
                   <td className="p-4">
                     <div className="text-sm">
-                      <div className="font-semibold">
-                        €
-                        {typeof module.pricing.basePrice === "number"
-                          ? (module.pricing.basePrice / 100).toFixed(2)
-                          : "0.00"}
-                        /maand
-                      </div>
+                      <div className="font-semibold">€{toFixedSafe(module.pricing.basePrice / 100)}/maand</div>
                       <div className="text-gray-500">{module.pricingModel}</div>
                       {module.pricing.setupFee && (
                         <div className="text-xs text-orange-600">
-                          +€
-                          {typeof module.pricing.setupFee === "number"
-                            ? (module.pricing.setupFee / 100).toFixed(2)
-                            : "0.00"}{" "}
-                          setup
+                          +€{toFixedSafe(module.pricing.setupFee / 100)} setup
                         </div>
                       )}
                     </div>
@@ -716,7 +692,6 @@ function ModuleTable({
                           checked={module.visible}
                           onCheckedChange={() => onToggleVisibility(module.id)}
                           disabled={loading}
-                          size="sm"
                         />
                       </div>
                       <div className="flex items-center gap-1">
@@ -729,7 +704,6 @@ function ModuleTable({
                           checked={module.enabled}
                           onCheckedChange={() => onToggleEnabled(module.id)}
                           disabled={loading}
-                          size="sm"
                         />
                       </div>
                     </div>
@@ -737,12 +711,10 @@ function ModuleTable({
                   <td className="p-4">
                     <div className="text-sm">
                       <div className="flex items-center gap-1">
-                        <span>★ {typeof module.rating === "number" ? module.rating.toFixed(1) : "0.0"}</span>
+                        <span>★ {toFixedSafe(module.rating, 1)}</span>
                         <span className="text-gray-500">({module.reviews})</span>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {typeof module.popularity === "number" ? module.popularity.toFixed(0) : "0"}% populariteit
-                      </div>
+                      <div className="text-xs text-gray-500">{toFixedSafe(module.popularity, 0)}% populariteit</div>
                     </div>
                   </td>
                   <td className="p-4">
@@ -779,18 +751,17 @@ function PricingEditor({
   onCancel: () => void
 }) {
   const [pricing, setPricing] = useState(module.pricing)
-  const [pricingType, setPricingType] = useState(module.pricing.type)
+  const [pricingType, setPricingType] = useState(module.pricingModel || "per_user")
 
   const handleSave = () => {
     onSave({ ...pricing, type: pricingType })
   }
 
   const handlePricingTypeChange = (newType: string) => {
-    setPricingType(newType as any)
+    setPricingType(newType)
     // Reset pricing when type changes
     setPricing({
       ...pricing,
-      type: newType as any,
       basePrice: 0,
       tierPricing: undefined,
     })
@@ -825,7 +796,7 @@ function PricingEditor({
           placeholder="Bijvoorbeeld: 850 voor €8.50"
         />
         <p className="text-xs text-gray-500 mt-1">
-          Huidige prijs: €{typeof pricing.basePrice === "number" ? (pricing.basePrice / 100).toFixed(2) : "0.00"} per{" "}
+          Huidige prijs: €{toFixedSafe(pricing.basePrice / 100)} per{" "}
           {pricingType === "per_user"
             ? "gebruiker"
             : pricingType === "per_building"
@@ -847,72 +818,9 @@ function PricingEditor({
           placeholder="Bijvoorbeeld: 15000 voor €150"
         />
         {pricing.setupFee && (
-          <p className="text-xs text-gray-500 mt-1">
-            Setup fee: €{typeof pricing.setupFee === "number" ? (pricing.setupFee / 100).toFixed(2) : "0.00"}
-          </p>
+          <p className="text-xs text-gray-500 mt-1">Setup fee: €{toFixedSafe(pricing.setupFee / 100)}</p>
         )}
       </div>
-
-      {/* Tier Pricing for per_user */}
-      {pricingType === "per_user" && (
-        <div>
-          <Label>Tier Pricing (optioneel)</Label>
-          <div className="space-y-3 mt-2">
-            <div className="grid grid-cols-3 gap-2 text-sm font-semibold">
-              <span>Min Gebruikers</span>
-              <span>Max Gebruikers</span>
-              <span>Prijs per Gebruiker</span>
-            </div>
-            {pricing.tierPricing?.map((tier, index) => (
-              <div key={index} className="grid grid-cols-3 gap-2">
-                <Input
-                  type="number"
-                  value={tier.minUsers}
-                  onChange={(e) => {
-                    const newTiers = [...(pricing.tierPricing || [])]
-                    newTiers[index] = { ...tier, minUsers: Number(e.target.value) }
-                    setPricing({ ...pricing, tierPricing: newTiers })
-                  }}
-                />
-                <Input
-                  type="number"
-                  value={tier.maxUsers || ""}
-                  onChange={(e) => {
-                    const newTiers = [...(pricing.tierPricing || [])]
-                    newTiers[index] = { ...tier, maxUsers: Number(e.target.value) || undefined }
-                    setPricing({ ...pricing, tierPricing: newTiers })
-                  }}
-                  placeholder="Onbeperkt"
-                />
-                <Input
-                  type="number"
-                  value={tier.pricePerUser}
-                  onChange={(e) => {
-                    const newTiers = [...(pricing.tierPricing || [])]
-                    newTiers[index] = { ...tier, pricePerUser: Number(e.target.value) }
-                    setPricing({ ...pricing, tierPricing: newTiers })
-                  }}
-                />
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const newTier = { minUsers: 1, pricePerUser: pricing.basePrice }
-                setPricing({
-                  ...pricing,
-                  tierPricing: [...(pricing.tierPricing || []), newTier],
-                })
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Tier Toevoegen
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Free Trial */}
       <div>
@@ -934,14 +842,10 @@ function PricingEditor({
               <strong>10 gebruikers, 1 gebouw:</strong>
             </p>
             <p>
-              €{(() => {
-                const price = calculateModulePrice(
-                  { ...module, pricing: { ...pricing, type: pricingType } },
-                  10,
-                  1,
-                ).price
-                return typeof price === "number" ? price.toFixed(2) : "0.00"
-              })()}
+              €
+              {toFixedSafe(
+                calculateModulePrice({ ...module, pricing: { ...pricing }, pricingModel: pricingType }, 10, 1).price,
+              )}
               /maand
             </p>
           </div>
@@ -950,14 +854,10 @@ function PricingEditor({
               <strong>25 gebruikers, 2 gebouwen:</strong>
             </p>
             <p>
-              €{(() => {
-                const price = calculateModulePrice(
-                  { ...module, pricing: { ...pricing, type: pricingType } },
-                  25,
-                  2,
-                ).price
-                return typeof price === "number" ? price.toFixed(2) : "0.00"
-              })()}
+              €
+              {toFixedSafe(
+                calculateModulePrice({ ...module, pricing: { ...pricing }, pricingModel: pricingType }, 25, 2).price,
+              )}
               /maand
             </p>
           </div>
@@ -966,14 +866,10 @@ function PricingEditor({
               <strong>100 gebruikers, 5 gebouwen:</strong>
             </p>
             <p>
-              €{(() => {
-                const price = calculateModulePrice(
-                  { ...module, pricing: { ...pricing, type: pricingType } },
-                  100,
-                  5,
-                ).price
-                return typeof price === "number" ? price.toFixed(2) : "0.00"
-              })()}
+              €
+              {toFixedSafe(
+                calculateModulePrice({ ...module, pricing: { ...pricing }, pricingModel: pricingType }, 100, 5).price,
+              )}
               /maand
             </p>
           </div>
@@ -1085,9 +981,7 @@ function PricingCalculator({
                     <p className="text-xs text-gray-600">{module.category}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-sm">
-                      €{typeof priceInfo.price === "number" ? priceInfo.price.toFixed(2) : "0.00"}/maand
-                    </p>
+                    <p className="font-semibold text-sm">€{toFixedSafe(priceInfo.price)}/maand</p>
                     <p className="text-xs text-gray-500">{priceInfo.model}</p>
                   </div>
                 </div>
@@ -1102,29 +996,22 @@ function PricingCalculator({
         <div className="space-y-2">
           <div className="flex justify-between">
             <span>Maandelijkse kosten:</span>
-            <span className="font-semibold">€{typeof totalCost === "number" ? totalCost.toFixed(2) : "0.00"}</span>
+            <span className="font-semibold">€{toFixedSafe(totalCost)}</span>
           </div>
           <div className="flex justify-between">
             <span>Jaarlijkse kosten:</span>
-            <span className="font-semibold">
-              €{typeof totalCost === "number" ? (totalCost * 12).toFixed(2) : "0.00"}
-            </span>
+            <span className="font-semibold">€{toFixedSafe(totalCost * 12)}</span>
           </div>
           {setupFees > 0 && (
             <div className="flex justify-between text-orange-600">
               <span>Eenmalige setup kosten:</span>
-              <span className="font-semibold">€{typeof setupFees === "number" ? setupFees.toFixed(2) : "0.00"}</span>
+              <span className="font-semibold">€{toFixedSafe(setupFees)}</span>
             </div>
           )}
           <hr className="border-green-300" />
           <div className="flex justify-between text-lg font-bold text-green-800">
             <span>Totaal eerste jaar:</span>
-            <span>
-              €
-              {typeof totalCost === "number" && typeof setupFees === "number"
-                ? (totalCost * 12 + setupFees).toFixed(2)
-                : "0.00"}
-            </span>
+            <span>€{toFixedSafe(totalCost * 12 + setupFees)}</span>
           </div>
         </div>
 
