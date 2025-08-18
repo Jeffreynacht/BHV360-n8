@@ -1,6 +1,10 @@
-// Globale shims om build te unblokken. Later verfijnen.
+// Global type shims to unblock build. Refine later.
 
-declare module "web-push"
+declare module "web-push" {
+  export function setVapidDetails(subject: string, publicKey: string, privateKey: string): void
+  export function sendNotification(subscription: any, payload: string, options?: any): Promise<any>
+  export function generateVAPIDKeys(): { publicKey: string; privateKey: string }
+}
 
 type UUID = string
 
@@ -63,7 +67,7 @@ interface ModuleDef {
   description?: string
   category: ModuleCategoryId | ModuleCategory
   tier?: ModuleTierId | ModuleTier
-  pricing: ModulePricing | number // sommige code leest .price direct
+  pricing: ModulePricing | number
   status?: "beta" | "ga" | "internal"
   implemented?: boolean
   routePath?: string
@@ -72,7 +76,7 @@ interface ModuleDef {
   reviews?: number
   popularity?: number
   version?: string
-  core?: boolean // i.p.v. isCore
+  core?: boolean
 }
 
 interface ModuleActivationRequest {
@@ -83,6 +87,7 @@ interface ModuleActivationRequest {
 }
 
 type DeepInspectionStatus = "warning" | "pass" | "fail"
+
 interface DeepInspectionReport {
   score?: number
   criticalIssues?: any[]
@@ -90,3 +95,12 @@ interface DeepInspectionReport {
 }
 
 type SkillLevel = 1 | 2 | 3 | 4 | 5
+
+// Global declarations for common patterns
+declare global {
+  interface Window {
+    gtag?: (...args: any[]) => void
+  }
+}
+
+export {}

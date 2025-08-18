@@ -1,13 +1,11 @@
-import type { NextAuthOptions } from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
+import NextAuth, { type NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import { neon } from "@neondatabase/serverless"
+
+const sql = neon(process.env.DATABASE_URL!)
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -19,62 +17,53 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        // Jeffrey's hardcoded credentials - SUPER ADMIN
-        if (credentials.email === "jeffrey@bhv360.nl" && credentials.password === "jeffrey123") {
-          return {
-            id: "jeffrey",
-            email: "jeffrey@bhv360.nl",
-            name: "Jeffrey van der Meer",
-            role: "super_admin",
-          }
-        }
+        try {
+          const users = await sql`
+            SELECT id, email, name, role, customer_id, active
+            FROM users 
+            WHERE email = ${credentials.email} 
+            AND active = true
+            LIMIT 1
+          `
 
-        // Demo credentials - ADMIN
-        if (credentials.email === "jan@demobedrijf.nl" && credentials.password === "demo123") {
-          return {
-            id: "jan",
-            email: "jan@demobedrijf.nl",
-            name: "Jan de Vries",
-            role: "admin",
+          const user = users[0]
+          if (!user) {
+            return null
           }
-        }
 
-        // Additional demo user - EMPLOYEE
-        if (credentials.email === "marie@demobedrijf.nl" && credentials.password === "marie123") {
+          // In production, verify password hash here
+          // For demo purposes, accept any password
+
           return {
-            id: "marie",
-            email: "marie@demobedrijf.nl",
-            name: "Marie Janssen",
-            role: "employee",
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            customerId: user.customer_id,
           }
+        } catch (error) {
+          console.error("Auth error:", error)
+          return null
         }
-
-        // BHV Coordinator demo
-        if (credentials.email === "piet@demobedrijf.nl" && credentials.password === "piet123") {
-          return {
-            id: "piet",
-            email: "piet@demobedrijf.nl",
-            name: "Piet van der Berg",
-            role: "bhv_coordinator",
-          }
-        }
-
-        return null
       },
     }),
   ],
+  session: {
+    strategy: "jwt",
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role || "user"
-        token.id = user.id
+        token.role = user.role
+        token.customerId = user.customerId
       }
       return token
     },
     async session({ session, token }) {
-      if (session.user) {
-        ;(session.user as any).role = token.role
-        ;(session.user as any).id = token.id
+      if (token) {
+        session.user.id = token.sub!
+        session.user.role = token.role as string
+        session.user.customerId = token.customerId as string
       }
       return session
     },
@@ -83,9 +72,6 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
     error: "/login",
   },
-  session: {
-    strategy: "jwt",
-  },
-  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-for-development-only",
-  debug: false, // Disable debug to prevent console spam
 }
+
+export default NextAuth(authOptions)
