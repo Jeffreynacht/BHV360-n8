@@ -3,61 +3,35 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import {
-  Loader2,
-  Settings,
-  Shield,
-  Users,
-  BarChart3,
-  Bell,
-  FileText,
-  Smartphone,
-  Zap,
-  CheckCircle,
-  XCircle,
-} from "lucide-react"
-import { toast } from "sonner"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { BHV360BrandHeader } from "@/components/bhv360-brand-header"
+import { Shield, Zap, Crown, Building, Package, Loader2, CheckCircle, XCircle, Euro, Users } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
+import { moduleDefinitions, calculateModulePrice, type ModuleDefinition } from "@/lib/modules/module-definitions"
 
-interface Module {
-  id: string
-  name: string
-  description: string
-  category: string
-  features: string[]
-  enabled: boolean
-  price?: number
-  isCore?: boolean
-}
+// Force dynamic rendering for this page
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 interface Customer {
   id: string
   name: string
   email: string
-  modules: string[]
-}
-
-const categoryIcons = {
-  core: Settings,
-  safety: Shield,
-  management: Users,
-  analytics: BarChart3,
-  communication: Bell,
-  reporting: FileText,
-  mobile: Smartphone,
-  automation: Zap,
-}
-
-const categoryColors = {
-  core: "bg-blue-100 text-blue-800 border-blue-200",
-  safety: "bg-red-100 text-red-800 border-red-200",
-  management: "bg-green-100 text-green-800 border-green-200",
-  analytics: "bg-purple-100 text-purple-800 border-purple-200",
-  communication: "bg-orange-100 text-orange-800 border-orange-200",
-  reporting: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  mobile: "bg-pink-100 text-pink-800 border-pink-200",
-  automation: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  phone: string
+  address: string
+  city: string
+  postalCode: string
+  country: string
+  industry: string
+  employeeCount: number
+  buildingCount: number
+  status: "active" | "inactive" | "trial"
+  createdAt: string
+  updatedAt: string
+  enabledModules: string[]
 }
 
 export default function CustomerModulesPage() {
@@ -65,337 +39,450 @@ export default function CustomerModulesPage() {
   const customerId = params.id as string
 
   const [customer, setCustomer] = useState<Customer | null>(null)
-  const [modules, setModules] = useState<Module[]>([])
+  const [modules, setModules] = useState<ModuleDefinition[]>(moduleDefinitions)
   const [loading, setLoading] = useState(true)
-  const [updating, setUpdating] = useState<string | null>(null)
-
-  // Mock data - replace with actual API calls
-  const mockModules: Module[] = [
-    {
-      id: "bhv-basis",
-      name: "BHV Basis",
-      description: "Basis BHV functionaliteiten voor bedrijfshulpverlening",
-      category: "core",
-      features: ["Plotkaart beheer", "Gebruikersbeheer", "Basis rapportage"],
-      enabled: true,
-      isCore: true,
-    },
-    {
-      id: "incident-management",
-      name: "Incident Management",
-      description: "Uitgebreid incident management systeem",
-      category: "safety",
-      features: ["Incident registratie", "Workflow management", "Escalatie procedures"],
-      enabled: true,
-      price: 29,
-    },
-    {
-      id: "advanced-reporting",
-      name: "Geavanceerde Rapportage",
-      description: "Uitgebreide rapportage en analytics",
-      category: "analytics",
-      features: ["Custom dashboards", "Trend analyse", "Export functionaliteit"],
-      enabled: false,
-      price: 19,
-    },
-    {
-      id: "mobile-app",
-      name: "Mobiele App",
-      description: "Native mobiele applicatie voor iOS en Android",
-      category: "mobile",
-      features: ["Push notificaties", "Offline functionaliteit", "QR code scanning"],
-      enabled: false,
-      price: 39,
-    },
-    {
-      id: "notification-system",
-      name: "Notificatie Systeem",
-      description: "Geavanceerd notificatie en alerting systeem",
-      category: "communication",
-      features: ["Multi-channel alerts", "Escalatie matrix", "Bulk messaging"],
-      enabled: true,
-      price: 15,
-    },
-    {
-      id: "user-management",
-      name: "Gebruikersbeheer Pro",
-      description: "Uitgebreid gebruikers- en rechtenbeheer",
-      category: "management",
-      features: ["Role-based access", "Single sign-on", "Audit logging"],
-      enabled: false,
-      price: 25,
-    },
-    {
-      id: "inspection-module",
-      name: "Inspectie Module",
-      description: "Digitale inspectie workflows en checklists",
-      category: "safety",
-      features: ["Digital checklists", "Photo documentation", "Compliance tracking"],
-      enabled: false,
-      price: 35,
-    },
-    {
-      id: "automation-workflows",
-      name: "Automatisering",
-      description: "Geautomatiseerde workflows en processen",
-      category: "automation",
-      features: ["Workflow builder", "Scheduled tasks", "Integration APIs"],
-      enabled: false,
-      price: 45,
-    },
-  ]
-
-  const mockCustomer: Customer = {
-    id: customerId,
-    name: "Acme Corporation",
-    email: "admin@acme.com",
-    modules: ["bhv-basis", "incident-management", "notification-system"],
-  }
+  const [toggleLoading, setToggleLoading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-
-        const updatedModules = mockModules.map((module) => ({
-          ...module,
-          enabled: mockCustomer.modules.includes(module.id),
-        }))
-
-        setCustomer(mockCustomer)
-        setModules(updatedModules)
-      } catch (error) {
-        console.error("Error fetching data:", error)
-        toast.error("Fout bij het laden van gegevens")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
+    loadCustomerData()
   }, [customerId])
 
-  const toggleModule = async (moduleId: string, enabled: boolean) => {
-    setUpdating(moduleId)
-
+  const loadCustomerData = async () => {
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 800))
+      setLoading(true)
+      setError(null)
 
-      // Update local state
-      setModules((prev) => prev.map((module) => (module.id === moduleId ? { ...module, enabled } : module)))
-
-      if (customer) {
-        const updatedModules = enabled
-          ? [...customer.modules, moduleId]
-          : customer.modules.filter((id) => id !== moduleId)
-
-        setCustomer((prev) => (prev ? { ...prev, modules: updatedModules } : null))
+      // Mock customer data - replace with actual API call
+      const mockCustomer: Customer = {
+        id: customerId,
+        name: "Acme Corporation",
+        email: "contact@acme.com",
+        phone: "+31 20 123 4567",
+        address: "Hoofdstraat 123",
+        city: "Amsterdam",
+        postalCode: "1000 AB",
+        country: "Nederland",
+        industry: "Technology",
+        employeeCount: 150,
+        buildingCount: 3,
+        status: "active",
+        createdAt: "2024-01-15T10:00:00Z",
+        updatedAt: "2024-01-20T14:30:00Z",
+        enabledModules: ["bhv-presence", "incident-management", "evacuation-plans"],
       }
 
-      toast.success(enabled ? "Module geactiveerd" : "Module gedeactiveerd")
-    } catch (error) {
-      console.error("Error updating module:", error)
-      toast.error("Fout bij het bijwerken van module")
+      setCustomer(mockCustomer)
+    } catch (err) {
+      console.error("Error loading customer:", err)
+      setError("Fout bij het laden van klantgegevens")
     } finally {
-      setUpdating(null)
+      setLoading(false)
     }
+  }
+
+  const handleToggleModule = async (moduleId: string) => {
+    if (!customer) return
+
+    try {
+      setToggleLoading(moduleId)
+
+      const isCurrentlyEnabled = customer.enabledModules.includes(moduleId)
+      const updatedModules = isCurrentlyEnabled
+        ? customer.enabledModules.filter((id) => id !== moduleId)
+        : [...customer.enabledModules, moduleId]
+
+      // Mock API call - replace with actual API
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      setCustomer({
+        ...customer,
+        enabledModules: updatedModules,
+        updatedAt: new Date().toISOString(),
+      })
+
+      const module = modules.find((m) => m.id === moduleId)
+      toast({
+        title: isCurrentlyEnabled ? "Module Uitgeschakeld" : "Module Ingeschakeld",
+        description: `${module?.name} is ${isCurrentlyEnabled ? "uitgeschakeld" : "ingeschakeld"} voor ${customer.name}`,
+      })
+    } catch (err) {
+      console.error("Error toggling module:", err)
+      toast({
+        title: "Fout",
+        description: "Er is een fout opgetreden bij het wijzigen van de module",
+        variant: "destructive",
+      })
+    } finally {
+      setToggleLoading(null)
+    }
+  }
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case "basis":
+        return <Shield className="h-5 w-5" />
+      case "geavanceerd":
+        return <Zap className="h-5 w-5" />
+      case "premium":
+        return <Crown className="h-5 w-5" />
+      case "enterprise":
+        return <Building className="h-5 w-5" />
+      default:
+        return <Package className="h-5 w-5" />
+    }
+  }
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case "basis":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      case "geavanceerd":
+        return "bg-green-100 text-green-800 border-green-200"
+      case "premium":
+        return "bg-purple-100 text-purple-800 border-purple-200"
+      case "enterprise":
+        return "bg-orange-100 text-orange-800 border-orange-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
+    }
+  }
+
+  const getModulesByCategory = (category: string) => {
+    return modules.filter((module) => module.category === category && module.visible)
+  }
+
+  const calculateTotalCost = () => {
+    if (!customer) return 0
+
+    return customer.enabledModules.reduce((total, moduleId) => {
+      const module = modules.find((m) => m.id === moduleId)
+      if (module) {
+        const price = calculateModulePrice(module, customer.employeeCount, customer.buildingCount)
+        return total + price.price
+      }
+      return total
+    }, 0)
+  }
+
+  const getModuleStats = () => {
+    if (!customer) return { enabled: 0, total: 0, categories: {} }
+
+    const visibleModules = modules.filter((m) => m.visible)
+    const enabledCount = customer.enabledModules.length
+    const totalCount = visibleModules.length
+
+    const categories = visibleModules.reduce(
+      (acc, module) => {
+        if (!acc[module.category]) {
+          acc[module.category] = { total: 0, enabled: 0 }
+        }
+        acc[module.category].total++
+        if (customer.enabledModules.includes(module.id)) {
+          acc[module.category].enabled++
+        }
+        return acc
+      },
+      {} as Record<string, { total: number; enabled: number }>,
+    )
+
+    return { enabled: enabledCount, total: totalCount, categories }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Modules laden...</span>
+      <div className="min-h-screen bg-gray-50">
+        <BHV360BrandHeader customerName="Laden..." userRole="Beheerder" />
+        <div className="container mx-auto p-6">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
         </div>
       </div>
     )
   }
 
-  if (!customer) {
+  if (error || !customer) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Klant niet gevonden</h2>
-          <p className="text-gray-600">De opgevraagde klant kon niet worden geladen.</p>
+      <div className="min-h-screen bg-gray-50">
+        <BHV360BrandHeader customerName="Fout" userRole="Beheerder" />
+        <div className="container mx-auto p-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center">
+                <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold mb-2">Fout bij laden</h2>
+                <p className="text-gray-600 mb-4">{error || "Klant niet gevonden"}</p>
+                <Button onClick={loadCustomerData}>Opnieuw proberen</Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
   }
 
-  const enabledModules = modules.filter((m) => m.enabled)
-  const disabledModules = modules.filter((m) => !m.enabled)
-  const totalCost = enabledModules.reduce((sum, module) => sum + (module.price || 0), 0)
-
-  const groupedModules = modules.reduce(
-    (acc, module) => {
-      if (!acc[module.category]) {
-        acc[module.category] = []
-      }
-      acc[module.category].push(module)
-      return acc
-    },
-    {} as Record<string, Module[]>,
-  )
+  const stats = getModuleStats()
+  const totalCost = calculateTotalCost()
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Module Beheer</h1>
-          <p className="text-gray-600 mt-1">Beheer modules voor {customer.name}</p>
+    <div className="min-h-screen bg-gray-50">
+      <BHV360BrandHeader customerName={customer.name} userRole="Module Beheer" />
+
+      <div className="container mx-auto p-6">
+        {/* Customer Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">{customer.name}</h1>
+              <p className="text-gray-600">Module configuratie en beheer</p>
+            </div>
+            <Badge variant={customer.status === "active" ? "default" : "secondary"} className="text-sm">
+              {customer.status === "active" ? "Actief" : customer.status === "trial" ? "Proefperiode" : "Inactief"}
+            </Badge>
+          </div>
+
+          {/* Customer Info Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Gebruikers</p>
+                    <p className="text-2xl font-bold">{customer.employeeCount}</p>
+                  </div>
+                  <Users className="h-8 w-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Gebouwen</p>
+                    <p className="text-2xl font-bold">{customer.buildingCount}</p>
+                  </div>
+                  <Building className="h-8 w-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Actieve Modules</p>
+                    <p className="text-2xl font-bold">
+                      {stats.enabled}/{stats.total}
+                    </p>
+                  </div>
+                  <Package className="h-8 w-8 text-purple-600" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Maandkosten</p>
+                    <p className="text-2xl font-bold">
+                      €{typeof totalCost === "number" ? totalCost.toFixed(2) : "0.00"}
+                    </p>
+                  </div>
+                  <Euro className="h-8 w-8 text-orange-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-        <div className="text-right">
-          <div className="text-sm text-gray-600">Maandelijkse kosten</div>
-          <div className="text-2xl font-bold text-green-600">€{totalCost}</div>
-        </div>
-      </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <div>
-                <div className="text-2xl font-bold">{enabledModules.length}</div>
-                <div className="text-sm text-gray-600">Actieve modules</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Module Management */}
+        <Tabs defaultValue="all" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="all">Alle Modules</TabsTrigger>
+            <TabsTrigger value="enabled">Actieve Modules</TabsTrigger>
+            <TabsTrigger value="basis">Basis</TabsTrigger>
+            <TabsTrigger value="geavanceerd">Geavanceerd</TabsTrigger>
+            <TabsTrigger value="premium">Premium</TabsTrigger>
+            <TabsTrigger value="enterprise">Enterprise</TabsTrigger>
+          </TabsList>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <XCircle className="h-5 w-5 text-gray-400" />
-              <div>
-                <div className="text-2xl font-bold">{disabledModules.length}</div>
-                <div className="text-sm text-gray-600">Beschikbare modules</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          <TabsContent value="all">
+            <div className="space-y-8">
+              {["basis", "geavanceerd", "premium", "enterprise"].map((category) => {
+                const categoryModules = getModulesByCategory(category)
+                if (categoryModules.length === 0) return null
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <BarChart3 className="h-5 w-5 text-blue-500" />
-              <div>
-                <div className="text-2xl font-bold">{modules.length}</div>
-                <div className="text-sm text-gray-600">Totaal modules</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Modules by Category */}
-      <div className="space-y-6">
-        {Object.entries(groupedModules).map(([category, categoryModules]) => {
-          const IconComponent = categoryIcons[category as keyof typeof categoryIcons] || Settings
-
-          return (
-            <div key={category}>
-              <div className="flex items-center space-x-2 mb-4">
-                <IconComponent className="h-5 w-5" />
-                <h2 className="text-xl font-semibold capitalize">
-                  {category === "core"
-                    ? "Basis Modules"
-                    : category === "safety"
-                      ? "Veiligheid"
-                      : category === "management"
-                        ? "Beheer"
-                        : category === "analytics"
-                          ? "Analytics"
-                          : category === "communication"
-                            ? "Communicatie"
-                            : category === "reporting"
-                              ? "Rapportage"
-                              : category === "mobile"
-                                ? "Mobiel"
-                                : category === "automation"
-                                  ? "Automatisering"
-                                  : category}
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {categoryModules.map((module) => (
-                  <Card
-                    key={module.id}
-                    className={`transition-all duration-200 ${
-                      module.enabled ? "ring-2 ring-green-200 bg-green-50" : ""
-                    }`}
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="text-lg flex items-center space-x-2">
-                            <span>{module.name}</span>
-                            {module.isCore && (
-                              <Badge variant="secondary" className="text-xs">
-                                Basis
-                              </Badge>
-                            )}
-                          </CardTitle>
-                          <CardDescription className="mt-1">{module.description}</CardDescription>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={categoryColors[module.category as keyof typeof categoryColors]}
-                        >
-                          <IconComponent className="h-3 w-3 mr-1" />
-                          {category}
+                return (
+                  <Card key={category}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-3">
+                        {getCategoryIcon(category)}
+                        {category.charAt(0).toUpperCase() + category.slice(1)} Modules
+                        <Badge variant="outline">
+                          {stats.categories[category]?.enabled || 0}/{stats.categories[category]?.total || 0}
                         </Badge>
-                      </div>
+                      </CardTitle>
+                      <CardDescription>
+                        {category === "basis" && "Essentiële modules voor basis BHV functionaliteit"}
+                        {category === "geavanceerd" && "Uitgebreide modules voor professioneel gebruik"}
+                        {category === "premium" && "Premium modules met geavanceerde features"}
+                        {category === "enterprise" && "Enterprise modules voor grote organisaties"}
+                      </CardDescription>
                     </CardHeader>
-
-                    <CardContent className="pt-0">
-                      <div className="space-y-3">
-                        <div>
-                          <h4 className="text-sm font-medium mb-2">Functionaliteiten:</h4>
-                          <ul className="text-sm text-gray-600 space-y-1">
-                            {module.features.map((feature, index) => (
-                              <li key={index} className="flex items-center space-x-2">
-                                <div className="w-1 h-1 bg-gray-400 rounded-full" />
-                                <span>{feature}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-2 border-t">
-                          <div className="flex items-center space-x-2">
-                            {module.price && (
-                              <span className="text-lg font-semibold text-green-600">€{module.price}/maand</span>
-                            )}
-                            {module.isCore && <span className="text-sm text-gray-500">Inbegrepen</span>}
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            {updating === module.id && <Loader2 className="h-4 w-4 animate-spin" />}
-                            <Switch
-                              checked={module.enabled}
-                              onCheckedChange={(checked) => toggleModule(module.id, checked)}
-                              disabled={updating === module.id || module.isCore}
-                            />
-                          </div>
-                        </div>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {categoryModules.map((module) => (
+                          <ModuleCard
+                            key={module.id}
+                            module={module}
+                            customer={customer}
+                            isEnabled={customer.enabledModules.includes(module.id)}
+                            isLoading={toggleLoading === module.id}
+                            onToggle={() => handleToggleModule(module.id)}
+                          />
+                        ))}
                       </div>
                     </CardContent>
                   </Card>
+                )
+              })}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="enabled">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {modules
+                .filter((module) => customer.enabledModules.includes(module.id))
+                .map((module) => (
+                  <ModuleCard
+                    key={module.id}
+                    module={module}
+                    customer={customer}
+                    isEnabled={true}
+                    isLoading={toggleLoading === module.id}
+                    onToggle={() => handleToggleModule(module.id)}
+                  />
+                ))}
+            </div>
+          </TabsContent>
+
+          {["basis", "geavanceerd", "premium", "enterprise"].map((category) => (
+            <TabsContent key={category} value={category}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getModulesByCategory(category).map((module) => (
+                  <ModuleCard
+                    key={module.id}
+                    module={module}
+                    customer={customer}
+                    isEnabled={customer.enabledModules.includes(module.id)}
+                    isLoading={toggleLoading === module.id}
+                    onToggle={() => handleToggleModule(module.id)}
+                  />
                 ))}
               </div>
-            </div>
-          )
-        })}
+            </TabsContent>
+          ))}
+        </Tabs>
       </div>
     </div>
+  )
+}
+
+// Module Card Component
+function ModuleCard({
+  module,
+  customer,
+  isEnabled,
+  isLoading,
+  onToggle,
+}: {
+  module: ModuleDefinition
+  customer: Customer
+  isEnabled: boolean
+  isLoading: boolean
+  onToggle: () => void
+}) {
+  const priceInfo = calculateModulePrice(module, customer.employeeCount, customer.buildingCount)
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case "basis":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      case "geavanceerd":
+        return "bg-green-100 text-green-800 border-green-200"
+      case "premium":
+        return "bg-purple-100 text-purple-800 border-purple-200"
+      case "enterprise":
+        return "bg-orange-100 text-orange-800 border-orange-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
+    }
+  }
+
+  return (
+    <Card
+      className={`transition-all duration-200 ${isEnabled ? "ring-2 ring-green-500 bg-green-50" : "hover:shadow-md"}`}
+    >
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-lg mb-2 flex items-center gap-2">
+              {module.name}
+              {isEnabled && <CheckCircle className="h-5 w-5 text-green-600" />}
+            </CardTitle>
+            <div className="flex gap-2 mb-2">
+              <Badge className={getCategoryColor(module.category)}>{module.category}</Badge>
+              <Badge variant="outline">{module.tier}</Badge>
+              {!module.implemented && (
+                <Badge variant="secondary" className="text-xs">
+                  Beta
+                </Badge>
+              )}
+            </div>
+            <CardDescription className="text-sm">{module.description}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        {/* Pricing */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-semibold text-lg text-blue-600">
+              €{typeof priceInfo.price === "number" ? priceInfo.price.toFixed(2) : "0.00"}/maand
+            </span>
+            <Badge variant="outline" className="text-xs">
+              {priceInfo.model}
+            </Badge>
+          </div>
+          <p className="text-xs text-gray-600">{priceInfo.explanation}</p>
+        </div>
+
+        {/* Features */}
+        <div className="mb-4">
+          <h4 className="font-semibold text-sm mb-2">Belangrijkste features:</h4>
+          <ul className="text-xs text-gray-600 space-y-1">
+            {module.features.slice(0, 3).map((feature, index) => (
+              <li key={index} className="flex items-center gap-1">
+                <div className="w-1 h-1 bg-blue-600 rounded-full" />
+                {feature}
+              </li>
+            ))}
+            {module.features.length > 3 && <li className="text-gray-500">+{module.features.length - 3} meer...</li>}
+          </ul>
+        </div>
+
+        {/* Toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Switch checked={isEnabled} onCheckedChange={onToggle} disabled={isLoading || !module.implemented} />
+            <span className="text-sm font-medium">{isEnabled ? "Ingeschakeld" : "Uitgeschakeld"}</span>
+          </div>
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+        </div>
+
+        {!module.implemented && <p className="text-xs text-orange-600 mt-2">Deze module is nog in ontwikkeling</p>}
+      </CardContent>
+    </Card>
   )
 }

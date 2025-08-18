@@ -33,7 +33,6 @@ import {
   Upload,
 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
-import { toFixedSafe } from "@/helpers/number"
 import {
   moduleDefinitions,
   moduleCategories,
@@ -551,13 +550,18 @@ function ModuleCard({
         {/* Prijsinformatie */}
         <div className="mb-4 p-3 bg-gray-50 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-semibold text-lg text-blue-600">€{toFixedSafe(priceInfo.price)}/maand</span>
+            <span className="font-semibold text-lg text-blue-600">
+              €{typeof priceInfo.price === "number" ? priceInfo.price.toFixed(2) : "0.00"}/maand
+            </span>
             <Badge variant="outline">{priceInfo.model}</Badge>
           </div>
           <p className="text-xs text-gray-600">{priceInfo.explanation}</p>
 
           {module.pricing.setupFee && (
-            <p className="text-xs text-orange-600 mt-1">+ €{toFixedSafe(module.pricing.setupFee / 100)} setup fee</p>
+            <p className="text-xs text-orange-600 mt-1">
+              + €{typeof module.pricing.setupFee === "number" ? (module.pricing.setupFee / 100).toFixed(2) : "0.00"}{" "}
+              setup fee
+            </p>
           )}
         </div>
 
@@ -580,9 +584,9 @@ function ModuleCard({
             {/* Stats */}
             <div className="mb-4 flex items-center gap-4 text-xs text-gray-500">
               <span>
-                ★ {toFixedSafe(module.rating)} ({module.reviews})
+                ★ {typeof module.rating === "number" ? module.rating.toFixed(1) : "0.0"} ({module.reviews})
               </span>
-              <span>Populariteit: {toFixedSafe(module.popularity)}%</span>
+              <span>Populariteit: {typeof module.popularity === "number" ? module.popularity.toFixed(0) : "0"}%</span>
               <span>v{module.version}</span>
             </div>
           </>
@@ -681,11 +685,21 @@ function ModuleTable({
                   </td>
                   <td className="p-4">
                     <div className="text-sm">
-                      <div className="font-semibold">€{toFixedSafe(module.pricing.basePrice / 100)}/maand</div>
+                      <div className="font-semibold">
+                        €
+                        {typeof module.pricing.basePrice === "number"
+                          ? (module.pricing.basePrice / 100).toFixed(2)
+                          : "0.00"}
+                        /maand
+                      </div>
                       <div className="text-gray-500">{module.pricingModel}</div>
                       {module.pricing.setupFee && (
                         <div className="text-xs text-orange-600">
-                          +€{toFixedSafe(module.pricing.setupFee / 100)} setup
+                          +€
+                          {typeof module.pricing.setupFee === "number"
+                            ? (module.pricing.setupFee / 100).toFixed(2)
+                            : "0.00"}{" "}
+                          setup
                         </div>
                       )}
                     </div>
@@ -723,10 +737,12 @@ function ModuleTable({
                   <td className="p-4">
                     <div className="text-sm">
                       <div className="flex items-center gap-1">
-                        <span>★ {toFixedSafe(module.rating)}</span>
+                        <span>★ {typeof module.rating === "number" ? module.rating.toFixed(1) : "0.0"}</span>
                         <span className="text-gray-500">({module.reviews})</span>
                       </div>
-                      <div className="text-xs text-gray-500">{toFixedSafe(module.popularity)}% populariteit</div>
+                      <div className="text-xs text-gray-500">
+                        {typeof module.popularity === "number" ? module.popularity.toFixed(0) : "0"}% populariteit
+                      </div>
                     </div>
                   </td>
                   <td className="p-4">
@@ -809,7 +825,7 @@ function PricingEditor({
           placeholder="Bijvoorbeeld: 850 voor €8.50"
         />
         <p className="text-xs text-gray-500 mt-1">
-          Huidige prijs: €{toFixedSafe(pricing.basePrice / 100)} per{" "}
+          Huidige prijs: €{typeof pricing.basePrice === "number" ? (pricing.basePrice / 100).toFixed(2) : "0.00"} per{" "}
           {pricingType === "per_user"
             ? "gebruiker"
             : pricingType === "per_building"
@@ -831,7 +847,9 @@ function PricingEditor({
           placeholder="Bijvoorbeeld: 15000 voor €150"
         />
         {pricing.setupFee && (
-          <p className="text-xs text-gray-500 mt-1">Setup fee: €{toFixedSafe(pricing.setupFee / 100)}</p>
+          <p className="text-xs text-gray-500 mt-1">
+            Setup fee: €{typeof pricing.setupFee === "number" ? (pricing.setupFee / 100).toFixed(2) : "0.00"}
+          </p>
         )}
       </div>
 
@@ -916,10 +934,14 @@ function PricingEditor({
               <strong>10 gebruikers, 1 gebouw:</strong>
             </p>
             <p>
-              €
-              {toFixedSafe(
-                calculateModulePrice({ ...module, pricing: { ...pricing, type: pricingType } }, 10, 1).price,
-              )}
+              €{(() => {
+                const price = calculateModulePrice(
+                  { ...module, pricing: { ...pricing, type: pricingType } },
+                  10,
+                  1,
+                ).price
+                return typeof price === "number" ? price.toFixed(2) : "0.00"
+              })()}
               /maand
             </p>
           </div>
@@ -928,10 +950,14 @@ function PricingEditor({
               <strong>25 gebruikers, 2 gebouwen:</strong>
             </p>
             <p>
-              €
-              {toFixedSafe(
-                calculateModulePrice({ ...module, pricing: { ...pricing, type: pricingType } }, 25, 2).price,
-              )}
+              €{(() => {
+                const price = calculateModulePrice(
+                  { ...module, pricing: { ...pricing, type: pricingType } },
+                  25,
+                  2,
+                ).price
+                return typeof price === "number" ? price.toFixed(2) : "0.00"
+              })()}
               /maand
             </p>
           </div>
@@ -940,10 +966,14 @@ function PricingEditor({
               <strong>100 gebruikers, 5 gebouwen:</strong>
             </p>
             <p>
-              €
-              {toFixedSafe(
-                calculateModulePrice({ ...module, pricing: { ...pricing, type: pricingType } }, 100, 5).price,
-              )}
+              €{(() => {
+                const price = calculateModulePrice(
+                  { ...module, pricing: { ...pricing, type: pricingType } },
+                  100,
+                  5,
+                ).price
+                return typeof price === "number" ? price.toFixed(2) : "0.00"
+              })()}
               /maand
             </p>
           </div>
@@ -1004,6 +1034,9 @@ function PricingCalculator({
     }, 0)
   }
 
+  const totalCost = calculateTotal()
+  const setupFees = calculateSetupFees()
+
   return (
     <div className="space-y-6">
       {/* Calculator Inputs */}
@@ -1052,7 +1085,9 @@ function PricingCalculator({
                     <p className="text-xs text-gray-600">{module.category}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-sm">€{toFixedSafe(priceInfo.price)}/maand</p>
+                    <p className="font-semibold text-sm">
+                      €{typeof priceInfo.price === "number" ? priceInfo.price.toFixed(2) : "0.00"}/maand
+                    </p>
                     <p className="text-xs text-gray-500">{priceInfo.model}</p>
                   </div>
                 </div>
@@ -1067,22 +1102,29 @@ function PricingCalculator({
         <div className="space-y-2">
           <div className="flex justify-between">
             <span>Maandelijkse kosten:</span>
-            <span className="font-semibold">€{toFixedSafe(calculateTotal())}</span>
+            <span className="font-semibold">€{typeof totalCost === "number" ? totalCost.toFixed(2) : "0.00"}</span>
           </div>
           <div className="flex justify-between">
             <span>Jaarlijkse kosten:</span>
-            <span className="font-semibold">€{toFixedSafe(calculateTotal() * 12)}</span>
+            <span className="font-semibold">
+              €{typeof totalCost === "number" ? (totalCost * 12).toFixed(2) : "0.00"}
+            </span>
           </div>
-          {calculateSetupFees() > 0 && (
+          {setupFees > 0 && (
             <div className="flex justify-between text-orange-600">
               <span>Eenmalige setup kosten:</span>
-              <span className="font-semibold">€{toFixedSafe(calculateSetupFees())}</span>
+              <span className="font-semibold">€{typeof setupFees === "number" ? setupFees.toFixed(2) : "0.00"}</span>
             </div>
           )}
           <hr className="border-green-300" />
           <div className="flex justify-between text-lg font-bold text-green-800">
             <span>Totaal eerste jaar:</span>
-            <span>€{toFixedSafe(calculateTotal() * 12 + calculateSetupFees())}</span>
+            <span>
+              €
+              {typeof totalCost === "number" && typeof setupFees === "number"
+                ? (totalCost * 12 + setupFees).toFixed(2)
+                : "0.00"}
+            </span>
           </div>
         </div>
 
