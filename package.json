@@ -101,7 +101,7 @@
     "path": "latest",
     "react": "^18",
     "react-chartjs-2": "latest",
-    "react-day-picker": "latest",
+    "react-day-picker": "9.2.0",
     "react-dom": "^18",
     "react-error-boundary": "latest",
     "react-hook-form": "latest",

@@ -3,7 +3,11 @@
 declare module "web-push" {
   export function setVapidDetails(subject: string, publicKey: string, privateKey: string): void
   export function sendNotification(subscription: any, payload: string, options?: any): Promise<any>
-  export function generateVAPIDKeys(): { publicKey: string; privateKey: string }
+}
+
+declare module "jsonwebtoken" {
+  export function sign(payload: any, secret: string, options?: any): string
+  export function verify(token: string, secret: string, options?: any): any
 }
 
 type UUID = string
@@ -54,22 +58,32 @@ interface ModuleCategory {
 type PricingModel = "fixed" | "per_user" | "per_building" | "per_customer"
 
 interface ModulePricing {
+  type?: PricingModel
   model: PricingModel
   basePrice: number
   setupFee?: number
   freeTrialDays?: number
   tierMultipliers?: Partial<Record<ModuleTierId, number>>
+  tierPricing?: Array<{
+    minUsers: number
+    maxUsers?: number
+    pricePerUser: number
+  }>
 }
 
-interface ModuleDef {
+interface ModuleDefinition {
   id: string
-  title: string
+  name: string
+  title?: string
   description?: string
   category: ModuleCategoryId | ModuleCategory
   tier?: ModuleTierId | ModuleTier
-  pricing: ModulePricing | number
+  pricing: ModulePricing
+  pricingModel?: string
   status?: "beta" | "ga" | "internal"
   implemented?: boolean
+  visible?: boolean
+  enabled?: boolean
   routePath?: string
   features?: string[]
   rating?: number
@@ -79,6 +93,10 @@ interface ModuleDef {
   core?: boolean
 }
 
+// Alias for compatibility
+type ModuleDef = ModuleDefinition
+type Module = ModuleDefinition
+
 interface ModuleActivationRequest {
   moduleId: string
   monthlyCost?: number
@@ -87,7 +105,6 @@ interface ModuleActivationRequest {
 }
 
 type DeepInspectionStatus = "warning" | "pass" | "fail"
-
 interface DeepInspectionReport {
   score?: number
   criticalIssues?: any[]

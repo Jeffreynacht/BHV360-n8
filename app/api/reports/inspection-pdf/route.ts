@@ -1,9 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateInspectionPDF } from "@/lib/reports/inspection-pdf-generator"
 
+// Force dynamic rendering for this route
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
+    const { searchParams } = new URL(request.url)
     const reportId = searchParams.get("id")
 
     if (!reportId) {

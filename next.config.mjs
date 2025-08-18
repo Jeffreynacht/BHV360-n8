@@ -52,12 +52,6 @@ const nextConfig = {
     domains: ['localhost', 'bhv360.vercel.app'],
   },
   
-  // Experimental features
-  experimental: {
-    // Enable app directory
-    appDir: true,
-  },
-  
   // Output configuration for static export if needed
   // output: 'export',
   // trailingSlash: true,

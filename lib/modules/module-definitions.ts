@@ -1,58 +1,43 @@
 // Compatibility layer: exports that your app expects
-export type { ModuleDef as Module, ModuleTier, ModuleCategory } from "@/types/shims"
+export type { ModuleDef as Module, ModuleTier, ModuleCategory, ModuleDefinition } from "@/types/shims"
 
-import type { ModuleDef, ModuleTier, ModuleCategory } from "@/types/shims"
+import type { ModuleTier, ModuleCategory, ModuleDefinition } from "@/types/shims"
 
 export const moduleCategories: ModuleCategory[] = [
   { id: "basis", name: "Basis", description: "Essentiële BHV functionaliteiten" },
-  { id: "geavanceerd", name: "Geavanceerd", description: "Uitgebreide BHV tools" },
-  { id: "premium", name: "Premium", description: "Premium BHV oplossingen" },
-  { id: "enterprise", name: "Enterprise", description: "Enterprise BHV suite" },
+  { id: "geavanceerd", name: "Geavanceerd", description: "Uitgebreide BHV tools en rapportages" },
+  { id: "premium", name: "Premium", description: "Professionele BHV oplossingen" },
+  { id: "enterprise", name: "Enterprise", description: "Enterprise-grade BHV management" },
 ]
 
 export const tierDefinitions: ModuleTier[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    description: "Voor kleine organisaties",
-    priceRange: "€0-50/maand",
-    features: ["Basis functionaliteit", "Email support"],
-  },
-  {
-    id: "professional",
-    name: "Professional",
-    description: "Voor middelgrote organisaties",
-    priceRange: "€50-200/maand",
-    features: ["Uitgebreide functionaliteit", "Telefoon support", "Integraties"],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    description: "Voor grote organisaties",
-    priceRange: "€200+/maand",
-    features: ["Volledige functionaliteit", "24/7 support", "Custom integraties", "SLA"],
-  },
-  {
-    id: "custom",
-    name: "Custom",
-    description: "Op maat gemaakte oplossing",
-    priceRange: "Op aanvraag",
-    features: ["Maatwerk", "Dedicated support", "Custom ontwikkeling"],
-  },
+  { id: "starter", name: "Starter", description: "Voor kleine organisaties", priceRange: "€0-50/maand" },
+  { id: "professional", name: "Professional", description: "Voor middelgrote bedrijven", priceRange: "€50-200/maand" },
+  { id: "enterprise", name: "Enterprise", description: "Voor grote organisaties", priceRange: "€200+/maand" },
+  { id: "custom", name: "Custom", description: "Op maat gemaakte oplossingen", priceRange: "Op aanvraag" },
 ]
 
-export const moduleDefinitions: ModuleDef[] = [
+export const moduleDefinitions: ModuleDefinition[] = [
   {
     id: "plotkaart",
-    title: "Plotkaart Editor",
-    description: "Interactieve plotkaart editor voor BHV procedures",
+    name: "BHV Plotkaart",
+    title: "BHV Plotkaart",
+    description: "Interactieve plotkaart voor BHV procedures en evacuatieroutes",
     category: "basis",
     tier: "starter",
-    pricing: { model: "fixed", basePrice: 29 },
+    pricing: {
+      model: "fixed",
+      basePrice: 2900, // €29.00
+      setupFee: 5000, // €50.00
+      freeTrialDays: 14,
+    },
+    pricingModel: "Vaste prijs per organisatie",
     implemented: true,
+    visible: true,
+    enabled: true,
     routePath: "/bhv/plotkaart",
     core: true,
-    features: ["Drag & drop editor", "PDF export", "Symbolen bibliotheek"],
+    features: ["Interactieve editor", "PDF export", "Evacuatieroutes", "Voorzieningen beheer"],
     rating: 4.8,
     reviews: 156,
     popularity: 95,
@@ -61,193 +46,213 @@ export const moduleDefinitions: ModuleDef[] = [
   },
   {
     id: "incidenten",
+    name: "Incident Management",
     title: "Incident Management",
-    description: "Realtime incident registratie en afhandeling",
+    description: "Registratie en opvolging van BHV incidenten",
     category: "basis",
     tier: "starter",
-    pricing: { model: "per_user", basePrice: 1.5 },
+    pricing: {
+      model: "per_user",
+      basePrice: 150, // €1.50 per user
+      setupFee: 2500, // €25.00
+      freeTrialDays: 30,
+      tierPricing: [
+        { minUsers: 1, maxUsers: 10, pricePerUser: 150 },
+        { minUsers: 11, maxUsers: 50, pricePerUser: 125 },
+        { minUsers: 51, pricePerUser: 100 },
+      ],
+    },
+    pricingModel: "Per gebruiker per maand",
     implemented: true,
+    visible: true,
+    enabled: true,
     routePath: "/incidenten",
     core: true,
-    features: ["Realtime meldingen", "Incident logging", "Rapportage"],
+    features: ["Incident registratie", "Workflow management", "Rapportages", "Notificaties"],
     rating: 4.6,
     reviews: 89,
-    popularity: 87,
+    popularity: 78,
     version: "1.8.2",
-    status: "ga",
   },
   {
-    id: "bhv-aanwezigheid",
-    title: "BHV Aanwezigheid",
-    description: "Overzicht van aanwezige BHV'ers",
-    category: "basis",
-    tier: "starter",
-    pricing: { model: "per_user", basePrice: 2.0 },
+    id: "voorzieningen",
+    name: "Voorzieningen Beheer",
+    title: "Voorzieningen Beheer",
+    description: "Beheer van brandblussers, AED's en andere veiligheidsvoorzieningen",
+    category: "geavanceerd",
+    tier: "professional",
+    pricing: {
+      model: "per_building",
+      basePrice: 1500, // €15.00 per building
+      setupFee: 7500, // €75.00
+      freeTrialDays: 21,
+    },
+    pricingModel: "Per gebouw per maand",
     implemented: true,
-    routePath: "/bhv-aanwezigheid",
-    core: true,
-    features: ["Realtime status", "Check-in/out", "Mobiele app"],
+    visible: true,
+    enabled: true,
+    routePath: "/beheer/voorzieningen",
+    features: ["Voorzieningen database", "Onderhoudsplanning", "QR codes", "Inspectierapporten"],
     rating: 4.7,
     reviews: 124,
     popularity: 82,
     version: "1.5.1",
-    status: "ga",
   },
   {
-    id: "voorzieningen",
-    title: "Voorzieningen Beheer",
-    description: "Beheer van BHV voorzieningen en materiaal",
-    category: "geavanceerd",
-    tier: "professional",
-    pricing: { model: "per_building", basePrice: 15 },
+    id: "gebruikers",
+    name: "Gebruikers Management",
+    title: "Gebruikers Management",
+    description: "Beheer van BHV medewerkers en hun certificeringen",
+    category: "basis",
+    tier: "starter",
+    pricing: {
+      model: "per_user",
+      basePrice: 200, // €2.00 per user
+      setupFee: 3000, // €30.00
+      freeTrialDays: 14,
+    },
+    pricingModel: "Per gebruiker per maand",
     implemented: true,
-    routePath: "/beheer/voorzieningen",
-    features: ["Inventaris beheer", "Onderhoudsplanning", "QR codes"],
+    visible: true,
+    enabled: true,
+    routePath: "/beheer/gebruikers",
+    core: true,
+    features: ["Gebruikersbeheer", "Rollen & rechten", "Certificering tracking", "Training planning"],
     rating: 4.5,
-    reviews: 67,
-    popularity: 74,
-    version: "1.3.0",
-    status: "ga",
+    reviews: 203,
+    popularity: 88,
+    version: "2.0.3",
   },
   {
     id: "rapportages",
+    name: "Rapportages & Analytics",
     title: "Rapportages & Analytics",
-    description: "Uitgebreide rapportages en analyses",
-    category: "geavanceerd",
+    description: "Uitgebreide rapportages en analyses van BHV activiteiten",
+    category: "premium",
     tier: "professional",
-    pricing: { model: "fixed", basePrice: 75 },
+    pricing: {
+      model: "per_customer",
+      basePrice: 4900, // €49.00 per organization
+      setupFee: 15000, // €150.00
+      freeTrialDays: 30,
+    },
+    pricingModel: "Per organisatie per maand",
     implemented: true,
+    visible: true,
+    enabled: true,
     routePath: "/beheer/rapportages",
-    features: ["Dashboard", "Custom rapporten", "Data export"],
-    rating: 4.4,
-    reviews: 43,
-    popularity: 68,
-    version: "1.2.3",
-    status: "ga",
+    features: ["Dashboard analytics", "Custom rapporten", "Data export", "Trend analyse"],
+    rating: 4.9,
+    reviews: 67,
+    popularity: 71,
+    version: "1.3.0",
   },
   {
-    id: "nfc-integratie",
-    title: "NFC Integratie",
-    description: "NFC tags voor snelle check-in en locatie tracking",
+    id: "mobile-app",
+    name: "Mobile App",
+    title: "BHV360 Mobile App",
+    description: "Mobiele app voor BHV medewerkers in het veld",
     category: "premium",
-    tier: "enterprise",
-    pricing: { model: "per_user", basePrice: 3.5 },
-    implemented: true,
-    routePath: "/nfc-scan",
-    features: ["NFC scanning", "Locatie tracking", "Automatische check-in"],
-    rating: 4.3,
-    reviews: 28,
-    popularity: 45,
-    version: "0.9.1",
+    tier: "professional",
+    pricing: {
+      model: "per_user",
+      basePrice: 300, // €3.00 per user
+      setupFee: 10000, // €100.00
+      freeTrialDays: 30,
+    },
+    pricingModel: "Per gebruiker per maand",
+    implemented: false,
+    visible: true,
+    enabled: true,
+    routePath: "/mobile-app",
+    features: ["Offline functionaliteit", "Push notificaties", "QR scanner", "GPS tracking"],
+    rating: 4.4,
+    reviews: 45,
+    popularity: 65,
+    version: "0.9.0",
     status: "beta",
   },
   {
     id: "api-integraties",
+    name: "API Integraties",
     title: "API Integraties",
-    description: "Integraties met externe systemen",
+    description: "Integraties met externe systemen en API toegang",
     category: "enterprise",
     tier: "enterprise",
-    pricing: { model: "fixed", basePrice: 150 },
+    pricing: {
+      model: "per_customer",
+      basePrice: 9900, // €99.00 per organization
+      setupFee: 25000, // €250.00
+      freeTrialDays: 14,
+    },
+    pricingModel: "Per organisatie per maand",
     implemented: true,
+    visible: true,
+    enabled: true,
     routePath: "/beheer/api-integraties",
-    features: ["REST API", "Webhooks", "Custom integraties"],
-    rating: 4.2,
-    reviews: 15,
-    popularity: 32,
-    version: "1.0.0",
-    status: "ga",
-  },
-  {
-    id: "white-label",
-    title: "White Label",
-    description: "Volledig aangepaste branding voor partners",
-    category: "enterprise",
-    tier: "custom",
-    pricing: { model: "per_customer", basePrice: 500 },
-    implemented: true,
-    routePath: "/white-label",
-    features: ["Custom branding", "Partner portal", "Multi-tenant"],
-    rating: 4.9,
-    reviews: 8,
-    popularity: 18,
-    version: "2.0.0",
-    status: "ga",
+    features: ["REST API", "Webhooks", "SSO integratie", "Custom connectors"],
+    rating: 4.3,
+    reviews: 28,
+    popularity: 45,
+    version: "1.1.0",
   },
 ]
 
-// Alias zoals andere delen verwachten
+// Aliases for compatibility
 export const AVAILABLE_MODULES = moduleDefinitions
 
-export function getModuleById(id: string): ModuleDef | null {
+export function getModuleById(id: string): ModuleDefinition | null {
   return moduleDefinitions.find((m) => m.id === id) || null
 }
 
-export function getCoreModules(): ModuleDef[] {
+export function getCoreModules(): ModuleDefinition[] {
   return moduleDefinitions.filter((m) => m.core)
 }
 
-export function getVisibleModules(): ModuleDef[] {
-  return moduleDefinitions.filter((m) => m.implemented !== false)
-}
-
-export function getModulesByCategory(categoryId: string): ModuleDef[] {
-  return moduleDefinitions.filter((m) => {
-    const cat = typeof m.category === "string" ? m.category : m.category.id
-    return cat === categoryId
-  })
-}
-
-export function getModulesByTier(tierId: string): ModuleDef[] {
-  return moduleDefinitions.filter((m) => {
-    const tier = typeof m.tier === "string" ? m.tier : m.tier?.id
-    return tier === tierId
-  })
+export function getVisibleModules(): ModuleDefinition[] {
+  return moduleDefinitions.filter((m) => m.visible !== false)
 }
 
 export function calculateModulePrice(
-  tierOrId: ModuleTier | string,
-  quantity = 1,
-  ctx?: { users?: number; buildings?: number; customers?: number },
-) {
-  const tierId = typeof tierOrId === "string" ? tierOrId : tierOrId.id
+  module: ModuleDefinition,
+  users = 1,
+  buildings = 1,
+): { price: number; model: string; explanation: string } {
+  const pricing = module.pricing
+  let price = 0
+  let explanation = ""
 
-  return (mod: ModuleDef) => {
-    const p = typeof mod.pricing === "number" ? { model: "fixed" as const, basePrice: mod.pricing } : mod.pricing
+  switch (pricing.model) {
+    case "per_user": {
+      // Check for tier pricing
+      if (pricing.tierPricing && pricing.tierPricing.length > 0) {
+        const tier =
+          pricing.tierPricing.find((t) => users >= t.minUsers && (!t.maxUsers || users <= t.maxUsers)) ||
+          pricing.tierPricing[pricing.tierPricing.length - 1]
 
-    const base = p.basePrice
-    const mult = (typeof p.tierMultipliers === "object" && p.tierMultipliers?.[tierId as any]) || 1
-
-    switch (p.model) {
-      case "per_user": {
-        const users = ctx?.users ?? quantity
-        return Math.round(base * mult * users * 100) / 100
+        price = (tier.pricePerUser / 100) * users
+        explanation = `€${(tier.pricePerUser / 100).toFixed(2)} per gebruiker × ${users} gebruikers`
+      } else {
+        price = (pricing.basePrice / 100) * users
+        explanation = `€${(pricing.basePrice / 100).toFixed(2)} per gebruiker × ${users} gebruikers`
       }
-      case "per_building": {
-        const buildings = ctx?.buildings ?? quantity
-        return Math.round(base * mult * buildings * 100) / 100
-      }
-      case "per_customer": {
-        const customers = ctx?.customers ?? quantity
-        return Math.round(base * mult * customers * 100) / 100
-      }
-      default:
-        return Math.round(base * mult * 100) / 100
+      return { price, model: "Per gebruiker", explanation }
+    }
+    case "per_building": {
+      price = (pricing.basePrice / 100) * buildings
+      explanation = `€${(pricing.basePrice / 100).toFixed(2)} per gebouw × ${buildings} gebouwen`
+      return { price, model: "Per gebouw", explanation }
+    }
+    case "per_customer": {
+      price = pricing.basePrice / 100
+      explanation = `€${price.toFixed(2)} per organisatie`
+      return { price, model: "Per organisatie", explanation }
+    }
+    case "fixed":
+    default: {
+      price = pricing.basePrice / 100
+      explanation = `€${price.toFixed(2)} vaste prijs`
+      return { price, model: "Vaste prijs", explanation }
     }
   }
 }
-
-export function getModulePriceForTier(
-  moduleId: string,
-  tierId: string,
-  context?: { users?: number; buildings?: number; customers?: number },
-): number {
-  const module = getModuleById(moduleId)
-  if (!module) return 0
-
-  const calculator = calculateModulePrice(tierId, 1, context)
-  return calculator(module)
-}
-
-// Export types for compatibility
-export type ModuleDefinition = ModuleDef
-export type { ModuleDef }
