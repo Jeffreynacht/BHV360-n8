@@ -1,10 +1,17 @@
 export enum UserRole {
-  SUPER_ADMIN = "super-admin",
+  SUPER_ADMIN = "super_admin",
   ADMIN = "admin",
-  PARTNER_ADMIN = "partner-admin",
+  PARTNER_ADMIN = "partner_admin",
   PARTNER_MANAGER = "partner-manager",
-  CUSTOMER_ADMIN = "customer-admin",
-  BHV_COORDINATOR = "bhv-coordinator",
+  CUSTOMER_OWNER = "customer_owner",
+  CUSTOMER_ADMIN = "customer_admin",
+  CUSTOMER_MANAGER = "customer_manager",
+  BHV_COORDINATOR = "bhv_coordinator",
+  BHV_PLOEGLEIDER = "bhv_ploegleider",
+  BHV_MEMBER = "bhv_member",
+  EHBO_MEMBER = "ehbo_member",
+  ONTRUIMER = "ontruimer",
+  VISITOR = "visitor",
   SECURITY_RECEPTIONIST = "security-receptionist",
   EMPLOYEE = "employee",
 }
@@ -126,6 +133,18 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     { resource: Resource.PRESENCE, actions: [Action.READ] },
   ],
 
+  [UserRole.CUSTOMER_OWNER]: [
+    {
+      resource: Resource.CUSTOMERS,
+      actions: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.MANAGE],
+    },
+    { resource: Resource.USERS, actions: [Action.CREATE, Action.READ, Action.UPDATE] },
+    { resource: Resource.REPORTS, actions: [Action.READ, Action.UPDATE] },
+    { resource: Resource.INCIDENTS, actions: [Action.CREATE, Action.READ, Action.UPDATE] },
+    { resource: Resource.PLOTKAART, actions: [Action.READ, Action.UPDATE] },
+    { resource: Resource.PRESENCE, actions: [Action.READ] },
+  ],
+
   [UserRole.CUSTOMER_ADMIN]: [
     { resource: Resource.USERS, actions: [Action.CREATE, Action.READ, Action.UPDATE] },
     { resource: Resource.REPORTS, actions: [Action.READ] },
@@ -133,6 +152,70 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     { resource: Resource.PLOTKAART, actions: [Action.READ, Action.UPDATE] },
     { resource: Resource.VISITORS, actions: [Action.READ] },
     { resource: Resource.CONTRACTORS, actions: [Action.READ] },
+    { resource: Resource.PRESENCE, actions: [Action.READ] },
+  ],
+
+  [UserRole.CUSTOMER_MANAGER]: [
+    { resource: Resource.USERS, actions: [Action.READ, Action.UPDATE] },
+    { resource: Resource.REPORTS, actions: [Action.READ] },
+    { resource: Resource.INCIDENTS, actions: [Action.CREATE, Action.READ, Action.UPDATE] },
+    { resource: Resource.PLOTKAART, actions: [Action.READ] },
+    { resource: Resource.VISITORS, actions: [Action.READ] },
+    { resource: Resource.CONTRACTORS, actions: [Action.READ] },
+    { resource: Resource.PRESENCE, actions: [Action.READ] },
+  ],
+
+  [UserRole.BHV_PLOEGLEIDER]: [
+    { resource: Resource.USERS, actions: [Action.READ, Action.UPDATE] },
+    { resource: Resource.BUILDINGS, actions: [Action.READ] },
+    { resource: Resource.FACILITIES, actions: [Action.READ] },
+    { resource: Resource.PLOTKAART, actions: [Action.READ] },
+    { resource: Resource.REPORTS, actions: [Action.READ] },
+    { resource: Resource.INCIDENTS, actions: [Action.CREATE, Action.READ, Action.UPDATE] },
+    { resource: Resource.VISITORS, actions: [Action.READ] },
+    { resource: Resource.CONTRACTORS, actions: [Action.READ] },
+    { resource: Resource.PRESENCE, actions: [Action.READ] },
+    { resource: Resource.BHV_ROLES, actions: [Action.READ] },
+  ],
+
+  [UserRole.BHV_MEMBER]: [
+    { resource: Resource.USERS, actions: [Action.READ] },
+    { resource: Resource.BUILDINGS, actions: [Action.READ] },
+    { resource: Resource.FACILITIES, actions: [Action.READ] },
+    { resource: Resource.PLOTKAART, actions: [Action.READ] },
+    { resource: Resource.REPORTS, actions: [Action.READ] },
+    { resource: Resource.INCIDENTS, actions: [Action.CREATE, Action.READ] },
+    { resource: Resource.VISITORS, actions: [Action.READ] },
+    { resource: Resource.CONTRACTORS, actions: [Action.READ] },
+    { resource: Resource.PRESENCE, actions: [Action.READ] },
+  ],
+
+  [UserRole.EHBO_MEMBER]: [
+    { resource: Resource.USERS, actions: [Action.READ] },
+    { resource: Resource.BUILDINGS, actions: [Action.READ] },
+    { resource: Resource.FACILITIES, actions: [Action.READ] },
+    { resource: Resource.PLOTKAART, actions: [Action.READ] },
+    { resource: Resource.REPORTS, actions: [Action.READ] },
+    { resource: Resource.INCIDENTS, actions: [Action.CREATE, Action.READ] },
+    { resource: Resource.VISITORS, actions: [Action.READ] },
+    { resource: Resource.CONTRACTORS, actions: [Action.READ] },
+    { resource: Resource.PRESENCE, actions: [Action.READ] },
+  ],
+
+  [UserRole.ONTRUIMER]: [
+    { resource: Resource.USERS, actions: [Action.READ] },
+    { resource: Resource.BUILDINGS, actions: [Action.READ] },
+    { resource: Resource.FACILITIES, actions: [Action.READ] },
+    { resource: Resource.PLOTKAART, actions: [Action.READ] },
+    { resource: Resource.REPORTS, actions: [Action.READ] },
+    { resource: Resource.INCIDENTS, actions: [Action.CREATE, Action.READ] },
+    { resource: Resource.VISITORS, actions: [Action.READ] },
+    { resource: Resource.CONTRACTORS, actions: [Action.READ] },
+    { resource: Resource.PRESENCE, actions: [Action.READ] },
+  ],
+
+  [UserRole.VISITOR]: [
+    { resource: Resource.PLOTKAART, actions: [Action.READ] },
     { resource: Resource.PRESENCE, actions: [Action.READ] },
   ],
 
@@ -195,5 +278,13 @@ export class RBACService {
 
   static canRevokeBHVRoles(userRole: UserRole): boolean {
     return this.hasPermission(userRole, Resource.BHV_ROLES, Action.REVOKE)
+  }
+
+  static canManageCustomers(userRole: UserRole): boolean {
+    return this.hasPermission(userRole, Resource.CUSTOMERS, Action.MANAGE)
+  }
+
+  static canManageBHVRoles(userRole: UserRole): boolean {
+    return this.hasPermission(userRole, Resource.BHV_ROLES, Action.MANAGE)
   }
 }

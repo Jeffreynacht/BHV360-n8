@@ -2,57 +2,86 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-import { useAuth } from "@/contexts/auth-context"
 
-interface Customer {
+// Define the Customer interface
+export interface Customer {
   id: string
   name: string
-  type: string
-  active: boolean
+  address: string
+  contactPerson: string
+  email: string
+  phone: string
+  logo?: string
+  users?: number
+  buildings?: number
+  createdAt?: string
 }
 
-interface CustomerContextType {
+// Define the CustomerContext type
+export interface CustomerContextType {
   selectedCustomer: Customer | null
+  setSelectedCustomer: (customer: Customer | null) => void
   customers: Customer[]
-  selectCustomer: (customer: Customer) => void
-  loading: boolean
+  setCustomers: (customers: Customer[]) => void
+  addCustomer: (customer: Omit<Customer, "id">) => void
+  updateCustomer: (id: string, updates: Partial<Customer>) => void
+  deleteCustomer: (id: string) => void
+  isLoading: boolean
 }
 
+// Create the CustomerContext
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined)
 
+// CustomerProvider component
 export function CustomerProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth()
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [customers, setCustomers] = useState<Customer[]>([])
-  const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    if (user) {
-      // Set demo customer based on user
-      const demoCustomer: Customer = {
-        id: user.customerId || "demo-company",
-        name: user.customerName || "Demo Bedrijf BV",
-        type: "demo",
-        active: true,
-      }
-
-      setSelectedCustomer(demoCustomer)
-      setCustomers([demoCustomer])
+    // Load customers from local storage on initial load
+    const storedCustomers = localStorage.getItem("customers")
+    if (storedCustomers) {
+      setCustomers(JSON.parse(storedCustomers))
     }
-    setLoading(false)
-  }, [user])
+  }, [])
 
-  const selectCustomer = (customer: Customer) => {
-    setSelectedCustomer(customer)
+  useEffect(() => {
+    // Save customers to local storage whenever the customers state changes
+    localStorage.setItem("customers", JSON.stringify(customers))
+  }, [customers])
+
+  const addCustomer = (customer: Omit<Customer, "id">) => {
+    const newCustomer: Customer = {
+      ...customer,
+      id: Date.now().toString(), // Generate a unique ID
+    }
+    setCustomers([...customers, newCustomer])
   }
 
-  return (
-    <CustomerContext.Provider value={{ selectedCustomer, customers, selectCustomer, loading }}>
-      {children}
-    </CustomerContext.Provider>
-  )
+  const updateCustomer = (id: string, updates: Partial<Customer>) => {
+    setCustomers(customers.map((customer) => (customer.id === id ? { ...customer, ...updates } : customer)))
+  }
+
+  const deleteCustomer = (id: string) => {
+    setCustomers(customers.filter((customer) => customer.id !== id))
+  }
+
+  const value: CustomerContextType = {
+    selectedCustomer,
+    setSelectedCustomer,
+    customers,
+    setCustomers,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer,
+    isLoading,
+  }
+
+  return <CustomerContext.Provider value={value}>{children}</CustomerContext.Provider>
 }
 
+// Custom hook to use the customer context
 export function useCustomer() {
   const context = useContext(CustomerContext)
   if (context === undefined) {
