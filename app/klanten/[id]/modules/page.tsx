@@ -1,225 +1,389 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Settings, Users, Shield, AlertTriangle } from "lucide-react"
-import { CustomerModuleService } from "@/services/CustomerModuleService"
-import type { Customer as ICustomer } from "@/components/customer-context"
-import type { ModuleDefinition as ICustomerModule } from "@/lib/modules/module-definitions"
+import {
+  ArrowLeft,
+  Settings,
+  Users,
+  Shield,
+  AlertTriangle,
+  FileText,
+  Calendar,
+  MapPin,
+  Smartphone,
+  Zap,
+  Loader2,
+} from "lucide-react"
+import { toast } from "sonner"
+import { AVAILABLE_MODULES, getModuleById } from "@/lib/modules/module-definitions"
 
-const CustomerModulesPage = () => {
-  const { id } = useParams<{ id: string }>()
-  const [selectedCustomer, setSelectedCustomer] = useState<ICustomer | null>(null)
-  const [customerModules, setCustomerModules] = useState<ICustomerModule[]>([])
-  const [loadingModule, setLoadingModule] = useState<string | null>(null)
+interface Customer {
+  id: string
+  name: string
+  email: string
+  phone: string
+  address: string
+  enabledModules: string[]
+}
+
+interface ModuleToggleState {
+  [key: string]: boolean
+}
+
+const getCategoryIcon = (category: string) => {
+  switch (category) {
+    case "core":
+      return <Shield className="h-5 w-5" />
+    case "safety":
+      return <AlertTriangle className="h-5 w-5" />
+    case "management":
+      return <Users className="h-5 w-5" />
+    case "reporting":
+      return <FileText className="h-5 w-5" />
+    case "scheduling":
+      return <Calendar className="h-5 w-5" />
+    case "location":
+      return <MapPin className="h-5 w-5" />
+    case "mobile":
+      return <Smartphone className="h-5 w-5" />
+    case "integration":
+      return <Zap className="h-5 w-5" />
+    default:
+      return <Settings className="h-5 w-5" />
+  }
+}
+
+const getCategoryColor = (category: string) => {
+  switch (category) {
+    case "core":
+      return "bg-blue-100 text-blue-800"
+    case "safety":
+      return "bg-red-100 text-red-800"
+    case "management":
+      return "bg-green-100 text-green-800"
+    case "reporting":
+      return "bg-purple-100 text-purple-800"
+    case "scheduling":
+      return "bg-orange-100 text-orange-800"
+    case "location":
+      return "bg-teal-100 text-teal-800"
+    case "mobile":
+      return "bg-pink-100 text-pink-800"
+    case "integration":
+      return "bg-yellow-100 text-yellow-800"
+    default:
+      return "bg-gray-100 text-gray-800"
+  }
+}
+
+export default function CustomerModulesPage() {
+  const params = useParams()
+  const router = useRouter()
+  const customerId = params.id as string
+
+  const [customer, setCustomer] = useState<Customer | null>(null)
   const [loading, setLoading] = useState(true)
+  const [toggleLoading, setToggleLoading] = useState<ModuleToggleState>({})
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (id) {
-      loadCustomer(id)
-      loadCustomerModules()
-    }
-  }, [id])
+    fetchCustomer()
+  }, [customerId])
 
-  const loadCustomer = async (customerId: string) => {
-    try {
-      const customer = await CustomerModuleService.getCustomer(customerId)
-      setSelectedCustomer(customer)
-    } catch (error) {
-      console.error("Error loading customer:", error)
-      setError("Fout bij laden van klantgegevens")
-    }
-  }
-
-  const loadCustomerModules = async () => {
+  const fetchCustomer = async () => {
     try {
       setLoading(true)
-      const modules = await CustomerModuleService.getAvailableModules()
-      setCustomerModules(modules)
+      setError(null)
+
+      const response = await fetch(`/api/customers/${customerId}`)
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch customer: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        setCustomer(data.customer)
+      } else {
+        throw new Error(data.error || "Failed to fetch customer")
+      }
     } catch (error) {
-      console.error("Error loading customer modules:", error)
-      setError("Fout bij laden van modules")
+      console.error("Error fetching customer:", error)
+      setError(error instanceof Error ? error.message : "Failed to fetch customer")
+      toast.error("Failed to load customer data")
     } finally {
       setLoading(false)
     }
   }
 
-  const handleToggleModule = async (moduleId: string, enabled: boolean) => {
-    if (!selectedCustomer) return
-
-    setLoadingModule(moduleId)
+  const toggleModule = async (moduleId: string, enabled: boolean) => {
+    if (!customer) return
 
     try {
-      if (enabled) {
-        const result = await CustomerModuleService.enableModule(
-          selectedCustomer.id,
-          moduleId,
-          "current_user", // In productie: echte gebruiker
-        )
+      setToggleLoading((prev) => ({ ...prev, [moduleId]: true }))
 
-        if (result.success) {
-          // Update local state
-          setCustomerModules((prev) =>
-            prev.map((module) => (module.id === moduleId ? { ...module, enabled: true } : module)),
-          )
-        } else {
-          setError(result.message || "Fout bij inschakelen module")
-        }
+      const response = await fetch(`/api/customers/${customerId}/modules`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          moduleId,
+          enabled,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to update module: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+
+      if (result.success) {
+        setCustomer((prev) => {
+          if (!prev) return null
+
+          const updatedModules = enabled
+            ? [...prev.enabledModules, moduleId]
+            : prev.enabledModules.filter((id) => id !== moduleId)
+
+          return {
+            ...prev,
+            enabledModules: updatedModules,
+          }
+        })
+
+        const module = getModuleById(moduleId)
+        toast.success(`${module?.name || "Module"} ${enabled ? "enabled" : "disabled"} successfully`)
       } else {
-        const result = await CustomerModuleService.disableModule(
-          selectedCustomer.id,
-          moduleId,
-          "current_user", // In productie: echte gebruiker
-        )
-
-        if (result.success) {
-          // Update local state
-          setCustomerModules((prev) =>
-            prev.map((module) => (module.id === moduleId ? { ...module, enabled: false } : module)),
-          )
-        } else {
-          setError(result.message || "Fout bij uitschakelen module")
-        }
+        throw new Error(result.error || "Failed to update module")
       }
     } catch (error) {
       console.error("Error toggling module:", error)
-      setError("Fout bij wijzigen module status")
+      toast.error(error instanceof Error ? error.message : "Failed to update module")
     } finally {
-      setLoadingModule(null)
-    }
-  }
-
-  const getModuleIcon = (category: string) => {
-    switch (category) {
-      case "core":
-        return <Shield className="h-5 w-5" />
-      case "management":
-        return <Settings className="h-5 w-5" />
-      case "communication":
-        return <Users className="h-5 w-5" />
-      default:
-        return <AlertTriangle className="h-5 w-5" />
-    }
-  }
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "core":
-        return "bg-blue-100 text-blue-800"
-      case "management":
-        return "bg-green-100 text-green-800"
-      case "communication":
-        return "bg-purple-100 text-purple-800"
-      default:
-        return "bg-gray-100 text-gray-800"
+      setToggleLoading((prev) => ({ ...prev, [moduleId]: false }))
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Modules laden...</span>
-      </div>
-    )
-  }
+      <div className="container mx-auto p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="sm" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+        </div>
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Fout opgetreden</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()}>Opnieuw proberen</Button>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading customer modules...</p>
+          </div>
         </div>
       </div>
     )
   }
 
-  if (!selectedCustomer) {
+  if (error || !customer) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Klant niet gevonden</h3>
-          <p className="text-gray-600">De opgevraagde klant kon niet worden geladen.</p>
+      <div className="container mx-auto p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="sm" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
         </div>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Error Loading Customer</h3>
+              <p className="text-muted-foreground mb-4">{error || "Customer not found"}</p>
+              <Button onClick={fetchCustomer} variant="outline">
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
+
+  const groupedModules = AVAILABLE_MODULES.reduce(
+    (acc, module) => {
+      if (!acc[module.category]) {
+        acc[module.category] = []
+      }
+      acc[module.category].push(module)
+      return acc
+    },
+    {} as Record<string, typeof AVAILABLE_MODULES>,
+  )
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Modules voor {selectedCustomer.name}</h1>
-        <p className="text-gray-600">Beheer welke modules beschikbaar zijn voor deze klant</p>
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold">Module Management</h1>
+          <p className="text-muted-foreground">Manage modules for {customer.name}</p>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {customerModules.map((module) => (
-          <Card key={module.id} className="relative">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-2">
-                  {getModuleIcon(module.category)}
-                  <CardTitle className="text-lg">{module.name}</CardTitle>
-                </div>
-                <Switch
-                  checked={module.enabled || false}
-                  onCheckedChange={(checked) => handleToggleModule(module.id, checked)}
-                  disabled={loadingModule === module.id}
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Badge className={getCategoryColor(module.category)}>{module.category}</Badge>
-                {module.tier && <Badge variant="outline">{module.tier}</Badge>}
-              </div>
+      {/* Customer Info */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Customer Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Name</p>
+              <p className="text-sm">{customer.name}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Email</p>
+              <p className="text-sm">{customer.email}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Phone</p>
+              <p className="text-sm">{customer.phone}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Enabled Modules</p>
+              <p className="text-sm">
+                {customer.enabledModules.length} of {AVAILABLE_MODULES.length}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Modules by Category */}
+      <div className="space-y-6">
+        {Object.entries(groupedModules).map(([category, modules]) => (
+          <Card key={category}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 capitalize">
+                {getCategoryIcon(category)}
+                {category} Modules
+              </CardTitle>
+              <CardDescription>
+                {modules.length} module{modules.length !== 1 ? "s" : ""} available in this category
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <CardDescription className="mb-4">{module.description}</CardDescription>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {modules.map((module) => {
+                  const isEnabled = customer.enabledModules.includes(module.id)
+                  const isLoading = toggleLoading[module.id]
 
-              {module.features && module.features.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-900">Functies:</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    {module.features.slice(0, 3).map((feature, index) => (
-                      <li key={index} className="flex items-center space-x-2">
-                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                    {module.features.length > 3 && (
-                      <li className="text-xs text-gray-500">+{module.features.length - 3} meer...</li>
-                    )}
-                  </ul>
-                </div>
-              )}
+                  return (
+                    <Card key={module.id} className="relative">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-base flex items-center gap-2">
+                              {module.name}
+                              <Badge variant="secondary" className={getCategoryColor(module.category)}>
+                                {module.category}
+                              </Badge>
+                            </CardTitle>
+                            <CardDescription className="text-sm mt-1">{module.description}</CardDescription>
+                          </div>
+                          <div className="flex items-center gap-2 ml-2">
+                            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                            <Switch
+                              checked={isEnabled}
+                              onCheckedChange={(checked) => toggleModule(module.id, checked)}
+                              disabled={isLoading}
+                            />
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        {module.features && module.features.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-2">Key Features:</p>
+                            <ul className="text-xs text-muted-foreground space-y-1">
+                              {module.features.slice(0, 3).map((feature, index) => (
+                                <li key={index} className="flex items-center gap-1">
+                                  <span className="w-1 h-1 bg-current rounded-full flex-shrink-0" />
+                                  {feature}
+                                </li>
+                              ))}
+                              {module.features.length > 3 && (
+                                <li className="text-xs text-muted-foreground/70">
+                                  +{module.features.length - 3} more features
+                                </li>
+                              )}
+                            </ul>
+                          </div>
+                        )}
 
-              {loadingModule === module.id && (
-                <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg">
-                  <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                </div>
-              )}
+                        {module.pricing && (
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="text-xs font-medium text-muted-foreground">
+                              Pricing: €{module.pricing.monthly}/month
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {customerModules.length === 0 && (
-        <div className="text-center py-12">
-          <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Geen modules beschikbaar</h3>
-          <p className="text-gray-600">Er zijn momenteel geen modules beschikbaar voor deze klant.</p>
-        </div>
-      )}
+      {/* Summary */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Module Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div>
+              <p className="text-2xl font-bold text-green-600">{customer.enabledModules.length}</p>
+              <p className="text-sm text-muted-foreground">Enabled</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-600">
+                {AVAILABLE_MODULES.length - customer.enabledModules.length}
+              </p>
+              <p className="text-sm text-muted-foreground">Disabled</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-blue-600">{AVAILABLE_MODULES.length}</p>
+              <p className="text-sm text-muted-foreground">Total Available</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-purple-600">
+                {Math.round((customer.enabledModules.length / AVAILABLE_MODULES.length) * 100)}%
+              </p>
+              <p className="text-sm text-muted-foreground">Utilization</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
-
-export default CustomerModulesPage
