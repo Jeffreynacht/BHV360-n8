@@ -9,7 +9,6 @@
     "e2e": "playwright test",
     "e2e:ci": "playwright test --reporter=github",
     "lint": "next lint",
-    "prepare": "node -e \"try { require('husky').install() } catch (e) { if (e.code !== 'MODULE_NOT_FOUND') throw e }\"",
     "start": "next start",
     "test": "jest --watchAll",
     "test:ci": "jest --ci"
@@ -99,7 +98,6 @@
     "autoprefixer": "10.4.20",
     "eslint": "9.15.0",
     "eslint-config-next": "15.1.0",
-    "husky": "^9.0.11",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
