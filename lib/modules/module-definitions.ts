@@ -147,6 +147,7 @@ export const moduleDefinitions: ModuleDefinition[] = [
     reviews: 89,
     popularity: 78,
     version: "1.8.2",
+    status: "ga",
   },
   {
     id: "voorzieningen",
@@ -171,6 +172,7 @@ export const moduleDefinitions: ModuleDefinition[] = [
     reviews: 124,
     popularity: 82,
     version: "1.5.1",
+    status: "ga",
   },
   {
     id: "gebruikers",
@@ -330,3 +332,6 @@ export function calculateModulePrice(
     }
   }
 }
+
+export type ModuleDef = ModuleDefinition
+export type ModuleActivationRequest = ModuleActivationRequest
