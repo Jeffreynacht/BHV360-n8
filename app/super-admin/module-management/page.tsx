@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -11,96 +11,126 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { BHV360BrandHeader } from "@/components/bhv360-brand-header"
-import {
-  Eye,
-  EyeOff,
-  Power,
-  PowerOff,
-  Save,
-  Package,
-  TrendingUp,
-  Edit,
-  Building,
-  Settings,
-  BarChart3,
-  Shield,
-  Zap,
-  Crown,
-  Search,
-  Plus,
-  Copy,
-  Download,
-  Upload,
-} from "lucide-react"
+import { Eye, EyeOff, Power, PowerOff, Save, Package, TrendingUp, Edit, Building, Settings, BarChart3, Shield, Zap, Crown, Search, Plus, Copy, Download, Upload, XCircle, Clock, CheckCircle, Star } from 'lucide-react'
 import { toast } from "@/hooks/use-toast"
-import { toFixedSafe } from "@/helpers/number"
 import {
-  moduleDefinitions,
-  moduleCategories,
-  tierDefinitions,
+  AVAILABLE_MODULES,
+  getModuleById,
+  getCoreModules,
+  getVisibleModules,
   calculateModulePrice,
   type ModuleDefinition,
+  type ModuleCategory,
+  type ModuleTier,
+  type ModulePricing,
+  moduleCategories,
+  tierDefinitions,
 } from "@/lib/modules/module-definitions"
+import { Textarea } from "@/components/ui/textarea"
+import { ModuleTableComponent } from "@/components/module-table-component"
+import { ModuleCard } from "@/components/module-card"
 
-// Force dynamic rendering for this page - MUST be a number, not an object
+// Force dynamic rendering to avoid static generation issues
 export const dynamic = "force-dynamic"
-export const revalidate = 0
+
+interface ModuleStats {
+  totalModules: number
+  activeModules: number
+  coreModules: number
+  betaModules: number
+  totalRevenue: number
+  averageRating: number
+}
 
 export default function SuperAdminModuleManagementPage() {
-  const [modules, setModules] = useState<ModuleDefinition[]>(moduleDefinitions)
-  const [editingModule, setEditingModule] = useState<ModuleDefinition | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
-  const [selectedTier, setSelectedTier] = useState<string>("all")
+  const [modules, setModules] = useState<ModuleDefinition[]>(AVAILABLE_MODULES)
+  const [filteredModules, setFilteredModules] = useState<ModuleDefinition[]>(AVAILABLE_MODULES)
+  const [selectedModule, setSelectedModule] = useState<ModuleDefinition | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [showPricingCalculator, setShowPricingCalculator] = useState(false)
-  const [calculatorUsers, setCalculatorUsers] = useState(25)
-  const [calculatorBuildings, setCalculatorBuildings] = useState(2)
+  const [categoryFilter, setCategoryFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [stats, setStats] = useState<ModuleStats>({
+    totalModules: 0,
+    activeModules: 0,
+    coreModules: 0,
+    betaModules: 0,
+    totalRevenue: 0,
+    averageRating: 0,
+  })
+  const [loading, setLoading] = useState(false)
+  const [editingModule, setEditingModule] = useState<ModuleDefinition | null>(null)
 
-  const handleToggleVisibility = async (moduleId: string) => {
-    setLoading(true)
+  // Safe number formatting helper
+  const formatPrice = (price: number): string => {
     try {
-      const updatedModules = modules.map((module) =>
-        module.id === moduleId ? { ...module, visible: !module.visible } : module,
-      )
-      setModules(updatedModules)
-
-      toast({
-        title: "Module Zichtbaarheid Bijgewerkt",
-        description: `Module is nu ${updatedModules.find((m) => m.id === moduleId)?.visible ? "zichtbaar" : "verborgen"} in de marketplace.`,
-      })
-    } catch (error) {
-      toast({
-        title: "Fout",
-        description: "Er is een fout opgetreden bij het bijwerken van de module.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
+      return (price / 100).toFixed(2)
+    } catch {
+      return "0.00"
     }
   }
 
-  const handleToggleEnabled = async (moduleId: string) => {
-    setLoading(true)
-    try {
-      const updatedModules = modules.map((module) =>
-        module.id === moduleId ? { ...module, enabled: !module.enabled } : module,
-      )
-      setModules(updatedModules)
+  // Calculate stats
+  useEffect(() => {
+    const totalModules = modules.length
+    const activeModules = modules.filter((m) => m.enabled).length
+    const coreModules = modules.filter((m) => m.core).length
+    const betaModules = modules.filter((m) => m.status === "beta").length
+    const totalRevenue = modules.reduce((sum, m) => sum + (m.pricing?.basePrice || 0), 0)
+    const averageRating = modules.reduce((sum, m) => sum + m.rating, 0) / totalModules
 
-      toast({
-        title: "Module Status Bijgewerkt",
-        description: `Module is nu ${updatedModules.find((m) => m.id === moduleId)?.enabled ? "ingeschakeld" : "uitgeschakeld"}.`,
-      })
-    } catch (error) {
-      toast({
-        title: "Fout",
-        description: "Er is een fout opgetreden bij het bijwerken van de module.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
+    setStats({
+      totalModules,
+      activeModules,
+      coreModules,
+      betaModules,
+      totalRevenue,
+      averageRating,
+    })
+  }, [modules])
+
+  // Filter modules
+  useEffect(() => {
+    let filtered = modules
+
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (module) =>
+          module.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          module.description.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
     }
+
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter((module) => module.category === categoryFilter)
+    }
+
+    if (statusFilter !== "all") {
+      if (statusFilter === "enabled") {
+        filtered = filtered.filter((module) => module.enabled)
+      } else if (statusFilter === "disabled") {
+        filtered = filtered.filter((module) => !module.enabled)
+      } else if (statusFilter === "core") {
+        filtered = filtered.filter((module) => module.core)
+      } else if (statusFilter === "beta") {
+        filtered = filtered.filter((module) => module.status === "beta")
+      }
+    }
+
+    setFilteredModules(filtered)
+  }, [modules, searchTerm, categoryFilter, statusFilter])
+
+  const handleToggleModule = (moduleId: string) => {
+    setModules((prev) =>
+      prev.map((module) => (module.id === moduleId ? { ...module, enabled: !module.enabled } : module)),
+    )
+  }
+
+  const handleToggleVisibility = (moduleId: string) => {
+    setModules((prev) =>
+      prev.map((module) => (module.id === moduleId ? { ...module, visible: !module.visible } : module)),
+    )
   }
 
   const handleUpdatePricing = async (moduleId: string, pricing: any) => {
@@ -125,59 +155,51 @@ export default function SuperAdminModuleManagementPage() {
     }
   }
 
-  const getModuleStats = () => {
-    return {
-      total: modules.length,
-      visible: modules.filter((m) => m.visible).length,
-      enabled: modules.filter((m) => m.enabled).length,
-      implemented: modules.filter((m) => m.implemented).length,
-      basis: modules.filter((m) => m.category === "basis").length,
-      geavanceerd: modules.filter((m) => m.category === "geavanceerd").length,
-      premium: modules.filter((m) => m.category === "premium").length,
-      enterprise: modules.filter((m) => m.category === "enterprise").length,
+  const getStatusBadge = (module: ModuleDefinition) => {
+    if (!module.enabled) {
+      return (
+        <Badge variant="secondary">
+          <XCircle className="w-3 h-3 mr-1" />
+          Uitgeschakeld
+        </Badge>
+      )
     }
-  }
-
-  const filteredModules = modules.filter((module) => {
-    const matchesCategory = selectedCategory === "all" || module.category === selectedCategory
-    const matchesTier = selectedTier === "all" || module.tier === selectedTier
-    const matchesSearch =
-      searchTerm === "" ||
-      module.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      module.description.toLowerCase().includes(searchTerm.toLowerCase())
-
-    return matchesCategory && matchesTier && matchesSearch
-  })
-
-  const stats = getModuleStats()
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "basis":
-        return <Shield className="h-4 w-4" />
-      case "geavanceerd":
-        return <Zap className="h-4 w-4" />
-      case "premium":
-        return <Crown className="h-4 w-4" />
-      case "enterprise":
-        return <Building className="h-4 w-4" />
-      default:
-        return <Package className="h-4 w-4" />
+    if (module.status === "beta") {
+      return (
+        <Badge variant="outline">
+          <Clock className="w-3 h-3 mr-1" />
+          Beta
+        </Badge>
+      )
     }
+    if (module.core) {
+      return (
+        <Badge variant="default">
+          <CheckCircle className="w-3 h-3 mr-1" />
+          Core
+        </Badge>
+      )
+    }
+    return (
+      <Badge variant="outline">
+        <CheckCircle className="w-3 h-3 mr-1" />
+        Actief
+      </Badge>
+    )
   }
 
   const getCategoryColor = (category: string) => {
     switch (category) {
       case "basis":
-        return "bg-blue-100 text-blue-800 border-blue-200"
+        return "bg-blue-100 text-blue-800"
       case "geavanceerd":
-        return "bg-green-100 text-green-800 border-green-200"
+        return "bg-green-100 text-green-800"
       case "premium":
-        return "bg-purple-100 text-purple-800 border-purple-200"
+        return "bg-purple-100 text-purple-800"
       case "enterprise":
-        return "bg-orange-100 text-orange-800 border-orange-200"
+        return "bg-orange-100 text-orange-800"
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-gray-100 text-gray-800"
     }
   }
 
@@ -198,7 +220,7 @@ export default function SuperAdminModuleManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Totaal</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-2xl font-bold">{stats.totalModules}</p>
                 </div>
                 <Package className="h-8 w-8 text-blue-600" />
               </div>
@@ -209,7 +231,7 @@ export default function SuperAdminModuleManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Zichtbaar</p>
-                  <p className="text-2xl font-bold">{stats.visible}</p>
+                  <p className="text-2xl font-bold">{filteredModules.filter((m) => m.visible).length}</p>
                 </div>
                 <Eye className="h-8 w-8 text-green-600" />
               </div>
@@ -220,7 +242,7 @@ export default function SuperAdminModuleManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Actief</p>
-                  <p className="text-2xl font-bold">{stats.enabled}</p>
+                  <p className="text-2xl font-bold">{stats.activeModules}</p>
                 </div>
                 <Power className="h-8 w-8 text-orange-600" />
               </div>
@@ -231,7 +253,7 @@ export default function SuperAdminModuleManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Live</p>
-                  <p className="text-2xl font-bold">{stats.implemented}</p>
+                  <p className="text-2xl font-bold">{stats.coreModules}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-purple-600" />
               </div>
@@ -242,7 +264,7 @@ export default function SuperAdminModuleManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Basis</p>
-                  <p className="text-2xl font-bold">{stats.basis}</p>
+                  <p className="text-2xl font-bold">{modules.filter((m) => m.category === "basis").length}</p>
                 </div>
                 <Shield className="h-8 w-8 text-blue-600" />
               </div>
@@ -253,7 +275,7 @@ export default function SuperAdminModuleManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Geavanceerd</p>
-                  <p className="text-2xl font-bold">{stats.geavanceerd}</p>
+                  <p className="text-2xl font-bold">{modules.filter((m) => m.category === "geavanceerd").length}</p>
                 </div>
                 <Zap className="h-8 w-8 text-green-600" />
               </div>
@@ -264,7 +286,7 @@ export default function SuperAdminModuleManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Premium</p>
-                  <p className="text-2xl font-bold">{stats.premium}</p>
+                  <p className="text-2xl font-bold">{modules.filter((m) => m.category === "premium").length}</p>
                 </div>
                 <Crown className="h-8 w-8 text-purple-600" />
               </div>
@@ -275,7 +297,7 @@ export default function SuperAdminModuleManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Enterprise</p>
-                  <p className="text-2xl font-bold">{stats.enterprise}</p>
+                  <p className="text-2xl font-bold">{modules.filter((m) => m.category === "enterprise").length}</p>
                 </div>
                 <Building className="h-8 w-8 text-orange-600" />
               </div>
@@ -321,43 +343,37 @@ export default function SuperAdminModuleManagementPage() {
               </div>
               <div>
                 <Label htmlFor="category">Categorie</Label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                   <SelectTrigger>
                     <SelectValue placeholder="Alle categorieën" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Alle categorieën</SelectItem>
-                    {moduleCategories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="basis">Basis</SelectItem>
+                    <SelectItem value="geavanceerd">Geavanceerd</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                    <SelectItem value="enterprise">Enterprise</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="tier">Tier</Label>
-                <Select value={selectedTier} onValueChange={setSelectedTier}>
+                <Label htmlFor="status">Status</Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Alle tiers" />
+                    <SelectValue placeholder="Alle statussen" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Alle tiers</SelectItem>
-                    {tierDefinitions.map((tier) => (
-                      <SelectItem key={tier.id} value={tier.id}>
-                        {tier.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="all">Alle statussen</SelectItem>
+                    <SelectItem value="enabled">Ingeschakeld</SelectItem>
+                    <SelectItem value="disabled">Uitgeschakeld</SelectItem>
+                    <SelectItem value="core">Core modules</SelectItem>
+                    <SelectItem value="beta">Beta modules</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Prijscalculator</Label>
-                <Button
-                  variant="outline"
-                  className="w-full bg-transparent"
-                  onClick={() => setShowPricingCalculator(true)}
-                >
+                <Button variant="outline" className="w-full bg-transparent">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Calculator
                 </Button>
@@ -377,27 +393,79 @@ export default function SuperAdminModuleManagementPage() {
           <TabsContent value="grid">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredModules.map((module) => (
-                <ModuleCard
-                  key={module.id}
-                  module={module}
-                  onToggleVisibility={handleToggleVisibility}
-                  onToggleEnabled={handleToggleEnabled}
-                  onEditPricing={(module) => setEditingModule(module)}
-                  loading={loading}
-                  calculatorUsers={calculatorUsers}
-                  calculatorBuildings={calculatorBuildings}
-                />
+                <Card key={module.id} className="relative">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{module.name}</CardTitle>
+                        <CardDescription className="mt-1">{module.description}</CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleToggleVisibility(module.id)}>
+                          {module.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedModule(module)
+                            setIsEditDialogOpen(true)
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Status and Category */}
+                    <div className="flex flex-wrap gap-2">
+                      {getStatusBadge(module)}
+                      <Badge className={getCategoryColor(module.category)}>{module.category}</Badge>
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">Prijsmodel</div>
+                      <div className="text-lg font-bold text-green-600">
+                        €{formatPrice(module.pricing?.basePrice || 0)}
+                        <span className="text-sm font-normal text-muted-foreground ml-1">{module.pricingModel}</span>
+                      </div>
+                    </div>
+
+                    {/* Rating and Reviews */}
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-medium">{module.rating}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">{module.reviews} reviews</div>
+                      <div className="text-sm text-muted-foreground">v{module.version}</div>
+                    </div>
+
+                    {/* Toggle Switch */}
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <Label htmlFor={`toggle-${module.id}`} className="text-sm">
+                        Module ingeschakeld
+                      </Label>
+                      <Switch
+                        id={`toggle-${module.id}`}
+                        checked={module.enabled}
+                        onCheckedChange={() => handleToggleModule(module.id)}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </TabsContent>
 
           <TabsContent value="table">
-            <ModuleTable
+            <ModuleTableComponent
               modules={filteredModules}
               onToggleVisibility={handleToggleVisibility}
-              onToggleEnabled={handleToggleEnabled}
-              onEditPricing={(module) => setEditingModule(module)}
-              loading={loading}
+              onToggleEnabled={handleToggleModule}
+              onEditPricing={(module) => setSelectedModule(module)}
             />
           </TabsContent>
 
@@ -411,7 +479,6 @@ export default function SuperAdminModuleManagementPage() {
                   <Card key={category.id}>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-3">
-                        {getCategoryIcon(category.id)}
                         {category.name}
                         <Badge variant="outline">{categoryModules.length}</Badge>
                       </CardTitle>
@@ -424,11 +491,10 @@ export default function SuperAdminModuleManagementPage() {
                             key={module.id}
                             module={module}
                             onToggleVisibility={handleToggleVisibility}
-                            onToggleEnabled={handleToggleEnabled}
-                            onEditPricing={(module) => setEditingModule(module)}
-                            loading={loading}
-                            calculatorUsers={calculatorUsers}
-                            calculatorBuildings={calculatorBuildings}
+                            onToggleEnabled={handleToggleModule}
+                            onEditPricing={(module) => setSelectedModule(module)}
+                            calculatorUsers={0}
+                            calculatorBuildings={0}
                             compact
                           />
                         ))}
@@ -441,583 +507,97 @@ export default function SuperAdminModuleManagementPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Pricing Editor Dialog */}
-        {editingModule && (
-          <Dialog open={!!editingModule} onOpenChange={() => setEditingModule(null)}>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>Prijzen Bewerken - {editingModule.name}</DialogTitle>
-                <DialogDescription>Pas de prijzen en pricing model aan voor deze module</DialogDescription>
-              </DialogHeader>
-              <PricingEditor
-                module={editingModule}
-                onSave={(pricing) => handleUpdatePricing(editingModule.id, pricing)}
-                onCancel={() => setEditingModule(null)}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
-
-        {/* Pricing Calculator Dialog */}
-        <Dialog open={showPricingCalculator} onOpenChange={setShowPricingCalculator}>
-          <DialogContent className="max-w-6xl">
+        {/* Edit Module Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Prijscalculator - Alle Modules</DialogTitle>
-              <DialogDescription>Bereken de totale kosten voor verschillende scenario's</DialogDescription>
+              <DialogTitle>Module Bewerken</DialogTitle>
+              <DialogDescription>Bewerk de instellingen van {selectedModule?.name}</DialogDescription>
             </DialogHeader>
-            <PricingCalculator
-              modules={modules.filter((m) => m.visible && m.enabled)}
-              users={calculatorUsers}
-              buildings={calculatorBuildings}
-              onUsersChange={setCalculatorUsers}
-              onBuildingsChange={setCalculatorBuildings}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
-    </div>
-  )
-}
-
-// Module Card Component
-function ModuleCard({
-  module,
-  onToggleVisibility,
-  onToggleEnabled,
-  onEditPricing,
-  loading,
-  calculatorUsers,
-  calculatorBuildings,
-  compact = false,
-}: {
-  module: ModuleDefinition
-  onToggleVisibility: (id: string) => void
-  onToggleEnabled: (id: string) => void
-  onEditPricing: (module: ModuleDefinition) => void
-  loading: boolean
-  calculatorUsers: number
-  calculatorBuildings: number
-  compact?: boolean
-}) {
-  const priceInfo = calculateModulePrice(module, calculatorUsers, calculatorBuildings)
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "basis":
-        return "bg-blue-100 text-blue-800 border-blue-200"
-      case "geavanceerd":
-        return "bg-green-100 text-green-800 border-green-200"
-      case "premium":
-        return "bg-purple-100 text-purple-800 border-purple-200"
-      case "enterprise":
-        return "bg-orange-100 text-orange-800 border-orange-200"
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
-    }
-  }
-
-  return (
-    <Card className={`${compact ? "h-auto" : "h-full"} transition-all duration-200 hover:shadow-md`}>
-      <CardHeader className={compact ? "pb-3" : ""}>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className={`${compact ? "text-base" : "text-lg"} mb-2 flex items-center gap-2`}>
-              {module.name}
-              {!module.implemented && (
-                <Badge variant="outline" className="text-xs">
-                  In Ontwikkeling
-                </Badge>
-              )}
-            </CardTitle>
-            <div className="flex gap-2 mb-2">
-              <Badge className={getCategoryColor(module.category)}>{module.category}</Badge>
-              <Badge variant="outline">{module.tier}</Badge>
-              {module.status === "beta" && <Badge variant="secondary">Beta</Badge>}
-            </div>
-            {!compact && <CardDescription className="text-sm">{module.description}</CardDescription>}
-          </div>
-          <div className="flex items-center gap-2">
-            {module.visible ? <Eye className="h-4 w-4 text-green-600" /> : <EyeOff className="h-4 w-4 text-gray-400" />}
-            {module.enabled ? (
-              <Power className="h-4 w-4 text-green-600" />
-            ) : (
-              <PowerOff className="h-4 w-4 text-gray-400" />
-            )}
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className={compact ? "pt-0" : ""}>
-        {/* Prijsinformatie */}
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-semibold text-lg text-blue-600">€{toFixedSafe(priceInfo.price)}/maand</span>
-            <Badge variant="outline">{priceInfo.model}</Badge>
-          </div>
-          <p className="text-xs text-gray-600">{priceInfo.explanation}</p>
-
-          {module.pricing.setupFee && (
-            <p className="text-xs text-orange-600 mt-1">+ €{toFixedSafe(module.pricing.setupFee / 100)} setup fee</p>
-          )}
-        </div>
-
-        {!compact && (
-          <>
-            {/* Features */}
-            <div className="mb-4">
-              <h4 className="font-semibold text-sm mb-2">Belangrijkste features:</h4>
-              <ul className="text-xs text-gray-600 space-y-1">
-                {module.features.slice(0, 4).map((feature, index) => (
-                  <li key={index} className="flex items-center gap-1">
-                    <div className="w-1 h-1 bg-blue-600 rounded-full" />
-                    {feature}
-                  </li>
-                ))}
-                {module.features.length > 4 && <li className="text-gray-500">+{module.features.length - 4} meer...</li>}
-              </ul>
-            </div>
-
-            {/* Stats */}
-            <div className="mb-4 flex items-center gap-4 text-xs text-gray-500">
-              <span>
-                ★ {toFixedSafe(module.rating, 1)} ({module.reviews})
-              </span>
-              <span>Populariteit: {toFixedSafe(module.popularity, 0)}%</span>
-              <span>v{module.version}</span>
-            </div>
-          </>
-        )}
-
-        {/* Acties */}
-        <div className="flex gap-2">
-          <Button onClick={() => onEditPricing(module)} variant="outline" size="sm" className="flex-1">
-            <Edit className="h-4 w-4 mr-1" />
-            Prijzen
-          </Button>
-
-          <div className="flex items-center gap-1">
-            <Switch checked={module.visible} onCheckedChange={() => onToggleVisibility(module.id)} disabled={loading} />
-            <Switch checked={module.enabled} onCheckedChange={() => onToggleEnabled(module.id)} disabled={loading} />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-// Module Table Component
-function ModuleTable({
-  modules,
-  onToggleVisibility,
-  onToggleEnabled,
-  onEditPricing,
-  loading,
-}: {
-  modules: ModuleDefinition[]
-  onToggleVisibility: (id: string) => void
-  onToggleEnabled: (id: string) => void
-  onEditPricing: (module: ModuleDefinition) => void
-  loading: boolean
-}) {
-  return (
-    <Card>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="text-left p-4 font-semibold">Module</th>
-                <th className="text-left p-4 font-semibold">Categorie</th>
-                <th className="text-left p-4 font-semibold">Pricing</th>
-                <th className="text-left p-4 font-semibold">Status</th>
-                <th className="text-left p-4 font-semibold">Populariteit</th>
-                <th className="text-left p-4 font-semibold">Acties</th>
-              </tr>
-            </thead>
-            <tbody>
-              {modules.map((module) => (
-                <tr key={module.id} className="border-b hover:bg-gray-50">
-                  <td className="p-4">
-                    <div>
-                      <h4 className="font-semibold">{module.name}</h4>
-                      <p className="text-sm text-gray-600">{module.description}</p>
-                      <div className="flex gap-1 mt-1">
-                        {!module.implemented && (
-                          <Badge variant="outline" className="text-xs">
-                            Dev
-                          </Badge>
-                        )}
-                        <Badge variant="outline" className="text-xs">
-                          v{module.version}
-                        </Badge>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <Badge
-                      className={
-                        module.category === "basis"
-                          ? "bg-blue-100 text-blue-800"
-                          : module.category === "geavanceerd"
-                            ? "bg-green-100 text-green-800"
-                            : module.category === "premium"
-                              ? "bg-purple-100 text-purple-800"
-                              : "bg-orange-100 text-orange-800"
-                      }
-                    >
-                      {module.category}
-                    </Badge>
-                    <div className="text-xs text-gray-500 mt-1">{module.tier}</div>
-                  </td>
-                  <td className="p-4">
-                    <div className="text-sm">
-                      <div className="font-semibold">€{toFixedSafe(module.pricing.basePrice / 100)}/maand</div>
-                      <div className="text-gray-500">{module.pricingModel}</div>
-                      {module.pricing.setupFee && (
-                        <div className="text-xs text-orange-600">
-                          +€{toFixedSafe(module.pricing.setupFee / 100)} setup
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        {module.visible ? (
-                          <Eye className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <EyeOff className="h-4 w-4 text-gray-400" />
-                        )}
-                        <Switch
-                          checked={module.visible}
-                          onCheckedChange={() => onToggleVisibility(module.id)}
-                          disabled={loading}
-                        />
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {module.enabled ? (
-                          <Power className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <PowerOff className="h-4 w-4 text-gray-400" />
-                        )}
-                        <Switch
-                          checked={module.enabled}
-                          onCheckedChange={() => onToggleEnabled(module.id)}
-                          disabled={loading}
-                        />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="text-sm">
-                      <div className="flex items-center gap-1">
-                        <span>★ {toFixedSafe(module.rating, 1)}</span>
-                        <span className="text-gray-500">({module.reviews})</span>
-                      </div>
-                      <div className="text-xs text-gray-500">{toFixedSafe(module.popularity, 0)}% populariteit</div>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex gap-2">
-                      <Button onClick={() => onEditPricing(module)} variant="outline" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-// Pricing Editor Component
-function PricingEditor({
-  module,
-  onSave,
-  onCancel,
-}: {
-  module: ModuleDefinition
-  onSave: (pricing: any) => void
-  onCancel: () => void
-}) {
-  const [pricing, setPricing] = useState(module.pricing)
-  const [pricingType, setPricingType] = useState(module.pricingModel || "per_user")
-
-  const handleSave = () => {
-    onSave({ ...pricing, type: pricingType })
-  }
-
-  const handlePricingTypeChange = (newType: string) => {
-    setPricingType(newType)
-    // Reset pricing when type changes
-    setPricing({
-      ...pricing,
-      basePrice: 0,
-      tierPricing: undefined,
-    })
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Pricing Type Selection */}
-      <div>
-        <Label htmlFor="pricingType">Pricing Model</Label>
-        <Select value={pricingType} onValueChange={handlePricingTypeChange}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="per_user">Per Gebruiker</SelectItem>
-            <SelectItem value="per_building">Per Gebouw</SelectItem>
-            <SelectItem value="per_customer">Per Organisatie</SelectItem>
-            <SelectItem value="fixed">Vaste Prijs</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Base Price */}
-      <div>
-        <Label htmlFor="basePrice">Basis Prijs (in euro centen)</Label>
-        <Input
-          id="basePrice"
-          type="number"
-          value={pricing.basePrice}
-          onChange={(e) => setPricing({ ...pricing, basePrice: Number(e.target.value) || 0 })}
-          placeholder="Bijvoorbeeld: 850 voor €8.50"
-        />
-        <p className="text-xs text-gray-500 mt-1">
-          Huidige prijs: €{toFixedSafe(pricing.basePrice / 100)} per{" "}
-          {pricingType === "per_user"
-            ? "gebruiker"
-            : pricingType === "per_building"
-              ? "gebouw"
-              : pricingType === "per_customer"
-                ? "organisatie"
-                : "maand"}
-        </p>
-      </div>
-
-      {/* Setup Fee */}
-      <div>
-        <Label htmlFor="setupFee">Setup Fee (optioneel, in euro centen)</Label>
-        <Input
-          id="setupFee"
-          type="number"
-          value={pricing.setupFee || 0}
-          onChange={(e) => setPricing({ ...pricing, setupFee: Number(e.target.value) || undefined })}
-          placeholder="Bijvoorbeeld: 15000 voor €150"
-        />
-        {pricing.setupFee && (
-          <p className="text-xs text-gray-500 mt-1">Setup fee: €{toFixedSafe(pricing.setupFee / 100)}</p>
-        )}
-      </div>
-
-      {/* Free Trial */}
-      <div>
-        <Label htmlFor="freeTrialDays">Gratis Proefperiode (dagen)</Label>
-        <Input
-          id="freeTrialDays"
-          type="number"
-          value={pricing.freeTrialDays || 0}
-          onChange={(e) => setPricing({ ...pricing, freeTrialDays: Number(e.target.value) || undefined })}
-        />
-      </div>
-
-      {/* Pricing Preview */}
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <h4 className="font-semibold mb-3">Prijsvoorbeeld</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <div>
-            <p>
-              <strong>10 gebruikers, 1 gebouw:</strong>
-            </p>
-            <p>
-              €
-              {toFixedSafe(
-                calculateModulePrice({ ...module, pricing: { ...pricing }, pricingModel: pricingType }, 10, 1).price,
-              )}
-              /maand
-            </p>
-          </div>
-          <div>
-            <p>
-              <strong>25 gebruikers, 2 gebouwen:</strong>
-            </p>
-            <p>
-              €
-              {toFixedSafe(
-                calculateModulePrice({ ...module, pricing: { ...pricing }, pricingModel: pricingType }, 25, 2).price,
-              )}
-              /maand
-            </p>
-          </div>
-          <div>
-            <p>
-              <strong>100 gebruikers, 5 gebouwen:</strong>
-            </p>
-            <p>
-              €
-              {toFixedSafe(
-                calculateModulePrice({ ...module, pricing: { ...pricing }, pricingModel: pricingType }, 100, 5).price,
-              )}
-              /maand
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onCancel}>
-          Annuleren
-        </Button>
-        <Button onClick={handleSave}>
-          <Save className="h-4 w-4 mr-2" />
-          Opslaan
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-// Pricing Calculator Component
-function PricingCalculator({
-  modules,
-  users,
-  buildings,
-  onUsersChange,
-  onBuildingsChange,
-}: {
-  modules: ModuleDefinition[]
-  users: number
-  buildings: number
-  onUsersChange: (users: number) => void
-  onBuildingsChange: (buildings: number) => void
-}) {
-  const [selectedModules, setSelectedModules] = useState<string[]>([])
-
-  const toggleModule = (moduleId: string) => {
-    setSelectedModules((prev) => (prev.includes(moduleId) ? prev.filter((id) => id !== moduleId) : [...prev, moduleId]))
-  }
-
-  const calculateTotal = () => {
-    return selectedModules.reduce((total, moduleId) => {
-      const module = modules.find((m) => m.id === moduleId)
-      if (module) {
-        const price = calculateModulePrice(module, users, buildings)
-        return total + price.price
-      }
-      return total
-    }, 0)
-  }
-
-  const calculateSetupFees = () => {
-    return selectedModules.reduce((total, moduleId) => {
-      const module = modules.find((m) => m.id === moduleId)
-      if (module && module.pricing.setupFee) {
-        return total + module.pricing.setupFee / 100
-      }
-      return total
-    }, 0)
-  }
-
-  const totalCost = calculateTotal()
-  const setupFees = calculateSetupFees()
-
-  return (
-    <div className="space-y-6">
-      {/* Calculator Inputs */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="calcUsers">Aantal Gebruikers</Label>
-          <Input
-            id="calcUsers"
-            type="number"
-            value={users}
-            onChange={(e) => onUsersChange(Number(e.target.value) || 1)}
-            min="1"
-          />
-        </div>
-        <div>
-          <Label htmlFor="calcBuildings">Aantal Gebouwen</Label>
-          <Input
-            id="calcBuildings"
-            type="number"
-            value={buildings}
-            onChange={(e) => onBuildingsChange(Number(e.target.value) || 1)}
-            min="1"
-          />
-        </div>
-      </div>
-
-      {/* Module Selection */}
-      <div>
-        <h4 className="font-semibold mb-3">Selecteer Modules</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-          {modules.map((module) => {
-            const priceInfo = calculateModulePrice(module, users, buildings)
-            const isSelected = selectedModules.includes(module.id)
-
-            return (
-              <div
-                key={module.id}
-                className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                  isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"
-                }`}
-                onClick={() => toggleModule(module.id)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h5 className="font-semibold text-sm">{module.name}</h5>
-                    <p className="text-xs text-gray-600">{module.category}</p>
+            {selectedModule && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-name">Naam</Label>
+                    <Input id="edit-name" defaultValue={selectedModule.name} />
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-sm">€{toFixedSafe(priceInfo.price)}/maand</p>
-                    <p className="text-xs text-gray-500">{priceInfo.model}</p>
+                  <div>
+                    <Label htmlFor="edit-version">Versie</Label>
+                    <Input id="edit-version" defaultValue={selectedModule.version} />
                   </div>
                 </div>
+
+                <div>
+                  <Label htmlFor="edit-description">Beschrijving</Label>
+                  <Textarea id="edit-description" defaultValue={selectedModule.description} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-category">Categorie</Label>
+                    <Select defaultValue={selectedModule.category}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="basis">Basis</SelectItem>
+                        <SelectItem value="geavanceerd">Geavanceerd</SelectItem>
+                        <SelectItem value="premium">Premium</SelectItem>
+                        <SelectItem value="enterprise">Enterprise</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-tier">Tier</Label>
+                    <Select defaultValue={selectedModule.tier}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="starter">Starter</SelectItem>
+                        <SelectItem value="professional">Professional</SelectItem>
+                        <SelectItem value="enterprise">Enterprise</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-price">Basisprijs (in centen)</Label>
+                    <Input id="edit-price" type="number" defaultValue={selectedModule.pricing?.basePrice || 0} />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-setup-fee">Setup fee (in centen)</Label>
+                    <Input id="edit-setup-fee" type="number" defaultValue={selectedModule.pricing?.setupFee || 0} />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch id="edit-enabled" defaultChecked={selectedModule.enabled} />
+                    <Label htmlFor="edit-enabled">Ingeschakeld</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="edit-visible" defaultChecked={selectedModule.visible} />
+                    <Label htmlFor="edit-visible">Zichtbaar</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="edit-core" defaultChecked={selectedModule.core} />
+                    <Label htmlFor="edit-core">Core module</Label>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                    Annuleren
+                  </Button>
+                  <Button onClick={() => setIsEditDialogOpen(false)}>Opslaan</Button>
+                </div>
               </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Totals */}
-      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span>Maandelijkse kosten:</span>
-            <span className="font-semibold">€{toFixedSafe(totalCost)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Jaarlijkse kosten:</span>
-            <span className="font-semibold">€{toFixedSafe(totalCost * 12)}</span>
-          </div>
-          {setupFees > 0 && (
-            <div className="flex justify-between text-orange-600">
-              <span>Eenmalige setup kosten:</span>
-              <span className="font-semibold">€{toFixedSafe(setupFees)}</span>
-            </div>
-          )}
-          <hr className="border-green-300" />
-          <div className="flex justify-between text-lg font-bold text-green-800">
-            <span>Totaal eerste jaar:</span>
-            <span>€{toFixedSafe(totalCost * 12 + setupFees)}</span>
-          </div>
-        </div>
-
-        <div className="mt-3 text-xs text-green-700">
-          {selectedModules.length} modules geselecteerd voor {users} gebruikers en {buildings} gebouwen
-        </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
