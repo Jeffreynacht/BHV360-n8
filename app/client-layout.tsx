@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { usePathname } from "next/navigation"
 import { ErrorBoundary } from "react-error-boundary"
 import { Toaster } from "@/components/ui/toaster"

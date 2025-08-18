@@ -21,7 +21,7 @@ export function BHV360Header({
   className,
 }: BHV360HeaderProps) {
   return (
-    <header className={`bg-white border-b shadow-sm ${className}`}>
+    <header className={`bg-white border-b shadow-sm ${className || ""}`}>
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">

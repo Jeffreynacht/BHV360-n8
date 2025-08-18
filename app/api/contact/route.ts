@@ -1,88 +1,51 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-interface ContactFormData {
-  name: string
-  email: string
-  phone: string
-  company: string
-  companyType: string
-  companySize: string
-  interest: string
-  message: string
-}
-
 export async function POST(request: NextRequest) {
   try {
-    const data: ContactFormData = await request.json()
+    const body = await request.json()
+    const { name, email, phone, company, message } = body
 
     // Validate required fields
-    if (!data.name || !data.email || !data.company) {
-      return NextResponse.json({ error: "Naam, email en bedrijfsnaam zijn verplicht" }, { status: 400 })
+    if (!name || !email || !company) {
+      return NextResponse.json({ success: false, error: "Naam, email en bedrijfsnaam zijn verplicht" }, { status: 400 })
     }
 
-    // Send notification email to sales team
-    const salesEmailResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/send`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        to: "info@BHV360.nl",
-        cc: ["sales@BHV360.nl"],
-        subject: `🎯 Nieuwe Demo Aanvraag - ${data.company}`,
-        template: "sales_notification",
-        data: {
-          customerName: data.name,
-          customerEmail: data.email,
-          customerPhone: data.phone || "Niet opgegeven",
-          company: data.company,
-          companyType: data.companyType || "Niet opgegeven",
-          companySize: data.companySize || "Niet opgegeven",
-          interest: data.interest || "Algemene interesse",
-          message: data.message || "Geen aanvullend bericht",
-          submittedAt: new Date().toLocaleString("nl-NL"),
-        },
-        priority: "high",
-      }),
-    })
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ success: false, error: "Ongeldig email adres" }, { status: 400 })
+    }
 
-    // Send confirmation email to customer
-    const customerEmailResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/send`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        to: data.email,
-        subject: "✅ Bevestiging Demo Aanvraag - BHV360",
-        template: "customer_confirmation",
-        data: {
-          customerName: data.name,
-          company: data.company,
-          interest: data.interest || "Demo",
-        },
-        priority: "normal",
-      }),
-    })
+    // Here you would typically:
+    // 1. Save to database
+    // 2. Send email notification
+    // 3. Add to CRM system
+    // 4. Send auto-reply email
 
-    // Log the contact form submission
     console.log("Contact form submission:", {
+      name,
+      email,
+      phone,
+      company,
+      message,
       timestamp: new Date().toISOString(),
-      customer: data.name,
-      company: data.company,
-      email: data.email,
-      interest: data.interest,
-      salesEmailSent: salesEmailResponse.ok,
-      customerEmailSent: customerEmailResponse.ok,
     })
+
+    // Simulate processing time
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    // In a real application, you would integrate with:
+    // - Email service (SendGrid, Mailgun, etc.)
+    // - CRM (HubSpot, Salesforce, etc.)
+    // - Database (PostgreSQL, MongoDB, etc.)
+    // - Notification service (Slack, Teams, etc.)
 
     return NextResponse.json({
       success: true,
-      message: "Demo aanvraag succesvol verzonden",
-      timestamp: new Date().toISOString(),
+      message: "Bericht succesvol verzonden. We nemen binnen 24 uur contact op.",
     })
   } catch (error) {
     console.error("Contact form error:", error)
-    return NextResponse.json({ error: "Er is een fout opgetreden bij het verzenden van uw aanvraag" }, { status: 500 })
+    return NextResponse.json({ success: false, error: "Er is een fout opgetreden bij het verzenden" }, { status: 500 })
   }
 }

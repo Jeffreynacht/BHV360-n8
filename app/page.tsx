@@ -39,9 +39,9 @@ import {
   Zap,
   Crown,
 } from "lucide-react"
-import Link from "next/link"
 import { EmailLink } from "@/components/ui/email-link"
 import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
 
 interface ContactFormData {
   name: string
@@ -67,6 +67,7 @@ export default function HomePage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   const handleInputChange = (field: keyof ContactFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -77,25 +78,37 @@ export default function HomePage() {
     setIsSubmitting(true)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      toast({
-        title: "Bericht verzonden!",
-        description: "We nemen binnen 24 uur contact met u op.",
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
       })
 
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        company: "",
-        companyType: "",
-        companySize: "",
-        interest: "",
-        message: "",
-      })
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        toast({
+          title: "Bericht verzonden!",
+          description: "We nemen binnen 24 uur contact met u op.",
+        })
+
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          company: "",
+          companyType: "",
+          companySize: "",
+          interest: "",
+          message: "",
+        })
+      } else {
+        throw new Error(result.error || "Er is een fout opgetreden")
+      }
     } catch (error) {
+      console.error("Contact form error:", error)
       toast({
         title: "Fout bij verzenden",
         description: "Probeer het opnieuw of neem direct contact op.",
@@ -104,6 +117,22 @@ export default function HomePage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleStartTrial = (planName: string) => {
+    localStorage.setItem("selectedPlan", planName)
+    router.push("/login?trial=true")
+  }
+
+  const handleContactSales = () => {
+    const contactSection = document.getElementById("contact")
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: "smooth" })
+    }
+  }
+
+  const handleDemoClick = (demoPath: string) => {
+    router.push(demoPath)
   }
 
   // Test data voor homepage
@@ -254,33 +283,41 @@ export default function HomePage() {
               </div>
             </div>
             <nav className="hidden md:flex items-center space-x-8">
-              <a href="#modules" className="text-gray-600 hover:text-blue-600 transition-colors">
+              <button
+                onClick={() => document.getElementById("modules")?.scrollIntoView({ behavior: "smooth" })}
+                className="text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
+              >
                 Modules
-              </a>
-              <a href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">
+              </button>
+              <button
+                onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
+                className="text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
+              >
                 Prijzen
-              </a>
-              <Link href="/demo/overview" className="text-gray-600 hover:text-blue-600 transition-colors">
+              </button>
+              <button
+                onClick={() => handleDemoClick("/demo/overview")}
+                className="text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
+              >
                 Demo's
-              </Link>
-              <a href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">
+              </button>
+              <button
+                onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+                className="text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
+              >
                 Contact
-              </a>
-              <Link href="/login">
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Inloggen
-                </Button>
-              </Link>
+              </button>
+              <Button onClick={() => router.push("/login")} className="bg-blue-600 hover:bg-blue-700">
+                <LogIn className="mr-2 h-4 w-4" />
+                Inloggen
+              </Button>
             </nav>
             {/* Mobile menu button */}
             <div className="md:hidden">
-              <Link href="/login">
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Login
-                </Button>
-              </Link>
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => router.push("/login")}>
+                <LogIn className="mr-2 h-4 w-4" />
+                Login
+              </Button>
             </div>
           </div>
         </div>
@@ -306,25 +343,23 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/demo/overview">
-                  <Button
-                    size="lg"
-                    className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 text-lg font-semibold"
-                  >
-                    <Play className="mr-2 h-5 w-5" />
-                    Bekijk Demo
-                  </Button>
-                </Link>
-                <Link href="/login">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg font-semibold bg-transparent"
-                  >
-                    <Download className="mr-2 h-5 w-5" />
-                    30 Dagen Gratis
-                  </Button>
-                </Link>
+                <Button
+                  size="lg"
+                  className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 text-lg font-semibold"
+                  onClick={() => handleDemoClick("/demo/overview")}
+                >
+                  <Play className="mr-2 h-5 w-5" />
+                  Bekijk Demo
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg font-semibold bg-transparent"
+                  onClick={() => handleStartTrial("Professional")}
+                >
+                  <Download className="mr-2 h-5 w-5" />
+                  30 Dagen Gratis
+                </Button>
               </div>
             </div>
 
@@ -435,6 +470,13 @@ export default function HomePage() {
                           : "bg-gray-100 hover:bg-gray-200 text-gray-900"
                       }`}
                       variant={plan.buttonVariant}
+                      onClick={() => {
+                        if (plan.name === "Enterprise") {
+                          handleContactSales()
+                        } else {
+                          handleStartTrial(plan.name)
+                        }
+                      }}
                     >
                       {plan.name === "Enterprise" ? (
                         <>
@@ -502,12 +544,10 @@ export default function HomePage() {
                   <p className="text-base text-gray-600">{module.description}</p>
                 </CardHeader>
                 <CardContent>
-                  <Link href={module.link}>
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                      Meer Info
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => handleDemoClick(module.link)}>
+                    Meer Info
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -561,12 +601,10 @@ export default function HomePage() {
                 <p className="text-base mb-4 text-gray-600">
                   Bekijk het complete BHV dashboard met team overzicht en certificeringen.
                 </p>
-                <Link href="/demo/bhv-status">
-                  <Button className="w-full">
-                    <Play className="mr-2 h-4 w-4" />
-                    Start Demo
-                  </Button>
-                </Link>
+                <Button className="w-full" onClick={() => handleDemoClick("/demo/bhv-status")}>
+                  <Play className="mr-2 h-4 w-4" />
+                  Start Demo
+                </Button>
               </CardContent>
             </Card>
 
@@ -583,12 +621,10 @@ export default function HomePage() {
                 <p className="text-base mb-4 text-gray-600">
                   Ervaar hoe eenvoudig het is om interactieve plotkaarten te maken.
                 </p>
-                <Link href="/demo/plotkaart-editor">
-                  <Button className="w-full">
-                    <Play className="mr-2 h-4 w-4" />
-                    Start Demo
-                  </Button>
-                </Link>
+                <Button className="w-full" onClick={() => handleDemoClick("/demo/plotkaart-editor")}>
+                  <Play className="mr-2 h-4 w-4" />
+                  Start Demo
+                </Button>
               </CardContent>
             </Card>
 
@@ -605,23 +641,24 @@ export default function HomePage() {
                 <p className="text-base mb-4 text-gray-600">
                   Simuleer een noodsituatie en zie hoe BHV360 automatisch reageert.
                 </p>
-                <Link href="/demo/incident-simulator">
-                  <Button className="w-full">
-                    <Play className="mr-2 h-4 w-4" />
-                    Start Demo
-                  </Button>
-                </Link>
+                <Button className="w-full" onClick={() => handleDemoClick("/demo/incident-simulator")}>
+                  <Play className="mr-2 h-4 w-4" />
+                  Start Demo
+                </Button>
               </CardContent>
             </Card>
           </div>
 
           <div className="text-center mt-12">
-            <Link href="/demo/overview">
-              <Button size="lg" variant="outline" className="px-8 py-3 bg-transparent">
-                <Eye className="mr-2 h-5 w-5" />
-                Alle Demo's Bekijken
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              variant="outline"
+              className="px-8 py-3 bg-transparent"
+              onClick={() => handleDemoClick("/demo/overview")}
+            >
+              <Eye className="mr-2 h-5 w-5" />
+              Alle Demo's Bekijken
+            </Button>
           </div>
         </div>
       </div>
@@ -853,9 +890,12 @@ export default function HomePage() {
                 </div>
                 <div>
                   <p className="font-medium text-gray-700">Knowledge Base:</p>
-                  <Link href="/help" className="text-blue-600 hover:underline">
+                  <button
+                    onClick={() => handleDemoClick("/help")}
+                    className="text-blue-600 hover:underline cursor-pointer"
+                  >
                     help.bhv360.nl
-                  </Link>
+                  </button>
                 </div>
               </CardContent>
             </Card>
@@ -1125,24 +1165,27 @@ export default function HomePage() {
               <h3 className="font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-gray-300">
                 <li>
-                  <Link href="/demo/overview" className="hover:text-white">
+                  <button onClick={() => handleDemoClick("/demo/overview")} className="hover:text-white cursor-pointer">
                     Demo's
-                  </Link>
+                  </button>
                 </li>
                 <li>
-                  <a href="#modules" className="hover:text-white">
+                  <button
+                    onClick={() => document.getElementById("modules")?.scrollIntoView({ behavior: "smooth" })}
+                    className="hover:text-white cursor-pointer"
+                  >
                     Modules
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <Link href="/plotkaart" className="hover:text-white">
+                  <button onClick={() => handleDemoClick("/plotkaart")} className="hover:text-white cursor-pointer">
                     Plotkaarten
-                  </Link>
+                  </button>
                 </li>
                 <li>
-                  <Link href="/incidenten" className="hover:text-white">
+                  <button onClick={() => handleDemoClick("/incidenten")} className="hover:text-white cursor-pointer">
                     Incidenten
-                  </Link>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -1151,24 +1194,27 @@ export default function HomePage() {
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-300">
                 <li>
-                  <Link href="/help" className="hover:text-white">
+                  <button onClick={() => handleDemoClick("/help")} className="hover:text-white cursor-pointer">
                     Helpdesk
-                  </Link>
+                  </button>
                 </li>
                 <li>
-                  <Link href="/video-tutorials" className="hover:text-white">
+                  <button
+                    onClick={() => handleDemoClick("/video-tutorials")}
+                    className="hover:text-white cursor-pointer"
+                  >
                     Training
-                  </Link>
+                  </button>
                 </li>
                 <li>
-                  <Link href="/login" className="hover:text-white">
+                  <button onClick={() => router.push("/login")} className="hover:text-white cursor-pointer">
                     Inloggen
-                  </Link>
+                  </button>
                 </li>
                 <li>
-                  <Link href="/system-health" className="hover:text-white">
+                  <button onClick={() => handleDemoClick("/system-health")} className="hover:text-white cursor-pointer">
                     Status
-                  </Link>
+                  </button>
                 </li>
               </ul>
             </div>
