@@ -8,7 +8,7 @@ export function toFixedSafe(value: unknown, decimals = 2): string {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value.toFixed(decimals)
   }
-  return "0".padEnd(decimals + 2, ".0")
+  return "0." + "0".repeat(decimals)
 }
 
 /**

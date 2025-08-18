@@ -33,6 +33,7 @@ import {
   Upload,
 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { toFixedSafe } from "@/helpers/number"
 import {
   moduleDefinitions,
   moduleCategories,
@@ -44,14 +45,6 @@ import {
 // Force dynamic rendering for this page - MUST be a number, not an object
 export const dynamic = "force-dynamic"
 export const revalidate = 0
-
-// Helper function to safely format numbers
-function toFixedSafe(value: unknown, decimals = 2): string {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value.toFixed(decimals)
-  }
-  return "0." + "0".repeat(decimals)
-}
 
 export default function SuperAdminModuleManagementPage() {
   const [modules, setModules] = useState<ModuleDefinition[]>(moduleDefinitions)
