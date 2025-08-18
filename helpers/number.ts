@@ -1,38 +1,23 @@
 /**
- * Safe number formatting helper to prevent .toFixed() errors during prerender
+ * Safe toFixed function that handles undefined/null values
  */
-export function toFixedSafe(value: unknown, digits = 2): string {
-  const n = Number(value)
-  return Number.isFinite(n) ? n.toFixed(digits) : "—"
+export function toFixedSafe(value: number | undefined | null, decimals = 2): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return "0." + "0".repeat(decimals)
+  }
+  return value.toFixed(decimals)
 }
 
 /**
- * Format currency safely
+ * Safe number formatting with fallback
  */
-export function formatCurrency(value: unknown, currency = "EUR"): string {
-  const n = Number(value)
-  if (!Number.isFinite(n)) return "—"
-
-  return new Intl.NumberFormat("nl-NL", {
-    style: "currency",
-    currency,
-  }).format(n)
+export function formatNumber(value: number | undefined | null, decimals = 2): string {
+  return toFixedSafe(value, decimals)
 }
 
 /**
- * Format percentage safely
+ * Safe percentage formatting
  */
-export function formatPercentage(value: unknown, digits = 1): string {
-  const n = Number(value)
-  if (!Number.isFinite(n)) return "—"
-
-  return `${n.toFixed(digits)}%`
-}
-
-/**
- * Safe number coercion with fallback
- */
-export function safeNumber(value: unknown, fallback = 0): number {
-  const n = Number(value)
-  return Number.isFinite(n) ? n : fallback
+export function formatPercentage(value: number | undefined | null, decimals = 1): string {
+  return toFixedSafe(value, decimals) + "%"
 }
