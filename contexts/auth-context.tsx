@@ -1,107 +1,27 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { getDashboardRoute } from "@/lib/dashboard-router"
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 
-interface User {
+export interface User {
   id: string
-  email: string
   name: string
+  email: string
   role: string
   customerId?: string
-  customerName?: string
-  loginTime?: string
+  partnerId?: string
+  permissions?: string[]
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  isAuthenticated: boolean
+  isLoading: boolean
+  login: (email: string, password: string) => Promise<boolean>
   logout: () => Promise<void>
-  loading: boolean
+  checkAuthStatus: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
-
-  useEffect(() => {
-    checkAuthStatus()
-  }, [])
-
-  const checkAuthStatus = async () => {
-    try {
-      console.log("🔍 Checking auth status...")
-      const response = await fetch("/api/auth/status")
-      const data = await response.json()
-
-      if (data.user) {
-        console.log("✅ User found in session:", data.user.name, "with role:", data.user.role)
-        setUser(data.user)
-      } else {
-        console.log("❌ No user in session")
-        setUser(null)
-      }
-    } catch (error) {
-      console.error("❌ Auth status check failed:", error)
-      setUser(null)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const login = async (email: string, password: string) => {
-    try {
-      console.log("🔐 Attempting login for:", email)
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await response.json()
-
-      if (data.success && data.user) {
-        console.log("✅ Login successful for:", data.user.name, "with role:", data.user.role)
-        setUser(data.user)
-
-        // Get dashboard route and redirect
-        const dashboardRoute = getDashboardRoute(data.user.role)
-        console.log("🚀 Redirecting to:", dashboardRoute)
-
-        router.push(dashboardRoute)
-        return { success: true }
-      } else {
-        console.log("❌ Login failed:", data.error)
-        return { success: false, error: data.error || "Login failed" }
-      }
-    } catch (error) {
-      console.error("❌ Login error:", error)
-      return { success: false, error: "Network error" }
-    }
-  }
-
-  const logout = async () => {
-    try {
-      console.log("🚪 Logging out...")
-      await fetch("/api/auth/logout", { method: "POST" })
-      setUser(null)
-      router.push("/login")
-    } catch (error) {
-      console.error("❌ Logout error:", error)
-      setUser(null)
-      router.push("/login")
-    }
-  }
-
-  return <AuthContext.Provider value={{ user, login, logout, loading }}>{children}</AuthContext.Provider>
-}
 
 export function useAuth() {
   const context = useContext(AuthContext)
@@ -109,4 +29,143 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider")
   }
   return context
+}
+
+interface AuthProviderProps {
+  children: ReactNode
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const checkAuthStatus = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch("/api/auth/status", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      // Check if response is ok and content-type is JSON
+      if (!response.ok) {
+        console.error("Auth status check failed:", response.status, response.statusText)
+        setUser(null)
+        return
+      }
+
+      const contentType = response.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        console.error("Auth status response is not JSON:", contentType)
+        setUser(null)
+        return
+      }
+
+      const data = await response.json()
+
+      if (data.success && data.authenticated && data.user) {
+        setUser(data.user)
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      console.error("❌ Auth status check failed:", error)
+      setUser(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      setIsLoading(true)
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!response.ok) {
+        console.error("Login failed:", response.status, response.statusText)
+        return false
+      }
+
+      const contentType = response.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        console.error("Login response is not JSON:", contentType)
+        return false
+      }
+
+      const data = await response.json()
+
+      if (data.success && data.user) {
+        setUser(data.user)
+        return true
+      } else {
+        console.error("Login failed:", data.error)
+        return false
+      }
+    } catch (error) {
+      console.error("Login error:", error)
+      return false
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const logout = async (): Promise<void> => {
+    try {
+      setIsLoading(true)
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      // Always clear user state, even if logout request fails
+      setUser(null)
+
+      if (!response.ok) {
+        console.error("Logout request failed:", response.status, response.statusText)
+        return
+      }
+
+      const contentType = response.headers.get("content-type")
+      if (contentType && contentType.includes("application/json")) {
+        const data = await response.json()
+        if (!data.success) {
+          console.error("Logout failed:", data.error)
+        }
+      }
+    } catch (error) {
+      console.error("Logout error:", error)
+      // Still clear user state even if there's an error
+      setUser(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    checkAuthStatus()
+  }, [])
+
+  const value: AuthContextType = {
+    user,
+    isAuthenticated: !!user,
+    isLoading,
+    login,
+    logout,
+    checkAuthStatus,
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

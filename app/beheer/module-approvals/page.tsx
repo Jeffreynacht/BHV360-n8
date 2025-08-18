@@ -58,7 +58,6 @@ export default function ModuleApprovalsPage() {
     const result = await ModuleNotificationService.approveRequest(
       selectedRequest.id,
       "Current User", // In productie: echte gebruiker
-      "current.user@company.com",
     )
 
     if (result.success) {
@@ -76,7 +75,6 @@ export default function ModuleApprovalsPage() {
     const result = await ModuleNotificationService.rejectRequest(
       selectedRequest.id,
       "Current User", // In productie: echte gebruiker
-      "current.user@company.com",
       rejectionReason,
     )
 
@@ -146,7 +144,7 @@ export default function ModuleApprovalsPage() {
             </div>
             <div className="flex items-center gap-2">
               <Euro className="w-4 h-4 text-gray-500" />
-              <span className="text-sm">€{request.monthlyCost.toFixed(2)}/maand</span>
+              <span className="text-sm">€{Number(request.monthlyCost).toFixed(2)}/maand</span>
             </div>
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-gray-500" />
@@ -264,10 +262,10 @@ export default function ModuleApprovalsPage() {
                   <strong>Klant:</strong> {selectedRequest.customerName}
                 </p>
                 <p>
-                  <strong>Maandelijkse kosten:</strong> €{selectedRequest.monthlyCost.toFixed(2)}
+                  <strong>Maandelijkse kosten:</strong> €{Number(selectedRequest.monthlyCost).toFixed(2)}
                 </p>
                 <p>
-                  <strong>Jaarlijkse kosten:</strong> €{selectedRequest.yearlyCost.toFixed(2)}
+                  <strong>Jaarlijkse kosten:</strong> €{Number(selectedRequest.yearlyCost).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -309,7 +307,7 @@ export default function ModuleApprovalsPage() {
               onClick={handleReject}
               disabled={loading || !rejectionReason.trim()}
               variant="outline"
-              className="border-red-200 text-red-600 hover:bg-red-50"
+              className="border-red-200 text-red-600 hover:bg-red-50 bg-transparent"
             >
               {loading ? "Afwijzen..." : "Afwijzen"}
             </Button>

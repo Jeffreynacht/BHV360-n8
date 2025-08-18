@@ -2,42 +2,17 @@
   "name": "bhv-plotkaart",
   "version": "0.1.0",
   "private": true,
-  "keywords": [
-    "bhv",
-    "emergency-response",
-    "floor-plan",
-    "safety",
-    "evacuation",
-    "nextjs",
-    "react",
-    "typescript",
-    "plotkaart",
-    "bedrijfshulpverlening"
-  ],
-  "homepage": "https://github.com/Jeffreynacht/BHV360-n8#readme",
-  "bugs": {
-    "url": "https://github.com/Jeffreynacht/BHV360-n8/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Jeffreynacht/BHV360-n8.git"
-  },
-  "license": "MIT",
-  "author": "BHV360 Team",
   "scripts": {
     "prebuild": "tsc -p tsconfig.json --noEmit && node scripts/validate-modules.mjs || true",
     "build": "next build",
-    "clean-install": "rm -rf node_modules pnpm-lock.yaml && pnpm install",
-    "deploy": "bash scripts/github-deploy.sh",
     "dev": "next dev",
-    "force-deploy": "bash scripts/force-github-deploy.sh",
+    "e2e": "playwright test",
+    "e2e:ci": "playwright test --reporter=github",
     "lint": "next lint",
-    "setup-demo": "node scripts/setup-demo-data.js",
+    "prepare": "husky install",
     "start": "next start",
-    "test-build": "next build",
-    "test-db": "node scripts/test-database-connection.js",
-    "type-check": "tsc --noEmit",
-    "update-lockfile": "pnpm install --lockfile-only"
+    "test": "jest --watchAll",
+    "test:ci": "jest --ci"
   },
   "dependencies": {
     "@ai-sdk/openai": "0.0.66",
@@ -130,7 +105,6 @@
   },
   "packageManager": "pnpm@10.2.0",
   "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=10.0.0"
+    "node": ">=18.0.0"
   }
 }

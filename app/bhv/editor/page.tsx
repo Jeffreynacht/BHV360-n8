@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useCustomer } from "@/components/customer-context"
-import { useData } from "@/contexts/data-context"
+import { useData, type DataContextType } from "@/contexts/data-context"
 import { NoCustomerSelected } from "@/components/no-customer-selected"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,15 +14,24 @@ import { Eye, Edit, Save, RefreshCw } from "lucide-react"
 
 export default function BHVEditorPage() {
   const { selectedCustomer } = useCustomer()
-  const { getPlotkaartByCustomer, updatePlotkaartForCustomer } = useData()
+  const { getPlotkaartByCustomer, updatePlotkaartForCustomer } = useData() as DataContextType
   const [activeTab, setActiveTab] = useState("plotkaart")
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [plotkaartData, setPlotkaartData] = useState<any>(null)
+
+  useEffect(() => {
+    async function loadPlotkaartData() {
+      if (selectedCustomer) {
+        const data = await getPlotkaartByCustomer(selectedCustomer.id)
+        setPlotkaartData(data)
+      }
+    }
+    loadPlotkaartData()
+  }, [selectedCustomer, getPlotkaartByCustomer])
 
   if (!selectedCustomer) {
     return <NoCustomerSelected />
   }
-
-  const plotkaartData = getPlotkaartByCustomer(selectedCustomer.id)
 
   const handleSaveChanges = () => {
     // In a real implementation, you would get the current floor data from the editor

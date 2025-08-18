@@ -38,13 +38,13 @@ const VOORZIENING_TYPES = [
   { value: "verzamelplaats", label: "Verzamelplaats" },
   { value: "brandmelder", label: "Brandmelder" },
   { value: "noodtelefoon", label: "Noodtelefoon" },
-]
+] as const
 
 const STATUS_OPTIONS = [
   { value: "actief", label: "Actief" },
   { value: "onderhoud", label: "Onderhoud" },
   { value: "defect", label: "Defect" },
-]
+] as const
 
 export default function VoorzieningModal({
   isOpen,
@@ -130,7 +130,7 @@ export default function VoorzieningModal({
               <Label htmlFor="type">Type</Label>
               <Select
                 value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
+                onValueChange={(value) => setFormData({ ...formData, type: value as any })}
                 disabled={isReadOnly}
               >
                 <SelectTrigger>

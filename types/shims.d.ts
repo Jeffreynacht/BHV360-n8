@@ -15,16 +15,16 @@ type UUID = string
 interface Customer {
   id: UUID
   name: string
-  active?: boolean
-  address?: string
-  email?: string
-  phone?: string
-  contactPerson?: string
+  contactPerson: string
+  email: string
+  phone: string
+  address: string
   logo?: string
-  users?: any[]
-  buildings?: any[]
-  createdAt?: string
-  userCount?: number
+  active: boolean
+  createdAt: string
+  userCount: number
+  buildings: number
+  users: number
 }
 
 declare const UserRole: {
@@ -40,57 +40,46 @@ declare const UserRole: {
 type ModuleTierId = "starter" | "professional" | "enterprise" | "custom"
 
 interface ModuleTier {
-  id: ModuleTierId
+  id: string
   name: string
-  description?: string
-  priceRange?: string
-  features?: string[]
+  description: string
 }
 
 type ModuleCategoryId = "basis" | "geavanceerd" | "premium" | "enterprise"
 
 interface ModuleCategory {
-  id: ModuleCategoryId
+  id: string
   name: string
-  description?: string
+  description: string
 }
 
 type PricingModel = "fixed" | "per_user" | "per_building" | "per_customer"
 
 interface ModulePricing {
-  type?: PricingModel
-  model: PricingModel
+  type: PricingModel
   basePrice: number
   setupFee?: number
   freeTrialDays?: number
-  tierMultipliers?: Partial<Record<ModuleTierId, number>>
-  tierPricing?: Array<{
-    minUsers: number
-    maxUsers?: number
-    pricePerUser: number
-  }>
+  tierPricing?: { minUsers: number; maxUsers?: number; pricePerUser: number }[]
 }
 
 interface ModuleDefinition {
   id: string
   name: string
-  title?: string
-  description?: string
-  category: ModuleCategoryId | ModuleCategory
-  tier?: ModuleTierId | ModuleTier
+  description: string
+  category: string
+  tier: string
+  features: string[]
+  pricingModel: string
   pricing: ModulePricing
-  pricingModel?: string
-  status?: "beta" | "ga" | "internal"
-  implemented?: boolean
-  visible?: boolean
-  enabled?: boolean
-  routePath?: string
-  features?: string[]
-  rating?: number
-  reviews?: number
-  popularity?: number
-  version?: string
-  core?: boolean
+  status: "live" | "beta" | "dev"
+  rating: number
+  reviews: number
+  popularity: number
+  version: string
+  visible: boolean
+  enabled: boolean
+  implemented: boolean
 }
 
 // Alias for compatibility
@@ -98,10 +87,20 @@ type ModuleDef = ModuleDefinition
 type Module = ModuleDefinition
 
 interface ModuleActivationRequest {
+  id: string
   moduleId: string
-  monthlyCost?: number
-  yearlyCost?: number
-  status: "pending" | "approved" | "rejected"
+  customerName: string
+  requestedBy: string
+  requestedByEmail: string
+  requestedAt: Date
+  approvedBy?: string
+  approvedAt?: Date
+  rejectedBy?: string
+  rejectedAt?: Date
+  rejectionReason?: string
+  status: "pending" | "approved" | "rejected" | "auto_approved"
+  monthlyCost: number
+  yearlyCost: number
 }
 
 type DeepInspectionStatus = "warning" | "pass" | "fail"

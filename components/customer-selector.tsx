@@ -1,325 +1,199 @@
 "use client"
 
+import { DialogDescription } from "@/components/ui/dialog"
+
 import { useState } from "react"
-import { useCustomer } from "@/components/customer-context"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Building2, Plus, Users, Calendar, Phone, Mail, MapPin } from "lucide-react"
-import { toast } from "@/hooks/use-toast"
-import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Plus, Building2, Users, Mail, Phone, MapPin, CheckCircle } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/auth-context"
+import { useCustomer, type Customer } from "@/components/customer-context"
+import { cn } from "@/lib/utils"
 
-export function CustomerSelector() {
-  const { customers, selectedCustomer, setSelectedCustomer, addCustomer, isLoading } = useCustomer()
-  const [isAddingCustomer, setIsAddingCustomer] = useState(false)
-  const [newCustomer, setNewCustomer] = useState({
-    name: "",
-    contactPerson: "",
-    email: "",
-    phone: "",
-    address: "",
-    isActive: true,
-    modules: [] as string[],
-    userCount: 0,
-  })
+export default function CustomerSelector() {
+  const { user } = useAuth()
+  const { customers, setSelectedCustomer, addCustomer, isLoading } = useCustomer()
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [newCustomerName, setNewCustomerName] = useState("")
+  const [newCustomerContactPerson, setNewCustomerContactPerson] = useState("")
+  const [newCustomerEmail, setNewCustomerEmail] = useState("")
+  const [newCustomerPhone, setNewCustomerPhone] = useState("")
+  const [newCustomerAddress, setNewCustomerAddress] = useState("")
+  const { toast } = useToast()
 
   const handleAddCustomer = async () => {
-    try {
-      if (!newCustomer.name || !newCustomer.contactPerson || !newCustomer.email) {
-        toast({
-          title: "Fout",
-          description: "Vul alle verplichte velden in",
-          variant: "destructive",
-        })
-        return
-      }
-
-      const customer = await addCustomer(newCustomer)
-      setSelectedCustomer(customer)
-      setIsAddingCustomer(false)
-      setNewCustomer({
-        name: "",
-        contactPerson: "",
-        email: "",
-        phone: "",
-        address: "",
-        isActive: true,
-        modules: [],
-        userCount: 0,
-      })
-
+    if (!newCustomerName) {
       toast({
-        title: "Succes",
-        description: `Klant "${customer.name}" is toegevoegd`,
-      })
-    } catch (error) {
-      toast({
-        title: "Fout",
-        description: "Er is een fout opgetreden bij het toevoegen van de klant",
+        title: "Error",
+        description: "Please enter a customer name.",
         variant: "destructive",
       })
+      return
     }
+
+    const newCustomer = {
+      name: newCustomerName,
+      contactPerson: newCustomerContactPerson,
+      email: newCustomerEmail,
+      phone: newCustomerPhone,
+      address: newCustomerAddress,
+    }
+
+    addCustomer(newCustomer)
+    setNewCustomerName("")
+    setNewCustomerContactPerson("")
+    setNewCustomerEmail("")
+    setNewCustomerPhone("")
+    setNewCustomerAddress("")
+    setIsDialogOpen(false)
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center space-x-2">
-        <Building2 className="h-4 w-4" />
-        <span className="text-sm">Laden...</span>
-      </div>
-    )
-  }
-
-  if (customers.length === 0) {
-    return (
-      <div className="flex items-center space-x-2">
-        <Building2 className="h-4 w-4" />
-        <span className="text-sm text-muted-foreground">Geen klanten</span>
-        <Link href="/klanten">
-          <Button size="sm" variant="outline">
-            <Plus className="h-3 w-3 mr-1" />
-            Toevoegen
-          </Button>
-        </Link>
-      </div>
-    )
+  const handleSelectCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer)
+    toast({
+      title: "Klant geselecteerd",
+      description: `${customer.name} is geselecteerd.`,
+    })
   }
 
   return (
-    <div className="space-y-4">
-      {/* Customer Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Building2 className="h-5 w-5 mr-2" />
-            Klant Selectie
-          </CardTitle>
-          <CardDescription>
-            {customers.length === 0
-              ? "Geen klanten beschikbaar. Voeg je eerste klant toe om te beginnen."
-              : "Selecteer een klant om mee te werken"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {customers.length > 0 ? (
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <Select
-                  value={selectedCustomer?.id || ""}
-                  onValueChange={(value) => {
-                    const customer = customers.find((c) => c.id === value)
-                    setSelectedCustomer(customer || null)
-                  }}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Selecteer klant" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Dialog open={isAddingCustomer} onOpenChange={setIsAddingCustomer}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nieuwe Klant
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Nieuwe Klant Toevoegen</DialogTitle>
-                    <DialogDescription>Vul de gegevens in voor de nieuwe klant</DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="name">Bedrijfsnaam *</Label>
-                      <Input
-                        id="name"
-                        value={newCustomer.name}
-                        onChange={(e) => setNewCustomer((prev) => ({ ...prev, name: e.target.value }))}
-                        placeholder="Bijv. Acme Corporation"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="contactPerson">Contactpersoon *</Label>
-                      <Input
-                        id="contactPerson"
-                        value={newCustomer.contactPerson}
-                        onChange={(e) => setNewCustomer((prev) => ({ ...prev, contactPerson: e.target.value }))}
-                        placeholder="Bijv. Jan Janssen"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="email">Email *</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={newCustomer.email}
-                        onChange={(e) => setNewCustomer((prev) => ({ ...prev, email: e.target.value }))}
-                        placeholder="contact@bedrijf.nl"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="phone">Telefoon</Label>
-                      <Input
-                        id="phone"
-                        value={newCustomer.phone}
-                        onChange={(e) => setNewCustomer((prev) => ({ ...prev, phone: e.target.value }))}
-                        placeholder="06-12345678"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="address">Adres</Label>
-                      <Input
-                        id="address"
-                        value={newCustomer.address}
-                        onChange={(e) => setNewCustomer((prev) => ({ ...prev, address: e.target.value }))}
-                        placeholder="Straat 1, 1234 AB Plaats"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsAddingCustomer(false)}>
-                      Annuleren
-                    </Button>
-                    <Button onClick={handleAddCustomer}>Klant Toevoegen</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-          ) : (
-            <Dialog open={isAddingCustomer} onOpenChange={setIsAddingCustomer}>
-              <DialogTrigger asChild>
-                <Button className="w-full">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Voeg je eerste klant toe
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>Eerste Klant Toevoegen</DialogTitle>
-                  <DialogDescription>Welkom bij BHV360! Voeg je eerste klant toe om te beginnen.</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="name">Bedrijfsnaam *</Label>
-                    <Input
-                      id="name"
-                      value={newCustomer.name}
-                      onChange={(e) => setNewCustomer((prev) => ({ ...prev, name: e.target.value }))}
-                      placeholder="Bijv. Acme Corporation"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="contactPerson">Contactpersoon *</Label>
-                    <Input
-                      id="contactPerson"
-                      value={newCustomer.contactPerson}
-                      onChange={(e) => setNewCustomer((prev) => ({ ...prev, contactPerson: e.target.value }))}
-                      placeholder="Bijv. Jan Janssen"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={newCustomer.email}
-                      onChange={(e) => setNewCustomer((prev) => ({ ...prev, email: e.target.value }))}
-                      placeholder="contact@bedrijf.nl"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="phone">Telefoon</Label>
-                    <Input
-                      id="phone"
-                      value={newCustomer.phone}
-                      onChange={(e) => setNewCustomer((prev) => ({ ...prev, phone: e.target.value }))}
-                      placeholder="06-12345678"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="address">Adres</Label>
-                    <Input
-                      id="address"
-                      value={newCustomer.address}
-                      onChange={(e) => setNewCustomer((prev) => ({ ...prev, address: e.target.value }))}
-                      placeholder="Straat 1, 1234 AB Plaats"
-                    />
-                  </div>
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Klanten Overzicht</h1>
+          <p className="text-muted-foreground">Beheer uw klanten en hun instellingen</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Nieuwe Klant
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Nieuwe Klant Toevoegen</DialogTitle>
+              <DialogDescription>Vul de gegevens van de nieuwe klant in</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Naam</Label>
+                  <Input
+                    id="name"
+                    placeholder="Naam van de klant"
+                    value={newCustomerName}
+                    onChange={(e) => setNewCustomerName(e.target.value)}
+                  />
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddingCustomer(false)}>
-                    Annuleren
-                  </Button>
-                  <Button onClick={handleAddCustomer}>Klant Toevoegen</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Selected Customer Info */}
-      {selectedCustomer && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center">
-                <Building2 className="h-5 w-5 mr-2" />
-                {selectedCustomer.name}
-              </span>
-              <Badge variant={selectedCustomer.isActive ? "default" : "secondary"}>
-                {selectedCustomer.isActive ? "Actief" : "Inactief"}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center space-x-2">
-                <Users className="h-4 w-4 text-gray-500" />
-                <span>{selectedCustomer.contactPerson}</span>
+                <div className="space-y-2">
+                  <Label htmlFor="contactPerson">Contactpersoon</Label>
+                  <Input
+                    id="contactPerson"
+                    placeholder="Naam van de contactpersoon"
+                    value={newCustomerContactPerson}
+                    onChange={(e) => setNewCustomerContactPerson(e.target.value)}
+                  />
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Mail className="h-4 w-4 text-gray-500" />
-                <span>{selectedCustomer.email}</span>
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="E-mailadres van de klant"
+                  value={newCustomerEmail}
+                  onChange={(e) => setNewCustomerEmail(e.target.value)}
+                />
               </div>
-              <div className="flex items-center space-x-2">
-                <Phone className="h-4 w-4 text-gray-500" />
-                <span>{selectedCustomer.phone}</span>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefoon</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="Telefoonnummer van de klant"
+                  value={newCustomerPhone}
+                  onChange={(e) => setNewCustomerPhone(e.target.value)}
+                />
               </div>
-              <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4 text-gray-500" />
-                <span>{selectedCustomer.address}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-gray-500" />
-                <span>Toegevoegd: {new Date(selectedCustomer.createdAt).toLocaleDateString("nl-NL")}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Users className="h-4 w-4 text-gray-500" />
-                <span>{selectedCustomer.userCount} gebruikers</span>
+              <div className="space-y-2">
+                <Label htmlFor="address">Adres</Label>
+                <Input
+                  id="address"
+                  placeholder="Adres van de klant"
+                  value={newCustomerAddress}
+                  onChange={(e) => setNewCustomerAddress(e.target.value)}
+                />
               </div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Annuleren
+              </Button>
+              <Button onClick={handleAddCustomer}>Klant Toevoegen</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center h-48">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {customers.map((customer) => (
+            <Card
+              key={customer.id}
+              className={cn(
+                "cursor-pointer transition-all hover:shadow-md",
+                customer.id === user?.customerId ? "ring-2 ring-blue-500" : "",
+              )}
+              onClick={() => handleSelectCustomer(customer)}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Building2 className="h-4 w-4 mr-2" />
+                  {customer.name}
+                </CardTitle>
+                <CardDescription>
+                  <div className="flex items-center">
+                    <CheckCircle className="h-4 w-4 mr-1 text-green-500" />
+                    Actief
+                  </div>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center">
+                  <MapPin className="h-4 w-4 mr-2 text-blue-500" />
+                  <span>{customer.address}</span>
+                </div>
+                <div className="flex items-center">
+                  <Users className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>Contact: {customer.contactPerson}</span>
+                </div>
+                <div className="flex items-center">
+                  <Mail className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>{customer.email}</span>
+                </div>
+                <div className="flex items-center">
+                  <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>{customer.phone}</span>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Aangemaakt op {new Date(customer.createdAt).toLocaleDateString()}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {customer.users} gebruikers - {customer.buildings} gebouwen
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   )

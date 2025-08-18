@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useCustomer } from "@/components/customer-context"
-import { useData } from "@/contexts/data-context"
+import { useData, type DataContextType } from "@/contexts/data-context"
 import { NoCustomerSelected } from "@/components/no-customer-selected"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -37,7 +37,7 @@ const actionTypes = [
 
 export default function BeheerNFCTagsPage() {
   const { selectedCustomer } = useCustomer()
-  const { getNfcTagsByCustomer, addNfcTag, updateNfcTag, deleteNfcTag } = useData()
+  const { getNfcTagsByCustomer, addNfcTag, updateNfcTag, deleteNfcTag } = useData() as DataContextType
   const [isScanning, setIsScanning] = useState(false)
   const [scanResult, setScanResult] = useState<string | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)

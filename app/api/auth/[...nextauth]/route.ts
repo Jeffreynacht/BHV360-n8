@@ -1,7 +1,11 @@
-import NextAuth, { type NextAuthOptions } from "next-auth"
+import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import { neon } from "@neondatabase/serverless"
+import type { NextAuthOptions } from "next-auth"
 
-const authOptions: NextAuthOptions = {
+const sql = neon(process.env.DATABASE_URL!)
+
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -14,57 +18,60 @@ const authOptions: NextAuthOptions = {
           return null
         }
 
-        // Demo authentication - replace with real auth logic
-        const demoUsers = [
-          {
-            id: "1",
-            email: "admin@bhv360.nl",
-            name: "Super Admin",
-            role: "SUPER_ADMIN",
-          },
-          {
-            id: "2",
-            email: "manager@company.nl",
-            name: "BHV Manager",
-            role: "CUSTOMER_MANAGER",
-          },
-        ]
+        try {
+          const users = await sql`
+            SELECT id, email, name, role, customer_id, active
+            FROM users 
+            WHERE email = ${credentials.email} 
+            AND active = true
+            LIMIT 1
+          `
 
-        const user = demoUsers.find((u) => u.email === credentials.email)
+          const user = users[0]
+          if (!user) {
+            return null
+          }
 
-        if (user && credentials.password === "demo123") {
+          // In production, verify password hash here
+          // For now, accept any password for demo purposes
+
           return {
             id: user.id,
             email: user.email,
             name: user.name,
             role: user.role,
+            customerId: user.customer_id,
           }
+        } catch (error) {
+          console.error("Auth error:", error)
+          return null
         }
-
-        return null
       },
     }),
   ],
   session: {
     strategy: "jwt",
   },
-  pages: {
-    signIn: "/login",
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
+        token.customerId = user.customerId
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub
-        session.user.role = token.role
+        session.user.id = token.sub!
+        session.user.role = token.role as string
+        session.user.customerId = token.customerId as string
       }
       return session
     },
+  },
+  pages: {
+    signIn: "/login",
+    error: "/login",
   },
 }
 

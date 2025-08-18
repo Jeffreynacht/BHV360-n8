@@ -1,20 +1,94 @@
-// Compatibility layer: exports that your app expects
-export type { ModuleDef as Module, ModuleTier, ModuleCategory, ModuleDefinition } from "@/types/shims"
+export interface ModuleTier {
+  id: string
+  name: string
+  description: string
+  priceRange?: string
+}
 
-import type { ModuleTier, ModuleCategory, ModuleDefinition } from "@/types/shims"
+export interface ModuleCategory {
+  id: string
+  name: string
+  description: string
+}
 
-export const moduleCategories: ModuleCategory[] = [
-  { id: "basis", name: "Basis", description: "Essentiële BHV functionaliteiten" },
-  { id: "geavanceerd", name: "Geavanceerd", description: "Uitgebreide BHV tools en rapportages" },
-  { id: "premium", name: "Premium", description: "Professionele BHV oplossingen" },
-  { id: "enterprise", name: "Enterprise", description: "Enterprise-grade BHV management" },
-]
+export interface ModulePricing {
+  model: "per_user" | "per_building" | "per_customer" | "fixed"
+  basePrice: number
+  setupFee?: number
+  freeTrialDays?: number
+  tierPricing?: { minUsers: number; maxUsers?: number; pricePerUser: number }[]
+}
+
+export interface ModuleDefinition {
+  id: string
+  name: string
+  title: string
+  description: string
+  category: string
+  tier: string
+  features: string[]
+  pricingModel: string
+  pricing: ModulePricing
+  status?: "ga" | "beta" | "dev"
+  rating: number
+  reviews: number
+  popularity: number
+  version: string
+  visible: boolean
+  enabled: boolean
+  implemented: boolean
+  routePath?: string
+  core?: boolean
+}
 
 export const tierDefinitions: ModuleTier[] = [
-  { id: "starter", name: "Starter", description: "Voor kleine organisaties", priceRange: "€0-50/maand" },
-  { id: "professional", name: "Professional", description: "Voor middelgrote bedrijven", priceRange: "€50-200/maand" },
-  { id: "enterprise", name: "Enterprise", description: "Voor grote organisaties", priceRange: "€200+/maand" },
-  { id: "custom", name: "Custom", description: "Op maat gemaakte oplossingen", priceRange: "Op aanvraag" },
+  {
+    id: "starter",
+    name: "Starter",
+    description: "Voor kleine organisaties",
+    priceRange: "€0-50/maand",
+  },
+  {
+    id: "professional",
+    name: "Professional",
+    description: "Voor middelgrote bedrijven",
+    priceRange: "€50-200/maand",
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    description: "Voor grote organisaties",
+    priceRange: "€200+/maand",
+  },
+  {
+    id: "custom",
+    name: "Custom",
+    description: "Op maat gemaakte oplossingen",
+    priceRange: "Op aanvraag",
+  },
+]
+
+export const moduleCategories: ModuleCategory[] = [
+  {
+    id: "basis",
+    name: "Basis",
+    description: "Essentiële BHV functionaliteiten",
+  },
+  {
+    id: "geavanceerd",
+    name: "Geavanceerd",
+    description: "Uitgebreide BHV tools en rapportages",
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    description: "Professionele BHV oplossingen",
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    description: "Enterprise-grade BHV management",
+  },
 ]
 
 export const moduleDefinitions: ModuleDefinition[] = [
@@ -198,7 +272,7 @@ export const moduleDefinitions: ModuleDefinition[] = [
   },
 ]
 
-// Aliases for compatibility
+// Required exports for compatibility
 export const AVAILABLE_MODULES = moduleDefinitions
 
 export function getModuleById(id: string): ModuleDefinition | null {

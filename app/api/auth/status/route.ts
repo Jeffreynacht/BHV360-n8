@@ -1,33 +1,45 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// Force dynamic rendering for this route
-export const dynamic = "force-dynamic"
-export const revalidate = 0
-
 export async function GET(request: NextRequest) {
   try {
+    // Mock authentication check - replace with your actual auth logic
+    const authHeader = request.headers.get("authorization")
     const sessionCookie = request.cookies.get("session")
 
-    if (!sessionCookie) {
-      console.log("❌ No session cookie found")
+    // For demo purposes, return a mock user if any auth token exists
+    if (authHeader || sessionCookie) {
       return NextResponse.json({
-        authenticated: false,
-        user: null,
+        success: true,
+        authenticated: true,
+        user: {
+          id: "1",
+          name: "Demo User",
+          email: "demo@bhv360.nl",
+          role: "SUPER_ADMIN",
+          customerId: "1",
+          partnerId: null,
+          permissions: ["read", "write", "admin"],
+        },
       })
     }
 
-    const sessionData = JSON.parse(sessionCookie.value)
-    console.log("✅ Session found for:", sessionData.name, "with role:", sessionData.role)
-
+    // No authentication found
     return NextResponse.json({
-      authenticated: true,
-      user: sessionData,
-    })
-  } catch (error) {
-    console.error("❌ Session check error:", error)
-    return NextResponse.json({
+      success: true,
       authenticated: false,
       user: null,
     })
+  } catch (error) {
+    console.error("Auth status check error:", error)
+
+    return NextResponse.json(
+      {
+        success: false,
+        authenticated: false,
+        user: null,
+        error: "Authentication check failed",
+      },
+      { status: 500 },
+    )
   }
 }

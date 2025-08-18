@@ -19,6 +19,10 @@ export const ALLOWED_DOMAINS: DomainConfig = {
   ],
 }
 
+export const appName = "BHV360"
+export const appDescription = "BHV360 - Uw partner in veiligheid"
+export const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+
 export function getCurrentEnvironment(): keyof DomainConfig {
   if (typeof window === "undefined") {
     // Server-side environment detection

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { debugDatabaseConnection, debugEnvironmentVariables } from "@/lib/debug-database"
+import type { DatabaseResult } from "@/lib/database-adapter"
 
 export async function GET() {
   try {
@@ -9,10 +10,10 @@ export async function GET() {
     const envResult = debugEnvironmentVariables()
 
     // Test database connection
-    const dbResult = await debugDatabaseConnection()
+    const dbResult: DatabaseResult = await debugDatabaseConnection()
 
     const response = {
-      success: dbResult.success,
+      success: dbResult.status === "healthy",
       timestamp: new Date().toISOString(),
       database: dbResult,
       environment: {
@@ -26,7 +27,7 @@ export async function GET() {
     console.log("✅ Debug check completed:", response)
 
     return NextResponse.json(response)
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Debug API error:", error)
 
     const errorResponse = {

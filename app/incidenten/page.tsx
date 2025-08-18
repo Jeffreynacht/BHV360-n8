@@ -154,7 +154,7 @@ export default function IncidentenPage() {
 
     // Filter by user role - Super Admin sees all, others see only their customer's incidents
     if (user?.role !== "super-admin") {
-      filtered = filtered.filter((incident) => incident.customer_id === user?.customer_id)
+      filtered = filtered.filter((incident) => incident.customer_id === user?.customerId)
     }
 
     // Apply search filter
@@ -250,7 +250,7 @@ export default function IncidentenPage() {
       floor: formData.floor,
       reported_by: user?.name || "Onbekend",
       reported_at: new Date().toISOString(),
-      customer_id: user?.customer_id || 1,
+      customer_id: user?.customerId || 1,
       customer_name: "Huidige Klant",
       customer_contact: user?.email || "",
     }
@@ -595,10 +595,13 @@ function IncidentDetailModal({
               {incident.severity === "low" && "Laag"}
             </Badge>
             <Badge className={getStatusColor(incident.status)}>
-              {incident.status === "open" && "Open"}
-              {incident.status === "in_progress" && "In behandeling"}
-              {incident.status === "resolved" && "Opgelost"}
-              {incident.status === "closed" && "Gesloten"}
+              {getStatusIcon(incident.status)}
+              <span className="ml-1">
+                {incident.status === "open" && "Open"}
+                {incident.status === "in_progress" && "In behandeling"}
+                {incident.status === "resolved" && "Opgelost"}
+                {incident.status === "closed" && "Gesloten"}
+              </span>
             </Badge>
           </div>
         </DialogHeader>
@@ -739,4 +742,19 @@ function formatDate(dateString: string) {
     hour: "2-digit",
     minute: "2-digit",
   })
+}
+
+function getStatusIcon(status: string) {
+  switch (status) {
+    case "open":
+      return <AlertCircle className="h-4 w-4" />
+    case "in_progress":
+      return <Clock className="h-4 w-4" />
+    case "resolved":
+      return <CheckCircle className="h-4 w-4" />
+    case "closed":
+      return <XCircle className="h-4 w-4" />
+    default:
+      return <AlertCircle className="h-4 w-4" />
+  }
 }

@@ -21,18 +21,21 @@ export const authOptions: NextAuthOptions = {
             email: "admin@bhv360.nl",
             name: "Super Admin",
             role: "SUPER_ADMIN",
+            customerId: "1",
           },
           {
             id: "2",
             email: "manager@company.nl",
             name: "BHV Manager",
             role: "CUSTOMER_MANAGER",
+            customerId: "2",
           },
           {
             id: "3",
             email: "coordinator@company.nl",
             name: "BHV Coordinator",
             role: "BHV_PLOEGLEIDER",
+            customerId: "3",
           },
         ]
 
@@ -44,6 +47,7 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.name,
             role: user.role,
+            customerId: user.customerId,
           }
         }
 
@@ -61,13 +65,15 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
+        token.customerId = user.customerId
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub
-        session.user.role = token.role
+        session.user.id = token.sub!
+        session.user.role = token.role as string
+        session.user.customerId = token.customerId as string
       }
       return session
     },
