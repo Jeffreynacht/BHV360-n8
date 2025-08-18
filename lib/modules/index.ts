@@ -1,4 +1,3 @@
+// Barrel export file for clean imports
 export * from "./module-definitions"
-export * from "./pricing-calculator"
-export * from "./customer-modules"
-export * from "./module-notifications"
+export type { ModuleDef, ModuleTier, ModuleCategory } from "./module-definitions"
