@@ -3,22 +3,24 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 
-interface Customer {
+export interface Customer {
   id: string
   name: string
-  address: string
-  contactPerson: string
   email: string
   phone: string
-  status: "active" | "inactive"
-  modules: string[]
+  address: string
+  contactPerson: string
+  createdAt: string
+  users: number
+  buildings: number
 }
 
 interface CustomerContextType {
   customers: Customer[]
   selectedCustomer: Customer | null
   setSelectedCustomer: (customer: Customer | null) => void
-  loading: boolean
+  addCustomer: (customer: Omit<Customer, "id" | "createdAt" | "users" | "buildings">) => void
+  isLoading: boolean
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined)
@@ -26,49 +28,61 @@ const CustomerContext = createContext<CustomerContextType | undefined>(undefined
 export function CustomerProvider({ children }: { children: React.ReactNode }) {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate loading demo customers
+    // Load demo customers
     const demoCustomers: Customer[] = [
       {
         id: "1",
-        name: "Provincie Noord-Brabant",
-        address: "Brabantlaan 1, 5216 TV 's-Hertogenbosch",
-        contactPerson: "Jan van der Berg",
-        email: "j.vandenberg@brabant.nl",
-        phone: "073-681 2812",
-        status: "active",
-        modules: ["bhv-team", "plotkaart", "incidenten", "bezoekers"],
+        name: "Demo Bedrijf BV",
+        email: "info@demobedrijf.nl",
+        phone: "+31 20 123 4567",
+        address: "Hoofdstraat 123, 1000 AB Amsterdam",
+        contactPerson: "Jan de Vries",
+        createdAt: "2024-01-15T10:00:00Z",
+        users: 25,
+        buildings: 3,
       },
       {
         id: "2",
-        name: "Gemeente Eindhoven",
-        address: "Stadhuisplein 10, 5611 EM Eindhoven",
+        name: "Veiligheid Eerst BV",
+        email: "contact@veiligheideerst.nl",
+        phone: "+31 30 987 6543",
+        address: "Veiligheidsweg 456, 3500 CD Utrecht",
         contactPerson: "Maria Janssen",
-        email: "m.janssen@eindhoven.nl",
-        phone: "040-238 0000",
-        status: "active",
-        modules: ["bhv-team", "plotkaart", "analytics"],
+        createdAt: "2024-02-20T14:30:00Z",
+        users: 45,
+        buildings: 5,
       },
       {
         id: "3",
-        name: "Philips Healthcare",
-        address: "Veenpluis 4-6, 5684 PC Best",
-        contactPerson: "Robert de Vries",
-        email: "robert.devries@philips.com",
-        phone: "040-276 9111",
-        status: "active",
-        modules: ["bhv-team", "plotkaart", "incidenten", "bezoekers", "analytics", "mobile-app"],
+        name: "BHV Partners",
+        email: "info@bhvpartners.nl",
+        phone: "+31 10 555 7890",
+        address: "Partnerslaan 789, 3000 EF Rotterdam",
+        contactPerson: "Piet van der Berg",
+        createdAt: "2024-03-10T09:15:00Z",
+        users: 12,
+        buildings: 2,
       },
     ]
 
-    setTimeout(() => {
-      setCustomers(demoCustomers)
-      setSelectedCustomer(demoCustomers[0]) // Auto-select first customer
-      setLoading(false)
-    }, 500)
+    setCustomers(demoCustomers)
+    setSelectedCustomer(demoCustomers[0])
+    setIsLoading(false)
   }, [])
+
+  const addCustomer = (customerData: Omit<Customer, "id" | "createdAt" | "users" | "buildings">) => {
+    const newCustomer: Customer = {
+      ...customerData,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      users: 0,
+      buildings: 0,
+    }
+    setCustomers((prev) => [...prev, newCustomer])
+  }
 
   return (
     <CustomerContext.Provider
@@ -76,7 +90,8 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
         customers,
         selectedCustomer,
         setSelectedCustomer,
-        loading,
+        addCustomer,
+        isLoading,
       }}
     >
       {children}

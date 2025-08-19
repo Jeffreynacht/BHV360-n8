@@ -2,131 +2,166 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-
-interface User {
-  id: string
-  email: string
-  name: string
-  role: "super_admin" | "admin" | "bhv_coordinator" | "employee" | "security" | "partner_admin"
-  company?: string
-}
+import { SupabaseAuthService, type UserProfile, supabase } from "@/lib/supabase-auth"
+import type { User } from "@supabase/supabase-js"
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  logout: () => void
-  isLoading: boolean
+  profile: UserProfile | null
+  loading: boolean
+  signUp: (email: string, password: string, userData: any) => Promise<{ success: boolean; error?: string }>
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  signOut: () => Promise<void>
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>
+  updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>
+  updateProfile: (updates: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>
   isAuthenticated: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Demo accounts for testing
-const DEMO_ACCOUNTS = [
-  {
-    id: "1",
-    email: "admin@demobedrijf.nl",
-    password: "admin123",
-    name: "Admin Demo",
-    role: "super_admin" as const,
-    company: "Demo Bedrijf BV",
-  },
-  {
-    id: "2",
-    email: "bhv@demobedrijf.nl",
-    password: "bhv123",
-    name: "BHV Coordinator",
-    role: "bhv_coordinator" as const,
-    company: "Demo Bedrijf BV",
-  },
-  {
-    id: "3",
-    email: "security@demobedrijf.nl",
-    password: "security123",
-    name: "Security Receptionist",
-    role: "security" as const,
-    company: "Demo Bedrijf BV",
-  },
-  {
-    id: "4",
-    email: "medewerker@demobedrijf.nl",
-    password: "medewerker123",
-    name: "Medewerker Demo",
-    role: "employee" as const,
-    company: "Demo Bedrijf BV",
-  },
-  {
-    id: "5",
-    email: "partner@demobedrijf.nl",
-    password: "partner123",
-    name: "Partner Admin",
-    role: "partner_admin" as const,
-    company: "Partner Bedrijf BV",
-  },
-]
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing session on mount
-    const savedUser = localStorage.getItem("bhv360_user")
-    if (savedUser) {
+    // Get initial session
+    const getInitialSession = async () => {
       try {
-        setUser(JSON.parse(savedUser))
+        const { session } = await SupabaseAuthService.getCurrentSession()
+
+        if (session?.user) {
+          setUser(session.user)
+
+          // Get user profile
+          const { success, data } = await SupabaseAuthService.getUserProfile(session.user.id)
+          if (success && data) {
+            setProfile(data)
+          }
+        }
       } catch (error) {
-        console.error("Error parsing saved user:", error)
-        localStorage.removeItem("bhv360_user")
+        console.error("Error getting initial session:", error)
+      } finally {
+        setLoading(false)
       }
     }
-    setIsLoading(false)
+
+    getInitialSession()
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.email)
+
+      if (event === "SIGNED_IN" && session?.user) {
+        setUser(session.user)
+
+        // Get user profile
+        const { success, data } = await SupabaseAuthService.getUserProfile(session.user.id)
+        if (success && data) {
+          setProfile(data)
+        }
+      } else if (event === "SIGNED_OUT") {
+        setUser(null)
+        setProfile(null)
+      } else if (event === "TOKEN_REFRESHED" && session?.user) {
+        setUser(session.user)
+      }
+
+      setLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    setIsLoading(true)
-
+  const signUp = async (email: string, password: string, userData: any) => {
+    setLoading(true)
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Find matching demo account
-      const account = DEMO_ACCOUNTS.find((acc) => acc.email === email && acc.password === password)
-
-      if (!account) {
-        setIsLoading(false)
-        return { success: false, error: "Ongeldige inloggegevens" }
-      }
-
-      const user: User = {
-        id: account.id,
-        email: account.email,
-        name: account.name,
-        role: account.role,
-        company: account.company,
-      }
-
-      setUser(user)
-      localStorage.setItem("bhv360_user", JSON.stringify(user))
-      setIsLoading(false)
-
-      return { success: true }
+      const result = await SupabaseAuthService.signUp(email, password, userData)
+      return { success: result.success, error: result.error }
     } catch (error) {
-      setIsLoading(false)
-      return { success: false, error: "Er is een fout opgetreden bij het inloggen" }
+      return { success: false, error: "An unexpected error occurred" }
+    } finally {
+      setLoading(false)
     }
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem("bhv360_user")
+  const signIn = async (email: string, password: string) => {
+    setLoading(true)
+    try {
+      const result = await SupabaseAuthService.signIn(email, password)
+
+      if (result.success && result.user) {
+        setUser(result.user)
+        if (result.profile) {
+          setProfile(result.profile)
+        }
+        return { success: true }
+      }
+
+      return { success: false, error: result.error }
+    } catch (error) {
+      return { success: false, error: "An unexpected error occurred" }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const signOut = async () => {
+    setLoading(true)
+    try {
+      await SupabaseAuthService.signOut()
+      setUser(null)
+      setProfile(null)
+    } catch (error) {
+      console.error("Logout error:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const resetPassword = async (email: string) => {
+    return await SupabaseAuthService.resetPassword(email)
+  }
+
+  const updatePassword = async (newPassword: string) => {
+    return await SupabaseAuthService.updatePassword(newPassword)
+  }
+
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user) {
+      return { success: false, error: "No user logged in" }
+    }
+
+    setLoading(true)
+    try {
+      const result = await SupabaseAuthService.updateUserProfile(user.id, updates)
+
+      if (result.success && result.data) {
+        setProfile(result.data)
+        return { success: true }
+      }
+
+      return { success: false, error: result.error }
+    } catch (error) {
+      return { success: false, error: "An unexpected error occurred" }
+    } finally {
+      setLoading(false)
+    }
   }
 
   const value: AuthContextType = {
     user,
-    login,
-    logout,
-    isLoading,
+    profile,
+    loading,
+    signUp,
+    signIn,
+    signOut,
+    resetPassword,
+    updatePassword,
+    updateProfile,
     isAuthenticated: !!user,
   }
 

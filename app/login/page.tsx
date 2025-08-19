@@ -4,130 +4,115 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Loader2, Shield, Users, UserCheck, Building } from "lucide-react"
-
-const DEMO_ACCOUNTS = [
-  {
-    email: "admin@demobedrijf.nl",
-    password: "admin123",
-    name: "Super Admin",
-    role: "Super Administrator",
-    icon: Shield,
-    color: "bg-red-500",
-    description: "Volledige toegang tot alle functies",
-  },
-  {
-    email: "bhv@demobedrijf.nl",
-    password: "bhv123",
-    name: "BHV Coordinator",
-    role: "BHV Coördinator",
-    icon: UserCheck,
-    color: "bg-blue-500",
-    description: "BHV team management en planning",
-  },
-  {
-    email: "security@demobedrijf.nl",
-    password: "security123",
-    name: "Security",
-    role: "Beveiliging/Receptie",
-    icon: Shield,
-    color: "bg-green-500",
-    description: "Bezoekers en aannemers beheer",
-  },
-  {
-    email: "medewerker@demobedrijf.nl",
-    password: "medewerker123",
-    name: "Medewerker",
-    role: "Medewerker",
-    icon: Users,
-    color: "bg-gray-500",
-    description: "Basis toegang voor medewerkers",
-  },
-]
+import { Loader2, Eye, EyeOff } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
-  const { login, isLoading } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
+
+  const { signIn } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setIsLoading(true)
 
-    const result = await login(email, password)
+    try {
+      const { success, error } = await signIn(email, password)
 
-    if (result.success) {
-      // Redirect based on role
-      if (email === "security@demobedrijf.nl") {
-        router.push("/dashboards/security-receptionist")
-      } else if (email === "admin@demobedrijf.nl") {
-        router.push("/dashboards/super-admin")
-      } else if (email === "bhv@demobedrijf.nl") {
-        router.push("/dashboards/bhv-coordinator")
-      } else {
+      if (success) {
         router.push("/dashboard")
+      } else {
+        setError(error || "Login failed")
       }
-    } else {
-      setError(result.error || "Inloggen mislukt")
+    } catch (error) {
+      setError("An unexpected error occurred")
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleDemoLogin = (demoEmail: string, demoPassword: string) => {
-    setEmail(demoEmail)
-    setPassword(demoPassword)
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="w-full max-w-4xl grid md:grid-cols-2 gap-8">
-        {/* Login Form */}
-        <Card className="w-full">
-          <CardHeader className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <Building className="h-8 w-8 text-blue-600 mr-2" />
-              <span className="text-2xl font-bold text-blue-600">BHV360</span>
-            </div>
-            <CardTitle className="text-2xl">Welkom terug</CardTitle>
-            <CardDescription>Log in om toegang te krijgen tot uw BHV dashboard</CardDescription>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Inloggen bij BHV360</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Of{" "}
+            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+              maak een nieuw account aan
+            </Link>
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Welkom terug</CardTitle>
+            <CardDescription>Voer je gegevens in om in te loggen</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mailadres</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="naam@bedrijf.nl"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Wachtwoord</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-
+            <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
+
+              <div>
+                <Label htmlFor="email">E-mailadres</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="je@bedrijf.nl"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="password">Wachtwoord</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-500">
+                  Wachtwoord vergeten?
+                </Link>
+              </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
@@ -140,45 +125,25 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
-          </CardContent>
-        </Card>
 
-        {/* Demo Accounts */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Demo Accounts</CardTitle>
-            <CardDescription>Klik op een account om automatisch in te loggen</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {DEMO_ACCOUNTS.map((account) => {
-              const IconComponent = account.icon
-              return (
-                <div
-                  key={account.email}
-                  className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => handleDemoLogin(account.email, account.password)}
-                >
-                  <div className="flex items-start space-x-3">
-                    <div className={`p-2 rounded-full ${account.color} text-white`}>
-                      <IconComponent className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="font-medium text-sm">{account.name}</h3>
-                        <Badge variant="secondary" className="text-xs">
-                          {account.role}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-gray-600 mb-2">{account.description}</p>
-                      <div className="text-xs text-gray-500">
-                        <div>{account.email}</div>
-                        <div>Wachtwoord: {account.password}</div>
-                      </div>
-                    </div>
-                  </div>
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
                 </div>
-              )
-            })}
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">Of</span>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <Link href="/demo">
+                  <Button variant="outline" className="w-full bg-transparent">
+                    Probeer de demo
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

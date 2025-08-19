@@ -1,6 +1,6 @@
 // Re-export all UI components for easier imports
-export { Button, buttonVariants } from "./ui/button"
-export { Badge, badgeVariants } from "./ui/badge"
+export { Button } from "./ui/button"
+export { Badge } from "./ui/badge"
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "./ui/card"
 export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from "./ui/table"
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"
@@ -43,165 +43,40 @@ export {
 export { Toaster } from "./ui/toaster"
 
 // Re-export other commonly used UI components
-export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
-export { Alert, AlertDescription, AlertTitle } from "./ui/alert"
-export { AspectRatio } from "./ui/aspect-ratio"
-export { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-export {
-  Breadcrumb,
-  BreadcrumbEllipsis,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "./ui/breadcrumb"
-export { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "./ui/carousel"
-export { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "./ui/chart"
-export { Checkbox } from "./ui/checkbox"
-export { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible"
-export {
-  Command,
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-  CommandShortcut,
-} from "./ui/command"
-export {
-  ContextMenu,
-  ContextMenuCheckboxItem,
-  ContextMenuContent,
-  ContextMenuGroup,
-  ContextMenuItem,
-  ContextMenuLabel,
-  ContextMenuPortal,
-  ContextMenuRadioGroup,
-  ContextMenuRadioItem,
-  ContextMenuSeparator,
-  ContextMenuShortcut,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger,
-} from "./ui/context-menu"
-export {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog"
-export {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerOverlay,
-  DrawerPortal,
-  DrawerTitle,
-  DrawerTrigger,
-} from "./ui/drawer"
-export {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuPortal,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu"
-export { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "./ui/form"
-export { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card"
-export { Input } from "./ui/input"
-export { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "./ui/input-otp"
-export { Label } from "./ui/label"
-export {
-  Menubar,
-  MenubarCheckboxItem,
-  MenubarContent,
-  MenubarItem,
-  MenubarLabel,
-  MenubarMenu,
-  MenubarRadioGroup,
-  MenubarRadioItem,
-  MenubarSeparator,
-  MenubarShortcut,
-  MenubarSub,
-  MenubarSubContent,
-  MenubarSubTrigger,
-  MenubarTrigger,
-} from "./ui/menubar"
-export {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuIndicator,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  NavigationMenuViewport,
-} from "./ui/navigation-menu"
-export {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "./ui/pagination"
-export { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
-export { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "./ui/resizable"
-export { ScrollArea, ScrollBar } from "./ui/scroll-area"
-export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-export { Separator } from "./ui/separator"
-export {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupAction,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInput,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuBadge,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSkeleton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarProvider,
-  SidebarRail,
-  SidebarSeparator,
-  SidebarTrigger,
-  useSidebar,
-} from "./ui/sidebar"
-export { Skeleton } from "./ui/skeleton"
-export { Slider } from "./ui/slider"
-export { Sonner } from "./ui/sonner"
-export { Switch } from "./ui/switch"
-export { Textarea } from "./ui/textarea"
-export { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group"
-export { Toggle } from "./ui/toggle"
-export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
+export * from "./ui/accordion"
+export * from "./ui/alert"
+export * from "./ui/aspect-ratio"
+export * from "./ui/avatar"
+export * from "./ui/breadcrumb"
+export * from "./ui/carousel"
+export * from "./ui/chart"
+export * from "./ui/checkbox"
+export * from "./ui/collapsible"
+export * from "./ui/command"
+export * from "./ui/context-menu"
+export * from "./ui/dialog"
+export * from "./ui/drawer"
+export * from "./ui/dropdown-menu"
+export * from "./ui/form"
+export * from "./ui/hover-card"
+export * from "./ui/input"
+export * from "./ui/input-otp"
+export * from "./ui/label"
+export * from "./ui/menubar"
+export * from "./ui/navigation-menu"
+export * from "./ui/pagination"
+export * from "./ui/popover"
+export * from "./ui/resizable"
+export * from "./ui/scroll-area"
+export * from "./ui/select"
+export * from "./ui/separator"
+export * from "./ui/sidebar"
+export * from "./ui/skeleton"
+export * from "./ui/slider"
+export * from "./ui/sonner"
+export * from "./ui/switch"
+export * from "./ui/textarea"
+export * from "./ui/toggle"
+export * from "./ui/toggle-group"
+export * from "./ui/tooltip"
+export * from "./ui/use-mobile"

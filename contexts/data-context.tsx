@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useAuth } from "./auth-context"
+import type { Customer } from "@/components/customer-context"
 
 // Types
 interface PlotkaartElement {
@@ -102,16 +103,6 @@ interface PlotkaartData {
   }
 }
 
-interface Customer {
-  id: string
-  name: string
-  address: string
-  contactPerson: string
-  email: string
-  phone: string
-  isActive: boolean
-}
-
 interface User {
   id: string
   name: string
@@ -121,8 +112,9 @@ interface User {
   isActive: boolean
 }
 
-interface DataContextType {
+export interface DataContextType {
   data: any
+  setData: (data: any) => void
   loading: boolean
   error: string | null
   refreshData: () => Promise<void>
@@ -147,6 +139,13 @@ interface DataContextType {
   updateUser: (user: User) => Promise<boolean>
   createUser: (user: Omit<User, "id">) => Promise<string>
   deleteUser: (id: string) => Promise<boolean>
+
+  // NFC Tag functions
+  nfcTags: any[]
+  getNfcTagsByCustomer: (customerId: string) => Promise<any[]>
+  addNfcTag: (tagData: any, customerId: string) => Promise<any>
+  updateNfcTag: (tagId: string, tagData: any) => Promise<any>
+  deleteNfcTag: (tagId: string) => Promise<boolean>
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
@@ -788,6 +787,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
+  const [nfcTags, setNfcTags] = useState<any[]>([])
   const { user } = useAuth()
 
   const refreshData = async () => {
@@ -1149,8 +1149,54 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // NFC Tag functions
+  const getNfcTagsByCustomer = async (customerId: string) => {
+    // Replace with actual data fetching logic
+    return new Promise<any[]>((resolve) => {
+      setTimeout(() => {
+        const mockTags = [
+          { id: "1", name: "Tag 1", uid: "123", customerId: customerId },
+          { id: "2", name: "Tag 2", uid: "456", customerId: customerId },
+        ]
+        resolve(mockTags.filter((tag) => tag.customerId === customerId))
+      }, 200)
+    })
+  }
+
+  const addNfcTag = async (tagData: any, customerId: string) => {
+    // Replace with actual data adding logic
+    return new Promise<any>((resolve) => {
+      setTimeout(() => {
+        const newTag = { ...tagData, id: Date.now().toString(), customerId: customerId }
+        setNfcTags((prevTags) => [...prevTags, newTag])
+        resolve(newTag)
+      }, 200)
+    })
+  }
+
+  const updateNfcTag = async (tagId: string, tagData: any) => {
+    // Replace with actual data updating logic
+    return new Promise<any>((resolve) => {
+      setTimeout(() => {
+        setNfcTags((prevTags) => prevTags.map((tag) => (tag.id === tagId ? { ...tag, ...tagData } : tag)))
+        resolve({ id: tagId, ...tagData })
+      }, 200)
+    })
+  }
+
+  const deleteNfcTag = async (tagId: string) => {
+    // Replace with actual data deleting logic
+    return new Promise<boolean>((resolve) => {
+      setTimeout(() => {
+        setNfcTags((prevTags) => prevTags.filter((tag) => tag.id !== tagId))
+        resolve(true)
+      }, 200)
+    })
+  }
+
   const value: DataContextType = {
     data,
+    setData,
     loading,
     error,
     refreshData,
@@ -1175,6 +1221,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     updateUser,
     createUser,
     deleteUser,
+
+    // NFC Tag functions
+    nfcTags,
+    getNfcTagsByCustomer,
+    addNfcTag,
+    updateNfcTag,
+    deleteNfcTag,
   }
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
@@ -1189,4 +1242,4 @@ export function useData() {
 }
 
 // Export types
-export type { PlotkaartElement, FloorData, PlotkaartData, Customer, User }
+export type { PlotkaartElement, FloorData, PlotkaartData, User }
