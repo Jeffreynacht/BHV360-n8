@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverActions: true,
-  },
-  output: "export",
+  output: 'export',
+  trailingSlash: true,
+  skipTrailingSlashRedirect: true,
+  distDir: 'out',
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -13,6 +13,18 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Remove the experimental.serverActions since it's no longer needed
+  experimental: {
+    // serverActions: true, // Remove this line
+  },
+  // Disable API routes for static export
+  async rewrites() {
+    return []
+  },
+  // Handle dynamic routes for static export
+  async generateStaticParams() {
+    return []
+  }
 }
 
 export default nextConfig

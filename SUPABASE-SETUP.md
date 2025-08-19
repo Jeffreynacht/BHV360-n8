@@ -1,142 +1,121 @@
-# BHV360 Supabase Authentication Setup Guide
+# Supabase Setup Guide for BHV360
 
 This guide will help you set up Supabase authentication for the BHV360 application.
 
 ## 1. Create Supabase Project
 
 1. Go to [supabase.com](https://supabase.com)
-2. Click "Start your project"
-3. Create a new organization or use existing
-4. Create a new project:
-   - Name: `BHV360 Production`
+2. Sign up or log in to your account
+3. Click "New Project"
+4. Choose your organization
+5. Fill in project details:
+   - Name: `BHV360`
    - Database Password: Generate a strong password
    - Region: Choose closest to your users
+6. Click "Create new project"
 
-## 2. Configure Environment Variables
+## 2. Get Project Credentials
 
-Copy `.env.example` to `.env.local` and fill in your Supabase credentials:
+Once your project is created:
 
-\`\`\`bash
-cp .env.example .env.local
+1. Go to Settings → API
+2. Copy the following values:
+   - **Project URL** (NEXT_PUBLIC_SUPABASE_URL)
+   - **anon public** key (NEXT_PUBLIC_SUPABASE_ANON_KEY)
+   - **service_role** key (SUPABASE_SERVICE_ROLE_KEY)
+
+## 3. Configure Environment Variables
+
+Create a `.env.local` file in your project root:
+
+\`\`\`env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 \`\`\`
 
-Get your credentials from Supabase Dashboard > Settings > API:
-- `NEXT_PUBLIC_SUPABASE_URL`: Your project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your anon/public key
-- `SUPABASE_SERVICE_ROLE_KEY`: Your service role key (keep secret!)
+## 4. Set up Database Schema
 
-## 3. Run Database Setup
+1. Go to your Supabase project dashboard
+2. Click on "SQL Editor" in the sidebar
+3. Create a new query
+4. Copy and paste the contents of `scripts/supabase-auth-setup.sql`
+5. Click "Run" to execute the schema
 
-1. Go to Supabase Dashboard > SQL Editor
-2. Copy and paste the contents of `scripts/supabase-auth-setup.sql`
-3. Click "Run" to execute the script
+## 5. Configure Authentication
 
-This will create:
-- User profiles table with proper RLS policies
-- Customers table for multi-tenancy
-- Authentication triggers and functions
-- Sample data for testing
-
-## 4. Configure Authentication Settings
-
-In Supabase Dashboard > Authentication > Settings:
+1. Go to Authentication → Settings
+2. Configure the following:
 
 ### Site URL
-- Set to your production domain: `https://yourdomain.com`
-- For development: `http://localhost:3000`
+- Set to: `http://localhost:3000` (development)
+- For production: `https://yourdomain.com`
 
 ### Redirect URLs
-Add these URLs to allowed redirects:
-- `https://yourdomain.com/auth/callback`
-- `https://yourdomain.com/reset-password`
-- `http://localhost:3000/auth/callback` (development)
-- `http://localhost:3000/reset-password` (development)
+Add these URLs:
+- `http://localhost:3000/auth/callback`
+- `https://yourdomain.com/auth/callback` (production)
 
-### Email Templates
-The setup script includes Dutch email templates. You can customize them in:
-Authentication > Email Templates
+### Email Templates (Optional)
+Customize the email templates for:
+- Confirm signup
+- Reset password
+- Magic link
 
-### Auth Providers
-Enable/disable providers as needed:
-- Email (enabled by default)
-- Google, GitHub, etc. (optional)
+## 6. Enable Row Level Security
 
-## 5. Test Authentication
+The provided SQL schema automatically enables RLS. Verify:
 
-1. Start your development server:
-   \`\`\`bash
-   npm run dev
-   \`\`\`
+1. Go to Database → Tables
+2. Check that RLS is enabled on all tables
+3. Review the policies in Database → Policies
 
-2. Navigate to `/register` to create a test account
-3. Check your email for confirmation
-4. Try logging in at `/login`
+## 7. Test the Setup
 
-## 6. User Roles and Permissions
-
-The system supports these roles:
-- `super_admin`: Full system access
-- `admin`: Customer-level administration
-- `bhv_coordinator`: BHV team management
-- `employee`: Basic user access
-- `security`: Security-specific features
-- `partner_admin`: Partner management
-
-## 7. Multi-Tenant Setup
-
-Each user belongs to a customer organization. The system automatically:
-- Creates customers for new users
-- Enforces data isolation via RLS policies
-- Manages user permissions per customer
+1. Start your development server: `npm run dev`
+2. Navigate to `/register`
+3. Create a test account
+4. Check your email for verification
+5. Try logging in at `/login`
 
 ## 8. Production Deployment
 
-Before going live:
+For production deployment:
 
-1. Update environment variables in your hosting platform
-2. Set proper CORS origins in Supabase
-3. Configure custom SMTP for emails (optional)
-4. Set up monitoring and logging
-5. Test all authentication flows
+1. Update environment variables with production URLs
+2. Configure custom domain in Supabase (if needed)
+3. Update redirect URLs in Supabase Auth settings
+4. Enable email confirmations in production
 
-## 9. Troubleshooting
+## Troubleshooting
 
-### Common Issues:
+### Common Issues
 
-**"Invalid login credentials"**
-- Check if user confirmed their email
-- Verify password requirements
-- Check Supabase logs
+1. **"Invalid API key"**
+   - Check that environment variables are correctly set
+   - Ensure no extra spaces in the keys
 
-**RLS Policy Errors**
-- Ensure user has proper role assigned
-- Check customer_id associations
-- Verify policy conditions
+2. **"Email not confirmed"**
+   - Check spam folder
+   - Verify email templates are configured
+   - Check Supabase logs
 
-**Email Not Sending**
-- Check SMTP configuration
-- Verify email templates
-- Check Supabase email settings
+3. **RLS Policy Errors**
+   - Verify policies are correctly applied
+   - Check user roles and permissions
 
-### Debug Mode:
-Enable debug logging by setting:
-\`\`\`bash
-NEXT_PUBLIC_DEBUG=true
-\`\`\`
+### Support
 
-## 10. Security Best Practices
+If you encounter issues:
+1. Check Supabase logs in Dashboard → Logs
+2. Review browser console for errors
+3. Verify database schema is correctly applied
 
-- Never expose service role key in client code
-- Use environment variables for all secrets
-- Enable RLS on all tables
+## Security Notes
+
+- Never commit `.env.local` to version control
+- Use strong passwords for service role keys
+- Enable MFA for your Supabase account
 - Regularly rotate API keys
-- Monitor authentication logs
-- Set up proper CORS policies
-
-## Support
-
-For issues with this setup:
-1. Check Supabase documentation
-2. Review application logs
-3. Test with demo data first
-4. Contact support if needed
+- Monitor authentication logs for suspicious activity

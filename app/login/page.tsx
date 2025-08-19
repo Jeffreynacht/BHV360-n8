@@ -2,151 +2,160 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Eye, EyeOff } from "lucide-react"
+import { Shield, Eye, EyeOff } from "lucide-react"
+import Link from "next/link"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-
-  const { signIn } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const { signIn, user, isLoading } = useAuth()
   const router = useRouter()
+
+  useEffect(() => {
+    if (user && !isLoading) {
+      router.push("/dashboard")
+    }
+  }, [user, isLoading, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    setIsLoading(true)
+    setLoading(true)
 
     try {
-      const { success, error } = await signIn(email, password)
+      const { error } = await signIn(email, password)
 
-      if (success) {
-        router.push("/dashboard")
+      if (error) {
+        setError(error.message || "Er is een fout opgetreden bij het inloggen")
       } else {
-        setError(error || "Login failed")
+        router.push("/dashboard")
       }
-    } catch (error) {
-      setError("An unexpected error occurred")
+    } catch (err) {
+      setError("Er is een onverwachte fout opgetreden")
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (user) {
+    return null // Will redirect to dashboard
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Inloggen bij BHV360</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Of{" "}
-            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              maak een nieuw account aan
-            </Link>
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="flex items-center justify-center mb-4">
+            <Shield className="h-8 w-8 text-blue-600 mr-2" />
+            <span className="text-2xl font-bold">BHV360</span>
+          </div>
+          <CardTitle>Welkom terug</CardTitle>
+          <CardDescription>Log in op uw BHV360 account</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Welkom terug</CardTitle>
-            <CardDescription>Voer je gegevens in om in te loggen</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+            <div className="space-y-2">
+              <Label htmlFor="email">E-mailadres</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="uw.email@bedrijf.nl"
+                required
+                disabled={loading}
+              />
+            </div>
 
-              <div>
-                <Label htmlFor="email">E-mailadres</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="je@bedrijf.nl"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="password">Wachtwoord</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-500">
-                  Wachtwoord vergeten?
-                </Link>
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Inloggen...
-                  </>
-                ) : (
-                  "Inloggen"
-                )}
-              </Button>
-            </form>
-
-            <div className="mt-6">
+            <div className="space-y-2">
+              <Label htmlFor="password">Wachtwoord</Label>
               <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Of</span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <Link href="/demo">
-                  <Button variant="outline" className="w-full bg-transparent">
-                    Probeer de demo
-                  </Button>
-                </Link>
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Uw wachtwoord"
+                  required
+                  disabled={loading}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Bezig met inloggen..." : "Inloggen"}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center space-y-2">
+            <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+              Wachtwoord vergeten?
+            </Link>
+            <div className="text-sm text-gray-600">
+              Nog geen account?{" "}
+              <Link href="/register" className="text-blue-600 hover:underline">
+                Registreer hier
+              </Link>
+            </div>
+          </div>
+
+          {/* Demo Login */}
+          <div className="mt-6 pt-6 border-t">
+            <div className="text-center text-sm text-gray-600 mb-4">Demo Account</div>
+            <div className="space-y-2 text-xs text-gray-500">
+              <div>Email: demo@bhv360.nl</div>
+              <div>Wachtwoord: demo123</div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full mt-2 bg-transparent"
+              onClick={() => {
+                setEmail("demo@bhv360.nl")
+                setPassword("demo123")
+              }}
+              disabled={loading}
+            >
+              Demo Inloggegevens Gebruiken
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

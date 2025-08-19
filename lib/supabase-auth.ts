@@ -1,49 +1,125 @@
 import { createClient } from "@supabase/supabase-js"
+import type { User, Session } from "@supabase/supabase-js"
 
-// Supabase configuration
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+// Supabase configuration with fallbacks for development
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://ybxmvuzgqevqpusimgmm.supabase.co"
+const supabaseAnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlieG12dXpncWV2cXB1c2ltZ21tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NDk4NDEsImV4cCI6MjA2NjMyNTg0MX0.MFB7ytqPId2c3HEm5KyK2RFZCO-cBrpmiO-FwHJXSv4"
+const supabaseServiceKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlieG12dXpncWV2cXB1c2ltZ21tIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDc0OTg0MSwiZXhwIjoyMDY2MzI1ODQxfQ.9sDOiFEbnx4hn69ay6P9J-YTaC_2DTBWiFSGRDul7dI"
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase environment variables")
+// Validate required environment variables
+if (!supabaseUrl) {
+  console.error("Missing NEXT_PUBLIC_SUPABASE_URL environment variable")
+}
+
+if (!supabaseAnonKey) {
+  console.error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable")
 }
 
 // Client-side Supabase client (singleton pattern)
 let supabaseClient: any = null
 
 export const supabase = (() => {
-  if (!supabaseClient) {
-    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        flowType: "pkce",
-      },
-      db: {
-        schema: "public",
-      },
-      global: {
-        headers: {
-          "X-Client-Info": "bhv360-production-v2.0",
+  if (!supabaseClient && supabaseUrl && supabaseAnonKey) {
+    try {
+      supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          flowType: "pkce",
         },
-      },
-    })
+        db: {
+          schema: "public",
+        },
+        global: {
+          headers: {
+            "X-Client-Info": "bhv360-production-v2.0",
+          },
+        },
+      })
+    } catch (error) {
+      console.error("Failed to initialize Supabase client:", error)
+      // Return a mock client for development
+      return createMockSupabaseClient()
+    }
   }
-  return supabaseClient
+
+  return supabaseClient || createMockSupabaseClient()
 })()
 
 // Server-side admin client
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-  db: {
-    schema: "public",
-  },
-})
+export const supabaseAdmin = (() => {
+  if (supabaseUrl && supabaseServiceKey) {
+    try {
+      return createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+        db: {
+          schema: "public",
+        },
+      })
+    } catch (error) {
+      console.error("Failed to initialize Supabase admin client:", error)
+      return createMockSupabaseClient()
+    }
+  }
+  return createMockSupabaseClient()
+})()
+
+// Mock Supabase client for development/fallback
+function createMockSupabaseClient() {
+  return {
+    auth: {
+      signUp: async () => ({ data: null, error: { message: "Supabase not configured" } }),
+      signInWithPassword: async () => ({ data: null, error: { message: "Supabase not configured" } }),
+      signOut: async () => ({ error: null }),
+      getSession: async () => ({ data: { session: null }, error: null }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      resetPasswordForEmail: async () => ({ data: null, error: { message: "Supabase not configured" } }),
+      updateUser: async () => ({ data: null, error: { message: "Supabase not configured" } }),
+    },
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          single: async () => ({ data: null, error: { message: "Supabase not configured" } }),
+          order: async () => ({ data: [], error: null }),
+        }),
+        limit: async () => ({ data: [], error: null }),
+        order: async () => ({ data: [], error: null }),
+      }),
+      insert: () => ({
+        select: () => ({
+          single: async () => ({ data: null, error: { message: "Supabase not configured" } }),
+        }),
+      }),
+      update: () => ({
+        eq: () => ({
+          select: () => ({
+            single: async () => ({ data: null, error: { message: "Supabase not configured" } }),
+          }),
+        }),
+      }),
+    }),
+  }
+}
+
+export type AuthUser = User & {
+  user_metadata?: {
+    name?: string
+    role?: string
+    customer_id?: string
+  }
+}
+
+export interface AuthSession extends Session {
+  user: AuthUser
+}
 
 // Database types
 export interface UserProfile {
@@ -106,14 +182,7 @@ export class SupabaseAuthService {
         email,
         password,
         options: {
-          data: {
-            name: userData.name,
-            role: userData.role || "employee",
-            company: userData.company,
-            department: userData.department,
-            phone: userData.phone,
-            customer_id: userData.customer_id,
-          },
+          data: userData,
         },
       })
 
@@ -228,11 +297,11 @@ export class SupabaseAuthService {
   // Reset password
   static async resetPassword(email: string) {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
       })
 
-      return { success: !error, error: error?.message }
+      return { data, error }
     } catch (error) {
       return { success: false, error: "An unexpected error occurred" }
     }
@@ -241,11 +310,11 @@ export class SupabaseAuthService {
   // Update password
   static async updatePassword(newPassword: string) {
     try {
-      const { error } = await supabase.auth.updateUser({
+      const { data, error } = await supabase.auth.updateUser({
         password: newPassword,
       })
 
-      return { success: !error, error: error?.message }
+      return { data, error }
     } catch (error) {
       return { success: false, error: "An unexpected error occurred" }
     }
