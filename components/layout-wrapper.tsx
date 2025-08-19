@@ -2,28 +2,30 @@
 
 import type React from "react"
 
-import { usePathname } from "next/navigation"
-import { SidebarProvider } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/app-sidebar"
+import { useCustomer } from "@/components/customer-context"
+import { NoCustomerSelected } from "@/components/no-customer-selected"
 
-interface LayoutWrapperProps {
-  children: React.ReactNode
-}
+export function LayoutWrapper({ children }: { children: React.ReactNode }) {
+  const { selectedCustomer, isLoading } = useCustomer()
 
-export function LayoutWrapper({ children }: LayoutWrapperProps) {
-  const pathname = usePathname()
-  const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password"
-
-  if (isAuthPage) {
-    return <main className="min-h-screen w-full">{children}</main>
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    )
   }
 
-  return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <AppSidebar />
-        <main className="flex-1 overflow-auto">{children}</main>
-      </div>
-    </SidebarProvider>
-  )
+  // Show customer selection for admin/management pages
+  const isAdminPage =
+    typeof window !== "undefined" &&
+    (window.location.pathname.startsWith("/beheer") ||
+      window.location.pathname.startsWith("/admin") ||
+      window.location.pathname.startsWith("/super-admin"))
+
+  if (isAdminPage && !selectedCustomer) {
+    return <NoCustomerSelected />
+  }
+
+  return <>{children}</>
 }

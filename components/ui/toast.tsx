@@ -30,7 +30,7 @@ const toastVariants = cva(
     variants: {
       variant: {
         default: "border bg-background text-foreground",
-        destructive: "destructive group border-destructive bg-destructive text-destructive-foreground",
+        destructive: "destructive border-destructive bg-destructive text-destructive-foreground",
       },
     },
     defaultVariants: {
@@ -100,6 +100,22 @@ type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>
 
 type ToastActionElement = React.ReactElement<typeof ToastAction>
 
+// Toast function for programmatic usage
+const toast = ({
+  title,
+  description,
+  variant = "default",
+  ...props
+}: {
+  title?: string
+  description?: string
+  variant?: "default" | "destructive"
+  [key: string]: any
+}) => {
+  // This is a simple implementation - in a real app you'd integrate with a toast system
+  console.log("Toast:", { title, description, variant, ...props })
+}
+
 export {
   type ToastProps,
   type ToastActionElement,
@@ -110,11 +126,5 @@ export {
   ToastDescription,
   ToastClose,
   ToastAction,
-}
-
-// Export the toast function for use in components
-export const toast = (props: ToastProps) => {
-  // This is a placeholder implementation
-  // In a real app, this would integrate with your toast system
-  console.log("Toast:", props)
+  toast,
 }

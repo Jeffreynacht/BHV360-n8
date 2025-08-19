@@ -298,12 +298,12 @@ export default function SecurityReceptionistDashboard() {
   const allMessageablePeople = [...messageableVisitors, ...messageableContractors]
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Beveiliging & Receptie Dashboard</h1>
-          <p className="text-muted-foreground">Beheer bezoekers, monteurs en toegangscontrole</p>
+          <h1 className="text-3xl font-bold text-gray-900">Beveiliging & Receptie Dashboard</h1>
+          <p className="text-gray-600">Beheer bezoekers, monteurs en toegangscontrole</p>
           <div className="flex items-center space-x-2 mt-2">
             <Badge variant="secondary" className="bg-blue-100 text-blue-800">
               <Shield className="h-3 w-3 mr-1" />
@@ -336,52 +336,52 @@ export default function SecurityReceptionistDashboard() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
+        <Card className="bg-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Huidige Bezoekers</p>
+                <p className="text-sm font-medium text-gray-600">Huidige Bezoekers</p>
                 <p className="text-2xl font-bold text-green-600">{currentVisitors}</p>
-                <p className="text-xs text-muted-foreground">In het gebouw</p>
+                <p className="text-xs text-gray-500">In het gebouw</p>
               </div>
               <Users className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Actieve Monteurs</p>
+                <p className="text-sm font-medium text-gray-600">Actieve Monteurs</p>
                 <p className="text-2xl font-bold text-blue-600">{currentContractors}</p>
-                <p className="text-xs text-muted-foreground">Aan het werk</p>
+                <p className="text-xs text-gray-500">Aan het werk</p>
               </div>
               <Building className="h-8 w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Totaal Vandaag</p>
-                <p className="text-2xl font-bold">{totalToday}</p>
-                <p className="text-xs text-muted-foreground">Registraties</p>
+                <p className="text-sm font-medium text-gray-600">Totaal Vandaag</p>
+                <p className="text-2xl font-bold text-gray-900">{totalToday}</p>
+                <p className="text-xs text-gray-500">Registraties</p>
               </div>
               <FileText className="h-8 w-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Berichten Vandaag</p>
+                <p className="text-sm font-medium text-gray-600">Berichten Vandaag</p>
                 <p className="text-2xl font-bold text-orange-600">12</p>
-                <p className="text-xs text-muted-foreground">Verzonden</p>
+                <p className="text-xs text-gray-500">Verzonden</p>
               </div>
               <MessageSquare className="h-8 w-8 text-orange-500" />
             </div>
@@ -431,7 +431,7 @@ export default function SecurityReceptionistDashboard() {
       )}
 
       {/* Quick Actions */}
-      <Card>
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle>Snelle Acties</CardTitle>
           <CardDescription>Veelgebruikte functies voor beveiliging en receptie</CardDescription>
@@ -468,7 +468,7 @@ export default function SecurityReceptionistDashboard() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-5 bg-white">
           <TabsTrigger value="overview">Overzicht</TabsTrigger>
           <TabsTrigger value="presence">Aanwezigheid</TabsTrigger>
           <TabsTrigger value="visitors">Bezoekers</TabsTrigger>
@@ -479,7 +479,7 @@ export default function SecurityReceptionistDashboard() {
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Current Visitors */}
-            <Card>
+            <Card className="bg-white">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>Huidige Bezoekers</span>
@@ -519,7 +519,7 @@ export default function SecurityReceptionistDashboard() {
             </Card>
 
             {/* Current Contractors */}
-            <Card>
+            <Card className="bg-white">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>Actieve Monteurs</span>
@@ -565,7 +565,7 @@ export default function SecurityReceptionistDashboard() {
           </div>
 
           {/* Recent Activity */}
-          <Card>
+          <Card className="bg-white">
             <CardHeader>
               <CardTitle>Recente Activiteit</CardTitle>
             </CardHeader>
@@ -616,7 +616,7 @@ export default function SecurityReceptionistDashboard() {
                 placeholder="Zoek bezoekers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-white"
               />
             </div>
             <Link href="/visitor-registration">
@@ -638,7 +638,7 @@ export default function SecurityReceptionistDashboard() {
             )}
           </div>
 
-          <Card>
+          <Card className="bg-white">
             <CardHeader>
               <CardTitle>Alle Bezoekers</CardTitle>
               <CardDescription>Overzicht van alle geregistreerde bezoekers vandaag</CardDescription>
@@ -736,7 +736,7 @@ export default function SecurityReceptionistDashboard() {
                 placeholder="Zoek monteurs..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-white"
               />
             </div>
             <Link href="/contractor-registration">
@@ -758,7 +758,7 @@ export default function SecurityReceptionistDashboard() {
             )}
           </div>
 
-          <Card>
+          <Card className="bg-white">
             <CardHeader>
               <CardTitle>Alle Monteurs</CardTitle>
               <CardDescription>Overzicht van alle geregistreerde monteurs vandaag</CardDescription>
@@ -865,7 +865,7 @@ export default function SecurityReceptionistDashboard() {
         </TabsContent>
 
         <TabsContent value="messaging" className="space-y-4">
-          <Card>
+          <Card className="bg-white">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <MessageSquare className="h-5 w-5" />

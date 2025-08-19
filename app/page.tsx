@@ -1,47 +1,43 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
-  Shield,
+  Clock,
   Users,
   MapPin,
+  AlertTriangle,
+  BarChart3,
   Smartphone,
-  Clock,
+  Shield,
   CheckCircle,
-  ArrowRight,
   Phone,
-  Mail,
   MapIcon,
   Globe,
   Award,
   Building,
-  LogIn,
-  Play,
-  Star,
-  AlertTriangle,
-  BarChart3,
   Timer,
   Eye,
-  Download,
-  Send,
-  RefreshCw,
-  TrendingUp,
   HeadphonesIcon,
+  Play,
+  Star,
+  TrendingUp,
   Check,
   Zap,
   Crown,
+  Mail,
+  Send,
+  RefreshCw,
 } from "lucide-react"
+import type React from "react"
 import { EmailLink } from "@/components/ui/email-link"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 
 interface ContactFormData {
   name: string
@@ -53,6 +49,177 @@ interface ContactFormData {
   interest: string
   message: string
 }
+
+const demoModules = [
+  {
+    id: "bhv-team-dashboard",
+    title: "BHV Team Dashboard",
+    description: "Complete overzicht van uw BHV team, aanwezigheid, certificeringen en status monitoring",
+    difficulty: "Beginner",
+    duration: "5-10 min",
+    icon: Users,
+    features: ["Team overzicht", "Certificaat tracking", "Aanwezigheid monitoring", "Status dashboard"],
+    href: "/demo/bhv-status",
+    requiresLogin: false,
+  },
+  {
+    id: "interactive-plotmaps",
+    title: "Interactieve Plotkaarten",
+    description: "Ervaar hoe eenvoudig het is om digitale plattegronden te maken met BHV voorzieningen",
+    difficulty: "Gemiddeld",
+    duration: "10-15 min",
+    icon: MapPin,
+    features: ["Plattegrond upload", "Voorziening markering", "Interactieve navigatie", "Print functionaliteit"],
+    href: "/demo/plotkaart-editor",
+    requiresLogin: false,
+  },
+  {
+    id: "incident-management",
+    title: "Incident Management",
+    description: "Simuleer een noodsituatie en zie hoe BHV360 automatisch procedures activeert",
+    difficulty: "Geavanceerd",
+    duration: "15-20 min",
+    icon: AlertTriangle,
+    features: ["Incident simulatie", "Automatische workflows", "Team mobilisatie", "Real-time monitoring"],
+    href: "/demo/incident-simulator",
+    requiresLogin: false,
+  },
+  {
+    id: "visitor-registration",
+    title: "Bezoeker Registratie",
+    description: "Professionele bezoeker check-in met veiligheidscheck en evacuatielijsten",
+    difficulty: "Beginner",
+    duration: "5-8 min",
+    icon: Shield,
+    features: ["Digitale check-in", "Host notificaties", "Veiligheidscheck", "Evacuatie lijsten"],
+    href: "/visitor-registration",
+    requiresLogin: false,
+  },
+  {
+    id: "analytics-reporting",
+    title: "Analytics & Rapportage",
+    description: "Uitgebreide dashboards met KPI's, trends en compliance rapportages",
+    difficulty: "Gemiddeld",
+    duration: "8-12 min",
+    icon: BarChart3,
+    features: ["Executive dashboards", "KPI tracking", "Trend analyse", "Compliance reports"],
+    href: "/beheer/rapportages",
+    requiresLogin: false,
+  },
+  {
+    id: "mobile-app",
+    title: "Mobiele App",
+    description: "Complete mobiele ervaring voor BHV'ers en medewerkers onderweg",
+    difficulty: "Beginner",
+    duration: "6-10 min",
+    icon: Smartphone,
+    features: ["iOS & Android", "Offline functionaliteit", "Push notificaties", "QR scanning"],
+    href: "/mobile-app",
+    requiresLogin: false,
+  },
+]
+
+const getDifficultyColor = (difficulty: string) => {
+  switch (difficulty) {
+    case "Beginner":
+      return "bg-green-100 text-green-800"
+    case "Gemiddeld":
+      return "bg-yellow-100 text-yellow-800"
+    case "Geavanceerd":
+      return "bg-red-100 text-red-800"
+    default:
+      return "bg-gray-100 text-gray-800"
+  }
+}
+
+const painPoints = [
+  {
+    icon: AlertTriangle,
+    problem: "Papieren BHV administratie",
+    description: "Verloren documenten, verouderde informatie, geen overzicht",
+    color: "text-red-600",
+  },
+  {
+    icon: MapPin,
+    problem: "Onduidelijke evacuatieroutes",
+    description: "Statische plattegronden, geen real-time updates",
+    color: "text-orange-600",
+  },
+  {
+    icon: Timer,
+    problem: "Trage incident afhandeling",
+    description: "Handmatige processen, geen automatisering",
+    color: "text-yellow-600",
+  },
+  {
+    icon: Eye,
+    problem: "Geen inzicht in compliance",
+    description: "Onduidelijke rapportages, geen real-time monitoring",
+    color: "text-purple-600",
+  },
+]
+
+const roiStats = [
+  { label: "Tijd besparing", value: "75%", description: "Minder administratie" },
+  { label: "Compliance score", value: "98%", description: "Verhoogde compliance" },
+  { label: "Incident respons", value: "60%", description: "Snellere afhandeling" },
+  { label: "Kosten reductie", value: "€15.000", description: "Jaarlijkse besparing" },
+]
+
+const pricingPlans = [
+  {
+    name: "Starter",
+    price: "€49",
+    period: "/maand",
+    description: "Perfect voor kleine organisaties",
+    features: [
+      "Tot 50 gebruikers",
+      "Basis plotkaarten",
+      "Incident registratie",
+      "Email ondersteuning",
+      "Standaard rapportages",
+    ],
+    buttonText: "Start Gratis Trial",
+    buttonVariant: "outline" as const,
+    popular: false,
+  },
+  {
+    name: "Professional",
+    price: "€149",
+    period: "/maand",
+    description: "Ideaal voor middelgrote bedrijven",
+    features: [
+      "Tot 250 gebruikers",
+      "Geavanceerde plotkaarten",
+      "Real-time monitoring",
+      "Telefoon ondersteuning",
+      "Custom rapportages",
+      "API integraties",
+      "Multi-locatie support",
+    ],
+    buttonText: "Start Gratis Trial",
+    buttonVariant: "default" as const,
+    popular: true,
+  },
+  {
+    name: "Enterprise",
+    price: "Op maat",
+    period: "",
+    description: "Voor grote organisaties",
+    features: [
+      "Onbeperkt gebruikers",
+      "White-label oplossing",
+      "Dedicated support",
+      "Custom ontwikkeling",
+      "SLA garanties",
+      "On-premise optie",
+      "Training & consultancy",
+    ],
+    buttonText: "Contact Opnemen",
+    buttonVariant: "outline" as const,
+    popular: false,
+  },
+]
 
 export default function HomePage() {
   const [formData, setFormData] = useState<ContactFormData>({
@@ -132,144 +299,12 @@ export default function HomePage() {
   }
 
   const handleDemoClick = (demoPath: string) => {
-    router.push(demoPath)
+    if (demoPath === "/demo/overview") {
+      router.push(demoPath)
+    } else {
+      router.push(`/login?demo=${encodeURIComponent(demoPath)}`)
+    }
   }
-
-  // Test data voor homepage
-  const painPoints = [
-    {
-      icon: AlertTriangle,
-      problem: "Papieren BHV administratie",
-      description: "Verloren documenten, verouderde informatie, geen overzicht",
-      color: "text-red-600",
-    },
-    {
-      icon: MapPin,
-      problem: "Onduidelijke evacuatieroutes",
-      description: "Statische plattegronden, geen real-time updates",
-      color: "text-orange-600",
-    },
-    {
-      icon: Timer,
-      problem: "Trage incident afhandeling",
-      description: "Handmatige processen, geen automatisering",
-      color: "text-yellow-600",
-    },
-    {
-      icon: Eye,
-      problem: "Geen inzicht in compliance",
-      description: "Onduidelijke rapportages, geen real-time monitoring",
-      color: "text-purple-600",
-    },
-  ]
-
-  const modules = [
-    {
-      icon: Shield,
-      title: "BHV Dashboard",
-      description: "Complete BHV administratie met certificering tracking",
-      price: "€39/maand",
-      link: "/dashboards/bhv-coordinator",
-    },
-    {
-      icon: MapPin,
-      title: "Interactieve Plotkaarten",
-      description: "Digitale plattegronden met real-time status",
-      price: "€29/maand",
-      link: "/plotkaart",
-    },
-    {
-      icon: AlertTriangle,
-      title: "Incident Management",
-      description: "Snelle incident registratie met workflows",
-      price: "€49/maand",
-      link: "/incidenten",
-    },
-    {
-      icon: Users,
-      title: "Bezoeker Registratie",
-      description: "Professionele bezoeker check-in systeem",
-      price: "€35/maand",
-      link: "/visitor-registration",
-    },
-    {
-      icon: BarChart3,
-      title: "Analytics & Rapportage",
-      description: "Uitgebreide analytics en compliance rapportage",
-      price: "€25/maand",
-      link: "/beheer/rapportages",
-    },
-    {
-      icon: Smartphone,
-      title: "Mobiele App",
-      description: "Complete mobiele toegang voor BHV'ers",
-      price: "€19/maand",
-      link: "/mobile-app",
-    },
-  ]
-
-  const roiStats = [
-    { label: "Tijd besparing", value: "75%", description: "Minder administratie" },
-    { label: "Compliance score", value: "98%", description: "Verhoogde compliance" },
-    { label: "Incident respons", value: "60%", description: "Snellere afhandeling" },
-    { label: "Kosten reductie", value: "€15.000", description: "Jaarlijkse besparing" },
-  ]
-
-  // Pricing plans
-  const pricingPlans = [
-    {
-      name: "Starter",
-      price: "€49",
-      period: "/maand",
-      description: "Perfect voor kleine organisaties",
-      features: [
-        "Tot 50 gebruikers",
-        "Basis plotkaarten",
-        "Incident registratie",
-        "Email ondersteuning",
-        "Standaard rapportages",
-      ],
-      buttonText: "Start Gratis Trial",
-      buttonVariant: "outline" as const,
-      popular: false,
-    },
-    {
-      name: "Professional",
-      price: "€149",
-      period: "/maand",
-      description: "Ideaal voor middelgrote bedrijven",
-      features: [
-        "Tot 250 gebruikers",
-        "Geavanceerde plotkaarten",
-        "Real-time monitoring",
-        "Telefoon ondersteuning",
-        "Custom rapportages",
-        "API integraties",
-        "Multi-locatie support",
-      ],
-      buttonText: "Start Gratis Trial",
-      buttonVariant: "default" as const,
-      popular: true,
-    },
-    {
-      name: "Enterprise",
-      price: "Op maat",
-      period: "",
-      description: "Voor grote organisaties",
-      features: [
-        "Onbeperkt gebruikers",
-        "White-label oplossing",
-        "Dedicated support",
-        "Custom ontwikkeling",
-        "SLA garanties",
-        "On-premise optie",
-        "Training & consultancy",
-      ],
-      buttonText: "Contact Opnemen",
-      buttonVariant: "outline" as const,
-      popular: false,
-    },
-  ]
 
   return (
     <div className="min-h-screen bg-white">
@@ -287,7 +322,7 @@ export default function HomePage() {
                 onClick={() => document.getElementById("modules")?.scrollIntoView({ behavior: "smooth" })}
                 className="text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
               >
-                Modules
+                Demo's
               </button>
               <button
                 onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
@@ -296,26 +331,19 @@ export default function HomePage() {
                 Prijzen
               </button>
               <button
-                onClick={() => handleDemoClick("/demo/overview")}
-                className="text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
-              >
-                Demo's
-              </button>
-              <button
                 onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
                 className="text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
               >
                 Contact
               </button>
               <Button onClick={() => router.push("/login")} className="bg-blue-600 hover:bg-blue-700">
-                <LogIn className="mr-2 h-4 w-4" />
+                <Phone className="mr-2 h-4 w-4" />
                 Inloggen
               </Button>
             </nav>
-            {/* Mobile menu button */}
             <div className="md:hidden">
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => router.push("/login")}>
-                <LogIn className="mr-2 h-4 w-4" />
+                <Phone className="mr-2 h-4 w-4" />
                 Login
               </Button>
             </div>
@@ -357,7 +385,7 @@ export default function HomePage() {
                   className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg font-semibold bg-transparent"
                   onClick={() => handleStartTrial("Professional")}
                 >
-                  <Download className="mr-2 h-5 w-5" />
+                  <Zap className="mr-2 h-5 w-5" />
                   30 Dagen Gratis
                 </Button>
               </div>
@@ -414,6 +442,138 @@ export default function HomePage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Demo Modules Section */}
+      <div id="modules" className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              <span className="text-blue-600">Interactieve Demo's</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Ervaar BHV360 met onze uitgebreide demo's. Elke demo toont specifieke functionaliteiten in actie.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {demoModules.map((module, index) => (
+              <Card key={index} className="hover:shadow-xl transition-all duration-300 h-full">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <module.icon className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <div className="flex flex-col items-end space-y-2">
+                      <Badge className={getDifficultyColor(module.difficulty)}>{module.difficulty}</Badge>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Clock className="h-4 w-4 mr-1" />
+                        {module.duration}
+                      </div>
+                    </div>
+                  </div>
+                  <CardTitle className="text-xl mb-2">{module.title}</CardTitle>
+                  <p className="text-base text-gray-600 mb-4">{module.description}</p>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-gray-700">Wat u gaat zien:</p>
+                    <ul className="space-y-1">
+                      {module.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="flex items-center text-sm text-gray-600">
+                          <Check className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="pt-0">
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() => router.push(module.href)}
+                  >
+                    <Play className="mr-2 h-4 w-4" />
+                    Start Demo
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ROI Section */}
+      <div className="py-16 bg-gradient-to-r from-blue-600 to-green-600 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4">Bewezen Resultaten</h2>
+            <p className="text-xl text-blue-100">Onze klanten zien direct resultaat</p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-8">
+            {roiStats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="text-4xl font-bold text-green-300 mb-2">{stat.value}</div>
+                <div className="text-lg font-semibold mb-1">{stat.label}</div>
+                <div className="text-blue-200 text-sm">{stat.description}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Social Proof */}
+      <div className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Waarom 500+ Organisaties Kiezen voor BHV360</h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="text-center">
+              <CardContent className="p-8">
+                <div className="flex justify-center space-x-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-6 w-6 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <blockquote className="text-lg text-gray-700 mb-4">
+                  "BHV360 heeft onze BHV administratie van chaos naar complete controle gebracht. Aanrader!"
+                </blockquote>
+                <cite className="text-sm text-gray-500">- Jan Bakker, Facility Manager</cite>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardContent className="p-8">
+                <div className="flex justify-center space-x-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-6 w-6 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <blockquote className="text-lg text-gray-700 mb-4">
+                  "Eindelijk een systeem dat werkt! Compliance is nu een fluitje van een cent."
+                </blockquote>
+                <cite className="text-sm text-gray-500">- Maria de Vries, HR Manager</cite>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardContent className="p-8">
+                <div className="flex justify-center space-x-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-6 w-6 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <blockquote className="text-lg text-gray-700 mb-4">
+                  "De ROI was binnen 3 maanden zichtbaar. Tijd en kosten besparing is enorm."
+                </blockquote>
+                <cite className="text-sm text-gray-500">- Peter Jansen, Operations Director</cite>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -516,206 +676,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Modules Section */}
-      <div id="modules" className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              <span className="text-blue-600">BHV360 Modules</span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Ontdek alle functionaliteiten die BHV360 biedt voor professioneel veiligheidsmanagement.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {modules.map((module, index) => (
-              <Card key={index} className="hover:shadow-xl transition-all duration-300">
-                <CardHeader>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="p-3 bg-blue-100 rounded-lg">
-                      <module.icon className="h-8 w-8 text-blue-600" />
-                    </div>
-                    <Badge variant="secondary" className="text-lg font-semibold">
-                      {module.price}
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-xl">{module.title}</CardTitle>
-                  <p className="text-base text-gray-600">{module.description}</p>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => handleDemoClick(module.link)}>
-                    Meer Info
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ROI Section */}
-      <div className="py-16 bg-gradient-to-r from-blue-600 to-green-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Bewezen Resultaten</h2>
-            <p className="text-xl text-blue-100">Onze klanten zien direct resultaat</p>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-8">
-            {roiStats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-4xl font-bold text-green-300 mb-2">{stat.value}</div>
-                <div className="text-lg font-semibold mb-1">{stat.label}</div>
-                <div className="text-blue-200 text-sm">{stat.description}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Demo Section */}
-      <div className="py-20 bg-blue-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Ervaar <span className="text-blue-600">BHV360</span> in Actie
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Ontdek hoe BHV360 werkt met onze interactieve demo's. Geen registratie vereist.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Shield className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <CardTitle className="text-xl">BHV Dashboard</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-base mb-4 text-gray-600">
-                  Bekijk het complete BHV dashboard met team overzicht en certificeringen.
-                </p>
-                <Button className="w-full" onClick={() => handleDemoClick("/demo/bhv-status")}>
-                  <Play className="mr-2 h-4 w-4" />
-                  Start Demo
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <MapPin className="h-6 w-6 text-green-600" />
-                  </div>
-                  <CardTitle className="text-xl">Plotkaart Editor</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-base mb-4 text-gray-600">
-                  Ervaar hoe eenvoudig het is om interactieve plotkaarten te maken.
-                </p>
-                <Button className="w-full" onClick={() => handleDemoClick("/demo/plotkaart-editor")}>
-                  <Play className="mr-2 h-4 w-4" />
-                  Start Demo
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <AlertTriangle className="h-6 w-6 text-red-600" />
-                  </div>
-                  <CardTitle className="text-xl">Incident Simulator</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-base mb-4 text-gray-600">
-                  Simuleer een noodsituatie en zie hoe BHV360 automatisch reageert.
-                </p>
-                <Button className="w-full" onClick={() => handleDemoClick("/demo/incident-simulator")}>
-                  <Play className="mr-2 h-4 w-4" />
-                  Start Demo
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="text-center mt-12">
-            <Button
-              size="lg"
-              variant="outline"
-              className="px-8 py-3 bg-transparent"
-              onClick={() => handleDemoClick("/demo/overview")}
-            >
-              <Eye className="mr-2 h-5 w-5" />
-              Alle Demo's Bekijken
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Social Proof */}
-      <div className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Waarom 500+ Organisaties Kiezen voor BHV360</h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="text-center">
-              <CardContent className="p-8">
-                <div className="flex justify-center space-x-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-6 w-6 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <blockquote className="text-lg text-gray-700 mb-4">
-                  "BHV360 heeft onze BHV administratie van chaos naar complete controle gebracht. Aanrader!"
-                </blockquote>
-                <cite className="text-sm text-gray-500">- Jan Bakker, Facility Manager</cite>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center">
-              <CardContent className="p-8">
-                <div className="flex justify-center space-x-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-6 w-6 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <blockquote className="text-lg text-gray-700 mb-4">
-                  "Eindelijk een systeem dat werkt! Compliance is nu een fluitje van een cent."
-                </blockquote>
-                <cite className="text-sm text-gray-500">- Maria de Vries, HR Manager</cite>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center">
-              <CardContent className="p-8">
-                <div className="flex justify-center space-x-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-6 w-6 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <blockquote className="text-lg text-gray-700 mb-4">
-                  "De ROI was binnen 3 maanden zichtbaar. Tijd en kosten besparing is enorm."
-                </blockquote>
-                <cite className="text-sm text-gray-500">- Peter Jansen, Operations Director</cite>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-
       {/* Company Information */}
       <div className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -727,7 +687,6 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Bedrijfsgegevens */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -755,7 +714,6 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Contactgegevens */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -795,7 +753,6 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Adresgegevens */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -827,7 +784,6 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Openingstijden */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -857,7 +813,6 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Sociale Media */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -900,7 +855,6 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Certificeringen */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -948,7 +902,6 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-12">
-            {/* Contact Form */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-2xl">Demo Aanvragen</CardTitle>
@@ -1039,7 +992,6 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Contact Info & Benefits */}
             <div className="space-y-6">
               <Card className="bg-gradient-to-br from-blue-50 to-green-50 border-blue-200">
                 <CardHeader>
@@ -1178,13 +1130,13 @@ export default function HomePage() {
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => handleDemoClick("/plotkaart")} className="hover:text-white cursor-pointer">
-                    Plotkaarten
+                  <button onClick={() => router.push("/login")} className="hover:text-white cursor-pointer">
+                    Plotkaarten (Login)
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => handleDemoClick("/incidenten")} className="hover:text-white cursor-pointer">
-                    Incidenten
+                  <button onClick={() => router.push("/login")} className="hover:text-white cursor-pointer">
+                    Incidenten (Login)
                   </button>
                 </li>
               </ul>

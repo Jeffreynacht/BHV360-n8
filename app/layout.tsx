@@ -2,18 +2,16 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import ClientLayout from "./client-layout"
+import { AuthProvider } from "@/contexts/auth-context"
+import { Toaster } from "@/components/ui/toaster"
+import { ThemeProvider } from "@/components/theme-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "BHV360 - Professional Safety Management Platform",
+  title: "BHV360 - Complete BHV Management Platform",
   description:
-    "Complete BHV management system with real-time monitoring, incident management, and compliance reporting. Powered by BHV360's innovative blue and green safety technology.",
-  keywords: "BHV360, BHV, safety management, emergency response, incident management, compliance, blue green safety",
-  authors: [{ name: "BHV360 Team" }],
-  viewport: "width=device-width, initial-scale=1",
-  themeColor: "#2563eb", // Blue-600
+    "Professional BHV management software with interactive floor plans, incident management, and comprehensive reporting.",
     generator: 'v0.app'
 }
 
@@ -25,7 +23,12 @@ export default function RootLayout({
   return (
     <html lang="nl" suppressHydrationWarning>
       <body className={inter.className}>
-        <ClientLayout>{children}</ClientLayout>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

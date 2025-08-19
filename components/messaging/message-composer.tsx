@@ -4,562 +4,414 @@ import type React from "react"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Mail,
-  MessageSquare,
-  Send,
-  Users,
-  Building,
-  Phone,
-  CheckCircle,
-  AlertTriangle,
-  User,
-  MapPin,
-} from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useToast } from "@/hooks/use-toast"
+import { MessageSquare, Mail, Phone, Users, Building, Send, LayoutTemplateIcon as Template, Clock } from "lucide-react"
 
-interface Person {
+interface Recipient {
   id: string
   name: string
-  type: "visitor" | "contractor"
+  type: "visitor" | "contractor" | "bhv_member" | "ploegleider"
   phone?: string
   email?: string
   company?: string
   location?: string
-  photo?: string
   host?: string
   purpose?: string
 }
 
 interface MessageComposerProps {
-  recipients?: Person[]
-  onSend?: (message: MessageData) => void
-  trigger?: React.ReactNode
-  currentUser?: {
-    name: string
-    role: string
-    department: string
-    phone?: string
-    email?: string
-  }
-  currentLocation?: {
-    name: string
-    address: string
-    phone: string
-    email: string
-    logo?: string
-  }
-}
-
-interface MessageData {
-  recipients: string[]
-  subject: string
-  message: string
-  channels: ("sms" | "email")[]
-  priority: "normal" | "high" | "urgent"
-  template?: string
-  sender: {
-    name: string
-    role: string
-    department: string
-    phone?: string
-    email?: string
-  }
-  location: {
-    name: string
-    address: string
-    phone: string
-    email: string
-    logo?: string
-  }
+  recipients: Recipient[]
+  trigger: React.ReactNode
 }
 
 const messageTemplates = [
   {
     id: "welcome",
     name: "Welkomstbericht",
-    subject: "Welkom bij {{location}}",
-    message:
-      "Hartelijk welkom bij {{location}}!\n\nU bent succesvol ingecheckt en kunt nu gebruik maken van onze faciliteiten. Mocht u vragen hebben tijdens uw bezoek, aarzel dan niet om contact op te nemen.\n\nWij wensen u een prettig verblijf toe.",
+    subject: "Welkom bij {company}",
+    content: "Welkom bij {company}! U bent succesvol ingecheckt. Bij vragen kunt u contact opnemen met de receptie.",
+    category: "welcome",
   },
   {
     id: "checkout_reminder",
     name: "Uitcheck herinnering",
-    subject: "Uitchecken niet vergeten",
-    message:
-      "Geachte {{name}},\n\nWij zien dat u nog niet bent uitgecheckt. Voor de veiligheid en administratie verzoeken wij u vriendelijk om bij vertrek uit te checken bij de receptie.\n\nBedankt voor uw medewerking en uw bezoek aan {{location}}.",
+    subject: "Vergeet niet uit te checken",
+    content:
+      "Dit is een vriendelijke herinnering om uit te checken bij de receptie voordat u vertrekt. Bedankt voor uw bezoek!",
+    category: "reminder",
   },
   {
-    id: "location_update",
+    id: "location_change",
     name: "Locatie wijziging",
-    subject: "Wijziging werklocatie",
-    message:
-      "Geachte {{name}},\n\nHierbij informeren wij u dat uw werklocatie is gewijzigd naar: {{new_location}}.\n\nMocht u deze locatie niet kunnen vinden, neem dan contact op met de receptie voor begeleiding.\n\nBedankt voor uw begrip.",
+    subject: "Werklocatie aangepast",
+    content: "Uw werklocatie is gewijzigd naar: {location}. Neem contact op met de receptie voor meer informatie.",
+    category: "update",
   },
   {
     id: "emergency_info",
-    name: "Veiligheidsinformatie",
-    subject: "BELANGRIJK: Veiligheidsinformatie",
-    message:
-      "Geachte {{name}},\n\nEr is belangrijke veiligheidsinformatie die uw aandacht behoeft. Volg alstublieft de instructies van het BHV-personeel op.\n\nBij vragen of onduidelijkheden kunt u direct contact opnemen met de receptie.\n\nUw veiligheid is onze prioriteit.",
+    name: "Noodinformatie",
+    subject: "Belangrijke mededeling",
+    content: "Belangrijke mededeling: {message}. Volg de instructies van het BHV-personeel.",
+    category: "emergency",
   },
   {
     id: "meeting_reminder",
     name: "Afspraak herinnering",
-    subject: "Herinnering: Uw afspraak",
-    message:
-      "Geachte {{name}},\n\nDit is een vriendelijke herinnering voor uw afspraak vandaag om {{time}}.\n\nLocatie: {{meeting_location}}\nGastheer/Gastvrouw: {{host}}\n\nMocht u vertraging hebben, neem dan contact op met de receptie.",
+    subject: "Herinnering afspraak",
+    content: "Herinnering: Uw afspraak met {host} begint over 15 minuten in {location}.",
+    category: "reminder",
   },
   {
-    id: "work_completion",
-    name: "Werkzaamheden voltooid",
+    id: "work_completed",
+    name: "Werk voltooid",
     subject: "Bedankt voor uw werkzaamheden",
-    message:
-      "Geachte {{name}},\n\nHartelijk dank voor het succesvol voltooien van de werkzaamheden bij {{location}}.\n\nVergeet niet om bij vertrek uit te checken bij de receptie voor de administratie.\n\nWij waarderen uw professionele inzet.",
-  },
-  {
-    id: "visitor_info",
-    name: "Bezoeker informatie",
-    subject: "Informatie voor uw bezoek",
-    message:
-      "Geachte {{name}},\n\nWelkom bij {{location}}. Hier is enkele belangrijke informatie voor uw bezoek:\n\n• Receptie: {{reception_phone}}\n• Uw gastheer: {{host}}\n• Parkeren: {{parking_info}}\n• WiFi: Vraag de toegangscode bij de receptie\n\nGeniet van uw bezoek!",
+    content: "Bedankt voor het uitvoeren van de werkzaamheden. Vergeet niet uit te checken bij de receptie.",
+    category: "completion",
   },
 ]
 
-export function MessageComposer({
-  recipients = [],
-  onSend,
-  trigger,
-  currentUser = {
-    name: "Receptie Medewerker",
-    role: "Receptionist",
-    department: "Beveiliging & Receptie",
-    phone: "+31 20 123 4567",
-    email: "receptie@bhv360.nl",
-  },
-  currentLocation = {
-    name: "BHV360 Hoofdkantoor",
-    address: "Voorbeeldstraat 123, 1234 AB Amsterdam",
-    phone: "+31 20 123 4567",
-    email: "info@bhv360.nl",
-    logo: "/images/placeholder-logo.png",
-  },
-}: MessageComposerProps) {
+export function MessageComposer({ recipients, trigger }: MessageComposerProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [selectedRecipients, setSelectedRecipients] = useState<string[]>([])
-  const [subject, setSubject] = useState("")
-  const [message, setMessage] = useState("")
-  const [channels, setChannels] = useState<("sms" | "email")[]>(["email"])
-  const [priority, setPriority] = useState<"normal" | "high" | "urgent">("normal")
-  const [selectedTemplate, setSelectedTemplate] = useState("")
+  const [selectedRecipients, setSelectedRecipients] = useState<string[]>(recipients.map((r) => r.id))
+  const [messageType, setMessageType] = useState<"sms" | "email" | "both">("both")
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("")
+  const [customMessage, setCustomMessage] = useState("")
+  const [customSubject, setCustomSubject] = useState("")
   const [isSending, setIsSending] = useState(false)
-  const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null)
+  const { toast } = useToast()
 
   const handleTemplateSelect = (templateId: string) => {
     const template = messageTemplates.find((t) => t.id === templateId)
     if (template) {
       setSelectedTemplate(templateId)
-      setSubject(template.subject)
-      setMessage(template.message)
+      setCustomMessage(template.content)
+      setCustomSubject(template.subject)
     }
   }
 
-  const handleRecipientToggle = (personId: string) => {
+  const handleRecipientToggle = (recipientId: string) => {
     setSelectedRecipients((prev) =>
-      prev.includes(personId) ? prev.filter((id) => id !== personId) : [...prev, personId],
+      prev.includes(recipientId) ? prev.filter((id) => id !== recipientId) : [...prev, recipientId],
     )
   }
 
-  const handleChannelToggle = (channel: "sms" | "email") => {
-    setChannels((prev) => (prev.includes(channel) ? prev.filter((c) => c !== channel) : [...prev, channel]))
-  }
+  const handleSendMessage = async () => {
+    if (selectedRecipients.length === 0) {
+      toast({
+        title: "Geen ontvangers geselecteerd",
+        description: "Selecteer minimaal één ontvanger om een bericht te versturen.",
+        variant: "destructive",
+      })
+      return
+    }
 
-  const processTemplate = (text: string, person: Person) => {
-    return text
-      .replace(/\{\{name\}\}/g, person.name)
-      .replace(/\{\{company\}\}/g, person.company || "")
-      .replace(/\{\{location\}\}/g, currentLocation.name)
-      .replace(/\{\{new_location\}\}/g, person.location || "")
-      .replace(/\{\{meeting_location\}\}/g, person.location || "")
-      .replace(/\{\{host\}\}/g, person.host || "")
-      .replace(/\{\{purpose\}\}/g, person.purpose || "")
-      .replace(/\{\{time\}\}/g, new Date().toLocaleTimeString("nl-NL"))
-      .replace(/\{\{reception_phone\}\}/g, currentLocation.phone)
-      .replace(/\{\{parking_info\}\}/g, "Beschikbaar op het terrein")
-  }
-
-  const handleSend = async () => {
-    if (selectedRecipients.length === 0 || !message.trim() || channels.length === 0) {
-      setSendResult({ success: false, message: "Vul alle vereiste velden in" })
+    if (!customMessage.trim()) {
+      toast({
+        title: "Geen bericht ingevoerd",
+        description: "Voer een bericht in om te versturen.",
+        variant: "destructive",
+      })
       return
     }
 
     setIsSending(true)
-    setSendResult(null)
 
     try {
-      const selectedPeople = recipients.filter((p) => selectedRecipients.includes(p.id))
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      // Send messages to each recipient
-      const promises = selectedPeople.map(async (person) => {
-        const personalizedSubject = processTemplate(subject, person)
-        const personalizedMessage = processTemplate(message, person)
+      const selectedRecipientsData = recipients.filter((r) => selectedRecipients.includes(r.id))
 
-        const messageData = {
-          recipient: person,
-          subject: personalizedSubject,
-          message: personalizedMessage,
-          channels,
-          priority,
-          sender: currentUser,
-          location: currentLocation,
-        }
+      // Simulate sending logic
+      const emailCount =
+        messageType === "email" || messageType === "both" ? selectedRecipientsData.filter((r) => r.email).length : 0
+      const smsCount =
+        messageType === "sms" || messageType === "both" ? selectedRecipientsData.filter((r) => r.phone).length : 0
 
-        // Send via API
-        const response = await fetch("/api/messaging/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(messageData),
-        })
-
-        return response.json()
+      toast({
+        title: "Bericht verzonden!",
+        description: `Bericht verzonden naar ${selectedRecipientsData.length} ontvangers${emailCount > 0 ? ` (${emailCount} emails` : ""}${smsCount > 0 ? `${emailCount > 0 ? ", " : " ("}${smsCount} SMS'en` : ""}${emailCount > 0 || smsCount > 0 ? ")" : ""}.`,
       })
 
-      const results = await Promise.all(promises)
-      const successCount = results.filter((r) => r.success).length
-
-      setSendResult({
-        success: successCount > 0,
-        message: `${successCount} van ${selectedPeople.length} berichten succesvol verzonden`,
-      })
-
-      if (onSend) {
-        onSend({
-          recipients: selectedRecipients,
-          subject,
-          message,
-          channels,
-          priority,
-          template: selectedTemplate,
-          sender: currentUser,
-          location: currentLocation,
-        })
-      }
-
-      // Reset form on success
-      if (successCount === selectedPeople.length) {
-        setTimeout(() => {
-          setIsOpen(false)
-          setSelectedRecipients([])
-          setSubject("")
-          setMessage("")
-          setChannels(["email"])
-          setPriority("normal")
-          setSelectedTemplate("")
-          setSendResult(null)
-        }, 2000)
-      }
+      // Reset form
+      setCustomMessage("")
+      setCustomSubject("")
+      setSelectedTemplate("")
+      setIsOpen(false)
     } catch (error) {
-      setSendResult({ success: false, message: "Fout bij verzenden van berichten" })
+      toast({
+        title: "Fout bij verzenden",
+        description: "Er is een fout opgetreden bij het verzenden van het bericht.",
+        variant: "destructive",
+      })
     } finally {
       setIsSending(false)
     }
   }
 
-  const selectedPeople = recipients.filter((p) => selectedRecipients.includes(p.id))
-  const canSendSMS = selectedPeople.every((p) => p.phone)
-  const canSendEmail = selectedPeople.every((p) => p.email)
+  const selectedRecipientsData = recipients.filter((r) => selectedRecipients.includes(r.id))
+  const emailRecipients = selectedRecipientsData.filter((r) => r.email)
+  const smsRecipients = selectedRecipientsData.filter((r) => r.phone)
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button>
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Professioneel Bericht
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <MessageSquare className="h-5 w-5" />
-            <span>Professioneel Bericht Sturen</span>
+            <span>Bericht Versturen</span>
           </DialogTitle>
           <DialogDescription>
-            Stuur een professioneel bericht met uw handtekening en bedrijfslogo's naar bezoekers of monteurs
+            Verstuur berichten naar geselecteerde bezoekers en monteurs via SMS en/of email
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Sender Information Display */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-blue-900 mb-2 flex items-center">
-              <User className="h-4 w-4 mr-2" />
-              Verzender Informatie
-            </h3>
-            <div className="flex items-center space-x-3">
-              <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-blue-600 text-white">
-                  {currentUser.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium text-blue-900">{currentUser.name}</p>
-                <p className="text-sm text-blue-700">
-                  {currentUser.role} | {currentUser.department}
-                </p>
-                <div className="flex items-center space-x-4 text-xs text-blue-600 mt-1">
-                  {currentUser.phone && (
-                    <span className="flex items-center">
-                      <Phone className="h-3 w-3 mr-1" />
-                      {currentUser.phone}
-                    </span>
-                  )}
-                  {currentUser.email && (
-                    <span className="flex items-center">
-                      <Mail className="h-3 w-3 mr-1" />
-                      {currentUser.email}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Location Information Display */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-green-900 mb-2 flex items-center">
-              <MapPin className="h-4 w-4 mr-2" />
-              Locatie Informatie
-            </h3>
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-white rounded border flex items-center justify-center">
-                <img
-                  src={currentLocation.logo || "/images/placeholder-logo.png"}
-                  alt={currentLocation.name}
-                  className="w-8 h-8 object-contain"
-                />
-              </div>
-              <div>
-                <p className="font-medium text-green-900">{currentLocation.name}</p>
-                <p className="text-sm text-green-700">{currentLocation.address}</p>
-                <div className="flex items-center space-x-4 text-xs text-green-600 mt-1">
-                  <span className="flex items-center">
-                    <Phone className="h-3 w-3 mr-1" />
-                    {currentLocation.phone}
-                  </span>
-                  <span className="flex items-center">
-                    <Mail className="h-3 w-3 mr-1" />
-                    {currentLocation.email}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Recipients Selection */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Ontvangers ({recipients.length})</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto border rounded-lg p-3">
-              {recipients.map((person) => (
-                <div
-                  key={person.id}
-                  className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                    selectedRecipients.includes(person.id) ? "bg-blue-50 border-blue-200" : "hover:bg-gray-50"
-                  }`}
-                  onClick={() => handleRecipientToggle(person.id)}
-                >
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Ontvangers ({recipients.length})</CardTitle>
+              <CardDescription>Selecteer wie het bericht moet ontvangen</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
                   <Checkbox
-                    checked={selectedRecipients.includes(person.id)}
-                    onChange={() => handleRecipientToggle(person.id)}
+                    id="select-all"
+                    checked={selectedRecipients.length === recipients.length}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedRecipients(recipients.map((r) => r.id))
+                      } else {
+                        setSelectedRecipients([])
+                      }
+                    }}
                   />
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={person.photo || "/placeholder.svg"} alt={person.name} />
-                    <AvatarFallback>
-                      {person.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{person.name}</p>
-                    <p className="text-sm text-gray-600 truncate">{person.company}</p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      {person.type === "visitor" ? (
-                        <Users className="h-3 w-3 text-green-600" />
-                      ) : (
-                        <Building className="h-3 w-3 text-orange-600" />
-                      )}
-                      <span className="text-xs text-gray-500">
-                        {person.type === "visitor" ? "Bezoeker" : "Monteur"}
-                      </span>
-                      {person.phone && <Phone className="h-3 w-3 text-blue-600" />}
-                      {person.email && <Mail className="h-3 w-3 text-green-600" />}
+                  <label htmlFor="select-all" className="text-sm font-medium">
+                    Selecteer alle ontvangers
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-48 overflow-y-auto">
+                  {recipients.map((recipient) => (
+                    <div key={recipient.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                      <Checkbox
+                        id={recipient.id}
+                        checked={selectedRecipients.includes(recipient.id)}
+                        onCheckedChange={() => handleRecipientToggle(recipient.id)}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          {recipient.type === "visitor" ? (
+                            <Users className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Building className="h-4 w-4 text-blue-600" />
+                          )}
+                          <span className="font-medium text-sm">{recipient.name}</span>
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {recipient.company}
+                          {recipient.type === "visitor" && recipient.host && ` • Host: ${recipient.host}`}
+                        </div>
+                        <div className="flex items-center space-x-2 mt-1">
+                          {recipient.phone && <Phone className="h-3 w-3 text-gray-400" />}
+                          {recipient.email && <Mail className="h-3 w-3 text-blue-400" />}
+                        </div>
+                      </div>
                     </div>
+                  ))}
+                </div>
+
+                {/* Summary */}
+                <div className="flex items-center justify-between pt-3 border-t">
+                  <div className="text-sm text-gray-600">
+                    {selectedRecipients.length} van {recipients.length} ontvangers geselecteerd
+                  </div>
+                  <div className="flex space-x-2">
+                    <Badge variant="outline" className="text-xs">
+                      <Mail className="h-3 w-3 mr-1" />
+                      {emailRecipients.length} emails
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      <Phone className="h-3 w-3 mr-1" />
+                      {smsRecipients.length} SMS
+                    </Badge>
                   </div>
                 </div>
-              ))}
-            </div>
-            {selectedRecipients.length > 0 && (
-              <div className="mt-2 flex items-center space-x-2">
-                <Badge variant="outline">{selectedRecipients.length} geselecteerd</Badge>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedRecipients(recipients.map((p) => p.id))}>
-                  Alles selecteren
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedRecipients([])}>
-                  Alles deselecteren
-                </Button>
               </div>
-            )}
-          </div>
+            </CardContent>
+          </Card>
 
-          {/* Message Channels */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Verzendmethode</h3>
-            <div className="flex space-x-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  checked={channels.includes("email")}
-                  onCheckedChange={() => handleChannelToggle("email")}
-                  disabled={!canSendEmail && selectedRecipients.length > 0}
-                />
-                <Mail className="h-4 w-4" />
-                <span>Email (met logo's en handtekening)</span>
-                {!canSendEmail && selectedRecipients.length > 0 && (
-                  <Badge variant="destructive" className="text-xs">
-                    Niet alle ontvangers hebben email
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  checked={channels.includes("sms")}
-                  onCheckedChange={() => handleChannelToggle("sms")}
-                  disabled={!canSendSMS && selectedRecipients.length > 0}
-                />
-                <MessageSquare className="h-4 w-4" />
-                <span>SMS (met handtekening)</span>
-                {!canSendSMS && selectedRecipients.length > 0 && (
-                  <Badge variant="destructive" className="text-xs">
-                    Niet alle ontvangers hebben telefoon
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Priority */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Prioriteit</h3>
-            <Select value={priority} onValueChange={(value: "normal" | "high" | "urgent") => setPriority(value)}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="normal">📋 Normaal</SelectItem>
-                <SelectItem value="high">⚠️ Hoog</SelectItem>
-                <SelectItem value="urgent">🚨 Urgent</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Templates */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Professionele Sjablonen</h3>
-            <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
-              <SelectTrigger>
-                <SelectValue placeholder="Kies een professioneel sjabloon (optioneel)" />
-              </SelectTrigger>
-              <SelectContent>
-                {messageTemplates.map((template) => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name}
+          {/* Message Type Selection */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Verzendmethode</CardTitle>
+              <CardDescription>Kies hoe het bericht verzonden moet worden</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Select value={messageType} onValueChange={(value: "sms" | "email" | "both") => setMessageType(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="both">
+                    <div className="flex items-center space-x-2">
+                      <MessageSquare className="h-4 w-4" />
+                      <span>Email + SMS (aanbevolen)</span>
+                    </div>
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                  <SelectItem value="email">
+                    <div className="flex items-center space-x-2">
+                      <Mail className="h-4 w-4" />
+                      <span>Alleen Email</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="sms">
+                    <div className="flex items-center space-x-2">
+                      <Phone className="h-4 w-4" />
+                      <span>Alleen SMS</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
 
           {/* Message Content */}
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Onderwerp</label>
-              <Input
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="Onderwerp van het bericht"
-                className="mt-1"
-              />
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Bericht</CardTitle>
+              <CardDescription>Kies een sjabloon of schrijf een aangepast bericht</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="templates" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="templates">
+                    <Template className="h-4 w-4 mr-2" />
+                    Sjablonen
+                  </TabsTrigger>
+                  <TabsTrigger value="custom">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Aangepast
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="templates" className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {messageTemplates.map((template) => (
+                      <div
+                        key={template.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                          selectedTemplate === template.id ? "border-blue-500 bg-blue-50" : "hover:bg-gray-50"
+                        }`}
+                        onClick={() => handleTemplateSelect(template.id)}
+                      >
+                        <h4 className="font-medium text-sm">{template.name}</h4>
+                        <p className="text-xs text-gray-600 mt-1">{template.content.substring(0, 100)}...</p>
+                        <Badge variant="outline" className="text-xs mt-2">
+                          {template.category}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="custom" className="space-y-4">
+                  <div className="space-y-3">
+                    {(messageType === "email" || messageType === "both") && (
+                      <div>
+                        <label className="text-sm font-medium">Email Onderwerp</label>
+                        <input
+                          type="text"
+                          value={customSubject}
+                          onChange={(e) => setCustomSubject(e.target.value)}
+                          placeholder="Voer email onderwerp in..."
+                          className="w-full mt-1 px-3 py-2 border rounded-md"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <label className="text-sm font-medium">Bericht</label>
+                      <Textarea
+                        value={customMessage}
+                        onChange={(e) => setCustomMessage(e.target.value)}
+                        placeholder="Voer uw bericht in..."
+                        rows={6}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          {/* Preview */}
+          {customMessage && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Voorbeeld</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {(messageType === "email" || messageType === "both") && customSubject && (
+                    <div>
+                      <label className="text-xs font-medium text-gray-600">EMAIL ONDERWERP:</label>
+                      <p className="text-sm font-medium">{customSubject}</p>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-xs font-medium text-gray-600">BERICHT:</label>
+                    <p className="text-sm whitespace-pre-wrap">{customMessage}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Send Button */}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="text-sm text-gray-600">
+              Bericht wordt verzonden naar {selectedRecipients.length} ontvangers
             </div>
-            <div>
-              <label className="text-sm font-medium">Bericht</label>
-              <Textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Typ uw professionele bericht hier..."
-                rows={8}
-                className="mt-1"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Gebruik {"{{name}}"}, {"{{company}}"}, {"{{location}}"}, {"{{host}}"} voor personalisatie. Uw
-                handtekening en logo's worden automatisch toegevoegd.
-              </p>
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => setIsOpen(false)}>
+                Annuleren
+              </Button>
+              <Button
+                onClick={handleSendMessage}
+                disabled={isSending || selectedRecipients.length === 0 || !customMessage.trim()}
+              >
+                {isSending ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Verzenden...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Bericht Versturen
+                  </>
+                )}
+              </Button>
             </div>
           </div>
-
-          {/* Send Result */}
-          {sendResult && (
-            <Alert className={sendResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
-              {sendResult.success ? (
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              ) : (
-                <AlertTriangle className="h-4 w-4 text-red-600" />
-              )}
-              <AlertDescription className={sendResult.success ? "text-green-800" : "text-red-800"}>
-                {sendResult.message}
-              </AlertDescription>
-            </Alert>
-          )}
         </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSending}>
-            Annuleren
-          </Button>
-          <Button onClick={handleSend} disabled={isSending || selectedRecipients.length === 0 || !message.trim()}>
-            {isSending ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                Verzenden...
-              </>
-            ) : (
-              <>
-                <Send className="h-4 w-4 mr-2" />
-                Verstuur Professioneel Bericht ({selectedRecipients.length})
-              </>
-            )}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

@@ -282,9 +282,9 @@ export function PresenceOverview({
 
   if (!selectedCustomer) {
     return (
-      <Card>
+      <Card className="bg-white">
         <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground">Selecteer een klant om aanwezigheid te bekijken</p>
+          <p className="text-gray-600">Selecteer een klant om aanwezigheid te bekijken</p>
         </CardContent>
       </Card>
     )
@@ -292,7 +292,7 @@ export function PresenceOverview({
 
   if (compact) {
     return (
-      <Card>
+      <Card className="bg-white">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Aanwezigheid</CardTitle>
@@ -310,13 +310,13 @@ export function PresenceOverview({
           <div className="grid grid-cols-2 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-blue-600">{bhvPresentCount}</div>
-              <div className="text-sm text-muted-foreground">BHV Aanwezig</div>
+              <div className="text-sm text-gray-600">BHV Aanwezig</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-green-600">
                 {people.filter((p) => p.type === "visitor" && p.status === "present").length}
               </div>
-              <div className="text-sm text-muted-foreground">Bezoekers</div>
+              <div className="text-sm text-gray-600">Bezoekers</div>
             </div>
           </div>
           {showMessaging && messageablePeople.length > 0 && (
@@ -338,7 +338,7 @@ export function PresenceOverview({
   }
 
   return (
-    <Card>
+    <Card className="bg-white">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -466,7 +466,7 @@ export function PresenceOverview({
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-muted-foreground">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
                   <div className="flex items-center">
                     <MapPin className="h-3 w-3 mr-1" />
                     {person.location}
@@ -488,14 +488,14 @@ export function PresenceOverview({
 
                 {/* Additional info based on type */}
                 {person.type === "visitor" && (
-                  <div className="mt-1 text-xs text-muted-foreground">
+                  <div className="mt-1 text-xs text-gray-500">
                     {person.company} • Host: {person.host} • {person.purpose}
                     {person.checkInTime && ` • Ingecheckt: ${person.checkInTime}`}
                   </div>
                 )}
 
                 {person.type === "contractor" && (
-                  <div className="mt-1 text-xs text-muted-foreground">
+                  <div className="mt-1 text-xs text-gray-500">
                     {person.company}
                     {person.licensePlate && ` • ${person.licensePlate}`}
                     {person.checkInTime && ` • Ingecheckt: ${person.checkInTime}`}
@@ -504,7 +504,7 @@ export function PresenceOverview({
                 )}
 
                 {person.role && (
-                  <div className="mt-1 text-xs text-muted-foreground">
+                  <div className="mt-1 text-xs text-gray-500">
                     Rol: {person.role}
                     {person.bhvRoles && ` • BHV: ${person.bhvRoles.join(", ")}`}
                   </div>
@@ -545,7 +545,7 @@ export function PresenceOverview({
           ))}
 
           {filteredPeople.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-gray-600">
               <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p>Geen personen gevonden voor het geselecteerde filter</p>
             </div>

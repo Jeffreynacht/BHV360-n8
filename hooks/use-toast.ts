@@ -1,6 +1,5 @@
 "use client"
 
-// Inspired by react-hot-toast library
 import * as React from "react"
 
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast"
@@ -88,8 +87,6 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -137,7 +134,7 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toastFn({ ...props }: Toast) {
+function toast({ ...props }: Toast) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -181,30 +178,9 @@ function useToast() {
 
   return {
     ...state,
-    toast: toastFn,
+    toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   }
 }
 
-export { useToast }
-
-// Export toast function for compatibility
-export const toast = ({
-  title,
-  description,
-  variant = "default",
-  ...props
-}: {
-  title?: string
-  description?: string
-  variant?: "default" | "destructive"
-  [key: string]: any
-}) => {
-  const { toast: toastFn } = useToast()
-  return toastFn({
-    title,
-    description,
-    variant,
-    ...props,
-  })
-}
+export { useToast, toast }

@@ -1,555 +1,404 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { UserPlus, CheckCircle, Camera, AlertTriangle, QrCode, X } from "lucide-react"
-import { toast } from "@/hooks/use-toast"
+import { ArrowLeft, UserPlus, Shield, Clock, CheckCircle, Users, Bell, MapPin, Phone } from "lucide-react"
+import Link from "next/link"
 
-type Visitor = {
-  id: string
-  name: string
-  company: string
-  purpose: string
-  host: string
-  phone: string
-  email?: string
-  arrivalTime: string
-  expectedDepartureTime?: string
-  photo?: string
-  emergencyContact?: {
-    name: string
-    phone: string
-  }
-  hasDisability: boolean
-  disabilityDetails?: string
-  needsAssistance: boolean
-  assistanceDetails?: string
-  privacyConsent: boolean
-  safetyBriefingCompleted: boolean
-  status: "registered" | "arrived"
-}
-
-export default function VisitorRegistrationPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [showCamera, setShowCamera] = useState(false)
-  const [photo, setPhoto] = useState<string | null>(null)
-  const [visitor, setVisitor] = useState<Visitor | null>(null)
-
-  // Form state
+export default function VisitorRegistrationDemo() {
+  const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     name: "",
     company: "",
-    purpose: "",
-    host: "",
-    phone: "",
     email: "",
-    expectedDepartureTime: "",
-    emergencyContactName: "",
-    emergencyContactPhone: "",
-    hasDisability: false,
-    disabilityDetails: "",
-    needsAssistance: false,
-    assistanceDetails: "",
-    privacyConsent: false,
-    safetyBriefingCompleted: false,
+    phone: "",
+    host: "",
+    purpose: "",
+    duration: "",
+    safetyBriefing: false,
+    emergencyContact: "",
   })
 
-  const purposeOptions = [
-    "Vergadering",
-    "Presentatie",
-    "Training",
-    "Interview",
-    "Leverancier",
-    "Onderhoud",
-    "Inspectie",
-    "Consultatie",
-    "Andere",
-  ]
-
-  const hostOptions = [
-    "Marie Jansen - HR Manager",
-    "Piet de Vries - IT Manager",
-    "Lisa van Dam - Marketing Manager",
-    "Tom Bakker - Facility Manager",
-    "Jan Pietersen - Operations Manager",
-    "Sarah Wilson - Finance Manager",
-  ]
-
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (step < 3) {
+      setStep(step + 1)
+    }
   }
 
-  const takePicture = () => {
-    // Simulate taking a picture
-    setPhoto("/placeholder.svg?height=200&width=200")
-    setShowCamera(false)
-    toast({
-      title: "Foto gemaakt",
-      description: "Foto succesvol toegevoegd aan registratie",
-    })
-  }
-
-  const handleRegister = async () => {
-    // Validation
-    if (!formData.name || !formData.company || !formData.purpose || !formData.host || !formData.phone) {
-      toast({
-        title: "Velden ontbreken",
-        description: "Vul alle verplichte velden in",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!formData.privacyConsent) {
-      toast({
-        title: "Privacy toestemming vereist",
-        description: "Je moet akkoord gaan met de privacy voorwaarden",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!formData.safetyBriefingCompleted) {
-      toast({
-        title: "Veiligheidsinstructie vereist",
-        description: "De veiligheidsinstructie moet worden voltooid",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsSubmitting(true)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    const newVisitor: Visitor = {
-      id: `VIS-${Date.now()}`,
-      name: formData.name,
-      company: formData.company,
-      purpose: formData.purpose,
-      host: formData.host,
-      phone: formData.phone,
-      email: formData.email,
-      arrivalTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      expectedDepartureTime: formData.expectedDepartureTime,
-      photo,
-      emergencyContact: formData.emergencyContactName
-        ? {
-            name: formData.emergencyContactName,
-            phone: formData.emergencyContactPhone,
-          }
-        : undefined,
-      hasDisability: formData.hasDisability,
-      disabilityDetails: formData.disabilityDetails,
-      needsAssistance: formData.needsAssistance,
-      assistanceDetails: formData.assistanceDetails,
-      privacyConsent: formData.privacyConsent,
-      safetyBriefingCompleted: formData.safetyBriefingCompleted,
-      status: "arrived",
-    }
-
-    setVisitor(newVisitor)
-    setIsSubmitting(false)
-    setShowSuccess(true)
-
-    toast({
-      title: "Registratie voltooid",
-      description: `${newVisitor.name} is succesvol geregistreerd`,
-    })
-  }
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      company: "",
-      purpose: "",
-      host: "",
-      phone: "",
-      email: "",
-      expectedDepartureTime: "",
-      emergencyContactName: "",
-      emergencyContactPhone: "",
-      hasDisability: false,
-      disabilityDetails: "",
-      needsAssistance: false,
-      assistanceDetails: "",
-      privacyConsent: false,
-      safetyBriefingCompleted: false,
-    })
-    setPhoto(null)
-    setVisitor(null)
-    setShowSuccess(false)
-  }
+  const hosts = ["Jan van der Berg - Directie", "Maria Jansen - HR", "Piet Bakker - IT", "Lisa de Vries - Marketing"]
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Bezoeker Registratie</h1>
-        <p className="text-muted-foreground">Registreer een nieuwe bezoeker voor toegang tot het gebouw</p>
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Link href="/">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Terug naar Home
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-xl font-semibold text-gray-900">Bezoeker Registratie Demo</h1>
+                <p className="text-sm text-gray-500">Professionele check-in met veiligheidsprotocol</p>
+              </div>
+            </div>
+            <Badge className="bg-blue-100 text-blue-800">Demo Modus</Badge>
+          </div>
+        </div>
       </div>
 
-      <div className="max-w-2xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <UserPlus className="h-5 w-5" />
-              <span>Nieuwe Bezoeker</span>
-            </CardTitle>
-            <CardDescription>
-              Alle velden met * zijn verplicht. Gegevens worden AVG-proof verwerkt en na 30 dagen automatisch
-              verwijderd.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Personal Information */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Persoonlijke Gegevens</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Volledige naam *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    placeholder="Voor- en achternaam"
-                  />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Progress Indicator */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            {[1, 2, 3].map((stepNumber) => (
+              <div key={stepNumber} className="flex items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    step >= stepNumber ? "bg-blue-600 text-white" : "bg-gray-300 text-gray-600"
+                  }`}
+                >
+                  {step > stepNumber ? <CheckCircle className="h-4 w-4" /> : stepNumber}
                 </div>
-                <div>
-                  <Label htmlFor="company">Bedrijf/Organisatie *</Label>
-                  <Input
-                    id="company"
-                    value={formData.company}
-                    onChange={(e) => handleInputChange("company", e.target.value)}
-                    placeholder="Bedrijfsnaam"
-                  />
-                </div>
+                {stepNumber < 3 && (
+                  <div className={`w-24 h-1 mx-2 ${step > stepNumber ? "bg-blue-600" : "bg-gray-300"}`} />
+                )}
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="phone">Telefoonnummer *</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                    placeholder="06-12345678"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">E-mailadres</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    placeholder="naam@bedrijf.nl"
-                  />
-                </div>
-              </div>
-            </div>
+            ))}
+          </div>
+          <div className="flex justify-between mt-2 text-sm text-gray-600">
+            <span>Registratie</span>
+            <span>Veiligheid</span>
+            <span>Bevestiging</span>
+          </div>
+        </div>
 
-            {/* Visit Information */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Bezoek Informatie</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="purpose">Doel van bezoek *</Label>
-                  <Select value={formData.purpose} onValueChange={(value) => handleInputChange("purpose", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecteer doel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {purposeOptions.map((purpose) => (
-                        <SelectItem key={purpose} value={purpose}>
-                          {purpose}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        {/* Step 1: Basic Registration */}
+        {step === 1 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <UserPlus className="h-5 w-5 mr-2" />
+                Bezoeker Informatie
+              </CardTitle>
+              <CardDescription>Vul uw gegevens in voor een veilige en professionele ontvangst</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="name">Volledige Naam *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="Uw voor- en achternaam"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="company">Bedrijf</Label>
+                    <Input
+                      id="company"
+                      value={formData.company}
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      placeholder="Naam van uw bedrijf"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">E-mailadres *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="uw.email@bedrijf.nl"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Telefoonnummer *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="06-12345678"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="host">Gastheer/Gastvrouw *</Label>
+                    <Select onValueChange={(value) => setFormData({ ...formData, host: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecteer uw contactpersoon" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hosts.map((host) => (
+                          <SelectItem key={host} value={host}>
+                            {host}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="duration">Verwachte duur</Label>
+                    <Select onValueChange={(value) => setFormData({ ...formData, duration: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Hoe lang blijft u?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="30min">30 minuten</SelectItem>
+                        <SelectItem value="1hour">1 uur</SelectItem>
+                        <SelectItem value="2hours">2 uur</SelectItem>
+                        <SelectItem value="halfday">Halve dag</SelectItem>
+                        <SelectItem value="fullday">Hele dag</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div>
-                  <Label htmlFor="host">Gastheer/Contactpersoon *</Label>
-                  <Select value={formData.host} onValueChange={(value) => handleInputChange("host", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecteer gastheer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {hostOptions.map((host) => (
-                        <SelectItem key={host} value={host}>
-                          {host}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="expectedDepartureTime">Verwachte vertrektijd</Label>
-                <Input
-                  id="expectedDepartureTime"
-                  type="time"
-                  value={formData.expectedDepartureTime}
-                  onChange={(e) => handleInputChange("expectedDepartureTime", e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Emergency Contact */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Noodcontact (optioneel)</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="emergencyContactName">Naam noodcontact</Label>
-                  <Input
-                    id="emergencyContactName"
-                    value={formData.emergencyContactName}
-                    onChange={(e) => handleInputChange("emergencyContactName", e.target.value)}
-                    placeholder="Naam"
+                  <Label htmlFor="purpose">Doel van het bezoek</Label>
+                  <Textarea
+                    id="purpose"
+                    value={formData.purpose}
+                    onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
+                    placeholder="Korte beschrijving van uw bezoek..."
+                    rows={3}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="emergencyContactPhone">Telefoon noodcontact</Label>
-                  <Input
-                    id="emergencyContactPhone"
-                    value={formData.emergencyContactPhone}
-                    onChange={(e) => handleInputChange("emergencyContactPhone", e.target.value)}
-                    placeholder="06-12345678"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Photo */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Foto (optioneel)</h3>
-              {!photo ? (
-                <Button variant="outline" onClick={() => setShowCamera(true)} className="w-full">
-                  <Camera className="h-4 w-4 mr-2" />
-                  Foto maken voor identificatie
+                <Button type="submit" className="w-full" size="lg">
+                  Volgende Stap
                 </Button>
-              ) : (
-                <div className="flex items-center space-x-4">
-                  <img
-                    src={photo || "/placeholder.svg"}
-                    alt="Visitor photo"
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                  <Button variant="outline" onClick={() => setPhoto(null)}>
-                    <X className="h-4 w-4 mr-2" />
-                    Verwijderen
-                  </Button>
-                </div>
-              )}
-            </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
-            {/* Accessibility */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Toegankelijkheid</h3>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="hasDisability"
-                    checked={formData.hasDisability}
-                    onCheckedChange={(checked) => handleInputChange("hasDisability", checked as boolean)}
-                  />
-                  <div>
-                    <Label htmlFor="hasDisability" className="text-sm font-medium">
-                      Ik heb een beperking die relevant is voor evacuatie
-                    </Label>
-                    <p className="text-xs text-gray-600 mt-1">
-                      Bijvoorbeeld: rolstoelgebruiker, slechtziend, slechthorend
-                    </p>
+        {/* Step 2: Safety Briefing */}
+        {step === 2 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Shield className="h-5 w-5 mr-2" />
+                Veiligheidsprotocol
+              </CardTitle>
+              <CardDescription>Belangrijke veiligheidsinformatie voor uw bezoek</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Safety Information */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h3 className="font-semibold text-blue-900 mb-3">Veiligheidsinstructies</h3>
+                  <div className="space-y-2 text-sm text-blue-800">
+                    <div className="flex items-start">
+                      <CheckCircle className="h-4 w-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                      <span>Bij alarm: volg de groene evacuatieborden naar de dichtstbijzijnde uitgang</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-4 w-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                      <span>Verzamelplaats: parkeerplaats aan de voorzijde van het gebouw</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-4 w-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                      <span>BHV'ers zijn herkenbaar aan hun gele hesjes</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-4 w-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                      <span>EHBO post bevindt zich op de begane grond bij de receptie</span>
+                    </div>
                   </div>
                 </div>
-                {formData.hasDisability && (
-                  <div>
-                    <Label htmlFor="disabilityDetails">Beschrijving beperking</Label>
-                    <Textarea
-                      id="disabilityDetails"
-                      value={formData.disabilityDetails}
-                      onChange={(e) => handleInputChange("disabilityDetails", e.target.value)}
-                      placeholder="Beschrijf je beperking zodat we je kunnen helpen..."
-                      rows={2}
-                    />
-                  </div>
-                )}
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="needsAssistance"
-                    checked={formData.needsAssistance}
-                    onCheckedChange={(checked) => handleInputChange("needsAssistance", checked as boolean)}
-                  />
-                  <div>
-                    <Label htmlFor="needsAssistance" className="text-sm font-medium">
-                      Ik heb hulp nodig bij evacuatie
-                    </Label>
-                  </div>
-                </div>
-                {formData.needsAssistance && (
-                  <div>
-                    <Label htmlFor="assistanceDetails">Welke hulp heb je nodig?</Label>
-                    <Textarea
-                      id="assistanceDetails"
-                      value={formData.assistanceDetails}
-                      onChange={(e) => handleInputChange("assistanceDetails", e.target.value)}
-                      placeholder="Beschrijf welke hulp je nodig hebt bij evacuatie..."
-                      rows={2}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
 
-            {/* Privacy & Safety */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Privacy & Veiligheid</h3>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="privacyConsent"
-                    checked={formData.privacyConsent}
-                    onCheckedChange={(checked) => handleInputChange("privacyConsent", checked as boolean)}
-                  />
-                  <div>
-                    <Label htmlFor="privacyConsent" className="text-sm font-medium">
-                      Ik ga akkoord met de verwerking van mijn gegevens *
-                    </Label>
-                    <p className="text-xs text-gray-600 mt-1">
-                      Je gegevens worden gebruikt voor toegangscontrole en veiligheid. Na 30 dagen worden ze automatisch
-                      verwijderd.
-                    </p>
+                {/* Emergency Contacts */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                    <h4 className="font-semibold text-red-900 mb-2">Noodgevallen</h4>
+                    <div className="space-y-1 text-sm text-red-800">
+                      <div className="flex items-center">
+                        <Phone className="h-3 w-3 mr-2" />
+                        <span>Brandweer/Ambulance: 112</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Phone className="h-3 w-3 mr-2" />
+                        <span>BHV Coördinator: 06-12345678</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <h4 className="font-semibold text-green-900 mb-2">Uw Gastheer</h4>
+                    <div className="space-y-1 text-sm text-green-800">
+                      <div className="flex items-center">
+                        <Users className="h-3 w-3 mr-2" />
+                        <span>{formData.host || "Nog niet geselecteerd"}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Bell className="h-3 w-3 mr-2" />
+                        <span>Wordt automatisch geïnformeerd</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="safetyBriefing"
-                    checked={formData.safetyBriefingCompleted}
-                    onCheckedChange={(checked) => handleInputChange("safetyBriefingCompleted", checked as boolean)}
-                  />
-                  <div>
-                    <Label htmlFor="safetyBriefing" className="text-sm font-medium">
+
+                {/* Confirmation */}
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      id="safety"
+                      checked={formData.safetyBriefing}
+                      onCheckedChange={(checked) => setFormData({ ...formData, safetyBriefing: checked as boolean })}
+                    />
+                    <Label htmlFor="safety" className="text-sm">
                       Ik heb de veiligheidsinstructies gelezen en begrepen *
                     </Label>
-                    <p className="text-xs text-gray-600 mt-1">
-                      Inclusief evacuatieprocedures, nooduitgangen en verzamelpunt
-                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="emergency">Noodcontact (optioneel)</Label>
+                    <Input
+                      id="emergency"
+                      value={formData.emergencyContact}
+                      onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })}
+                      placeholder="Naam en telefoonnummer van noodcontact"
+                    />
                   </div>
                 </div>
+
+                <div className="flex space-x-4">
+                  <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
+                    Vorige
+                  </Button>
+                  <Button onClick={() => setStep(3)} className="flex-1" disabled={!formData.safetyBriefing}>
+                    Registratie Voltooien
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 3: Confirmation */}
+        {step === 3 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-green-600">
+                <CheckCircle className="h-5 w-5 mr-2" />
+                Registratie Voltooid
+              </CardTitle>
+              <CardDescription>Welkom! Uw bezoek is geregistreerd en uw gastheer is geïnformeerd.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Visitor Badge */}
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">Bezoeker Badge</h3>
+                      <p className="text-blue-100">Draag deze zichtbaar tijdens uw bezoek</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold">#V001</div>
+                      <div className="text-sm text-blue-100">Badge nummer</div>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-blue-400">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <div className="text-blue-100">Bezoeker</div>
+                        <div className="font-semibold">{formData.name}</div>
+                      </div>
+                      <div>
+                        <div className="text-blue-100">Gastheer</div>
+                        <div className="font-semibold">{formData.host}</div>
+                      </div>
+                      <div>
+                        <div className="text-blue-100">Datum</div>
+                        <div className="font-semibold">{new Date().toLocaleDateString("nl-NL")}</div>
+                      </div>
+                      <div>
+                        <div className="text-blue-100">Tijd</div>
+                        <div className="font-semibold">
+                          {new Date().toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Next Steps */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-3">Volgende Stappen</h4>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <div className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      <span>Uw gastheer {formData.host?.split(" - ")[0]} is geïnformeerd</span>
+                    </div>
+                    <div className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      <span>U bent toegevoegd aan de evacuatielijst</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 text-blue-500 mr-2" />
+                      <span>Verwachte aankomst gastheer: 2-3 minuten</span>
+                    </div>
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 text-gray-500 mr-2" />
+                      <span>Wachtruimte: receptie begane grond</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex space-x-4">
+                  <Button className="flex-1">
+                    <Phone className="h-4 w-4 mr-2" />
+                    Contact Gastheer
+                  </Button>
+                  <Button variant="outline" className="flex-1 bg-transparent">
+                    Badge Printen
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Demo CTA */}
+        <Card className="mt-8 bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+          <CardContent className="p-6">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Professionele bezoeker ervaring!</h3>
+              <p className="text-gray-600 mb-4">
+                BHV360 zorgt voor een veilige en professionele ontvangst van al uw bezoekers. Automatische notificaties,
+                veiligheidsprotocol en evacuatielijsten.
+              </p>
+              <div className="flex justify-center space-x-4">
+                <Link href="/login">
+                  <Button size="lg">Start Gratis Trial</Button>
+                </Link>
+                <Link href="/">
+                  <Button variant="outline" size="lg">
+                    Meer Demo's
+                  </Button>
+                </Link>
               </div>
             </div>
-
-            {/* Submit Button */}
-            <Button
-              onClick={handleRegister}
-              disabled={isSubmitting || !formData.privacyConsent || !formData.safetyBriefingCompleted}
-              className="w-full"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Registreren...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Bezoeker Registreren
-                </>
-              )}
-            </Button>
           </CardContent>
         </Card>
       </div>
-
-      {/* Camera Modal */}
-      <Dialog open={showCamera} onOpenChange={setShowCamera}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Foto maken</DialogTitle>
-            <DialogDescription>Maak een foto voor identificatie</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center">
-              <Camera className="h-16 w-16 text-gray-400" />
-              <p className="text-gray-500 ml-2">Camera Preview</p>
-            </div>
-            <div className="flex space-x-2">
-              <Button onClick={takePicture} className="flex-1">
-                <Camera className="h-4 w-4 mr-2" />
-                Foto maken
-              </Button>
-              <Button variant="outline" onClick={() => setShowCamera(false)}>
-                Annuleren
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Success Modal */}
-      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2 text-green-600">
-              <CheckCircle className="h-5 w-5" />
-              <span>Registratie Voltooid!</span>
-            </DialogTitle>
-            <DialogDescription>De bezoeker is succesvol geregistreerd en kan het gebouw betreden.</DialogDescription>
-          </DialogHeader>
-          {visitor && (
-            <div className="space-y-4">
-              <div className="p-4 bg-green-50 rounded-lg">
-                <h4 className="font-semibold text-green-800">Bezoeker gegevens:</h4>
-                <p className="text-sm text-green-700">Naam: {visitor.name}</p>
-                <p className="text-sm text-green-700">Bedrijf: {visitor.company}</p>
-                <p className="text-sm text-green-700">Gastheer: {visitor.host}</p>
-                <p className="text-sm text-green-700">Aankomst: {visitor.arrivalTime}</p>
-                {visitor.expectedDepartureTime && (
-                  <p className="text-sm text-green-700">Verwacht vertrek: {visitor.expectedDepartureTime}</p>
-                )}
-              </div>
-
-              {(visitor.hasDisability || visitor.needsAssistance) && (
-                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <h4 className="font-semibold text-orange-800 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    Speciale aandacht:
-                  </h4>
-                  {visitor.hasDisability && (
-                    <p className="text-sm text-orange-700">Beperking: {visitor.disabilityDetails}</p>
-                  )}
-                  {visitor.needsAssistance && (
-                    <p className="text-sm text-orange-700">Hulp nodig: {visitor.assistanceDetails}</p>
-                  )}
-                </div>
-              )}
-
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-semibold text-blue-800 flex items-center">
-                  <QrCode className="h-4 w-4 mr-1" />
-                  Bezoeker ID: {visitor.id}
-                </h4>
-                <p className="text-sm text-blue-700 mt-2">Deze ID kan gebruikt worden voor uitchecken en tracking.</p>
-              </div>
-
-              <Button onClick={resetForm} className="w-full">
-                Nieuwe Bezoeker Registreren
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
