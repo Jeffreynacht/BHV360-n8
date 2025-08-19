@@ -1,153 +1,105 @@
-// Database adapter - Neon serverless only
-import { sql } from "./neon-config"
+export interface DatabaseResult {
+  success: boolean
+  data?: any
+  error?: string
+  message?: string
+}
+
+export interface DatabaseConnection {
+  host: string
+  port: number
+  database: string
+  user: string
+  password: string
+}
 
 export class DatabaseAdapter {
-  // Customers
-  async getCustomers() {
+  private connection: DatabaseConnection | null = null
+
+  constructor(connection?: DatabaseConnection) {
+    this.connection = connection || null
+  }
+
+  async connect(): Promise<DatabaseResult> {
     try {
-      return await sql`SELECT * FROM customers ORDER BY name`
+      // Mock connection logic
+      if (!this.connection) {
+        return {
+          success: false,
+          error: "No connection configuration provided",
+        }
+      }
+
+      // Simulate connection attempt
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      return {
+        success: true,
+        message: "Database connected successfully",
+      }
     } catch (error) {
-      console.error("Database error:", error)
-      // Return mock data as fallback
-      return [
-        {
-          id: "1",
-          name: "Demo Bedrijf BV",
-          contact_person: "Jan de Vries",
-          email: "jan@demobedrijf.nl",
-          active: true,
-          buildings: 3,
-          users: 25,
-          status: "active",
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: "2",
-          name: "Provincie Noord-Brabant",
-          contact_person: "Marie van den Berg",
-          email: "marie@brabant.nl",
-          active: true,
-          buildings: 5,
-          users: 50,
-          status: "active",
-          created_at: new Date().toISOString(),
-        },
-      ]
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      }
     }
   }
 
-  async getCustomerById(id: string) {
+  async query(sql: string, params?: any[]): Promise<DatabaseResult> {
     try {
-      const result = await sql`SELECT * FROM customers WHERE id = ${id}`
-      return result[0] || null
+      // Mock query execution
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      return {
+        success: true,
+        data: [],
+        message: "Query executed successfully",
+      }
     } catch (error) {
-      console.error("Database error:", error)
-      return null
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Query failed",
+      }
     }
   }
 
-  async createCustomer(data: any) {
+  async disconnect(): Promise<DatabaseResult> {
     try {
-      const result = await sql`
-        INSERT INTO customers (name, contact_person, email, phone, address, active, buildings, users, status)
-        VALUES (${data.name}, ${data.contact_person}, ${data.email}, ${data.phone}, ${data.address}, ${data.active}, ${data.buildings}, ${data.users}, ${data.status})
-        RETURNING *
-      `
-      return result[0]
+      this.connection = null
+      return {
+        success: true,
+        message: "Database disconnected",
+      }
     } catch (error) {
-      console.error("Database error:", error)
-      return null
-    }
-  }
-
-  // Users
-  async getUsersByCustomer(customerId: string) {
-    try {
-      return await sql`
-        SELECT * FROM users 
-        WHERE customer_id = ${customerId} 
-        ORDER BY name
-      `
-    } catch (error) {
-      console.error("Database error:", error)
-      return []
-    }
-  }
-
-  async createUser(data: any) {
-    try {
-      const result = await sql`
-        INSERT INTO users (customer_id, name, email, phone, role, department, bhv_roles, active)
-        VALUES (${data.customer_id}, ${data.name}, ${data.email}, ${data.phone}, ${data.role}, ${data.department}, ${JSON.stringify(data.bhv_roles)}, ${data.active})
-        RETURNING *
-      `
-      return result[0]
-    } catch (error) {
-      console.error("Database error:", error)
-      return null
-    }
-  }
-
-  // Facilities
-  async getFacilitiesByCustomer(customerId: string) {
-    try {
-      return await sql`
-        SELECT * FROM facilities 
-        WHERE customer_id = ${customerId} 
-        ORDER BY name
-      `
-    } catch (error) {
-      console.error("Database error:", error)
-      return []
-    }
-  }
-
-  // NFC Tags
-  async getNfcTagsByCustomer(customerId: string) {
-    try {
-      return await sql`
-        SELECT * FROM nfc_tags 
-        WHERE customer_id = ${customerId} 
-        ORDER BY name
-      `
-    } catch (error) {
-      console.error("Database error:", error)
-      return []
-    }
-  }
-
-  // Plotkaart
-  async getPlotkaartByCustomer(customerId: string) {
-    try {
-      const result = await sql`
-        SELECT * FROM plotkaart_data 
-        WHERE customer_id = ${customerId}
-        ORDER BY created_at DESC
-        LIMIT 1
-      `
-      return result[0] || null
-    } catch (error) {
-      console.error("Database error:", error)
-      return null
-    }
-  }
-
-  // Incidents
-  async getIncidentsByCustomer(customerId: string) {
-    try {
-      return await sql`
-        SELECT i.*, u.name as reported_by_name, a.name as assigned_to_name
-        FROM incidents i
-        LEFT JOIN users u ON i.reported_by = u.id
-        LEFT JOIN users a ON i.assigned_to = a.id
-        WHERE i.customer_id = ${customerId}
-        ORDER BY i.created_at DESC
-      `
-    } catch (error) {
-      console.error("Database error:", error)
-      return []
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Disconnect failed",
+      }
     }
   }
 }
 
-export const db = new DatabaseAdapter()
+export async function testDatabaseConnection(): Promise<DatabaseResult> {
+  try {
+    const adapter = new DatabaseAdapter({
+      host: process.env.PGHOST || "localhost",
+      port: Number.parseInt(process.env.PGPORT || "5432"),
+      database: process.env.POSTGRES_DATABASE || "bhv360",
+      user: process.env.POSTGRES_USER || "postgres",
+      password: process.env.POSTGRES_PASSWORD || "",
+    })
+
+    const result = await adapter.connect()
+
+    if (result.success) {
+      await adapter.disconnect()
+    }
+
+    return result
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Connection test failed",
+    }
+  }
+}

@@ -1,7 +1,10 @@
 {
-  "buildCommand": "pnpm run build",
+  "buildCommand": "npm run build",
   "installCommand": "corepack enable && corepack use pnpm@10 && pnpm install --frozen-lockfile=false",
   "framework": "nextjs",
+  "outputDirectory": "out",
+  "trailingSlash": false,
+  "cleanUrls": true,
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 30
@@ -9,8 +12,8 @@
   },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
     }
   ],
   "headers": [

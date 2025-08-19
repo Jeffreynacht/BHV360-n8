@@ -1,337 +1,451 @@
+export interface Module {
+  id: string
+  name: string
+  description: string
+  category: "core" | "premium" | "enterprise" | "addon"
+  price: number
+  currency: string
+  features: string[]
+  icon: string
+  color: string
+  popular: boolean
+  active: boolean
+  dependencies?: string[]
+  version: string
+  lastUpdated: Date
+}
+
+export interface ModuleDefinition {
+  id: string
+  name: string
+  description: string
+  category: string
+  tier: string
+  version: string
+  enabled: boolean
+  visible: boolean
+  core: boolean
+  status: "active" | "beta" | "deprecated"
+  features: string[]
+  pricing: {
+    basePrice: number
+    setupFee?: number
+    freeTrialDays?: number
+  }
+  rating: number
+  reviews: number
+  popularity: number
+  implemented: boolean
+  routePath?: string
+}
+
 export interface ModuleTier {
   id: string
   name: string
   description: string
-  priceRange?: string
+  priceRange: string
+  features: string[]
 }
 
 export interface ModuleCategory {
   id: string
   name: string
   description: string
+  icon: string
+  color: string
 }
 
 export interface ModulePricing {
-  model: "per_user" | "per_building" | "per_customer" | "fixed"
   basePrice: number
   setupFee?: number
+  monthlyFee?: number
+  yearlyDiscount?: number
   freeTrialDays?: number
-  tierPricing?: { minUsers: number; maxUsers?: number; pricePerUser: number }[]
 }
 
-export interface ModuleDefinition {
+export interface ModuleActivationRequest {
   id: string
-  name: string
-  title: string
-  description: string
-  category: string
-  tier: string
-  features: string[]
-  pricingModel: string
+  customerId: string
+  moduleId: string
+  requestedBy: string
+  requestedAt: Date
+  status: "pending" | "approved" | "rejected"
+  approvedBy?: string
+  approvedAt?: Date
+  rejectedBy?: string
+  rejectedAt?: Date
+  rejectionReason?: string
+  notes?: string
   pricing: ModulePricing
-  status?: "ga" | "beta" | "dev"
-  rating: number
-  reviews: number
-  popularity: number
-  version: string
-  visible: boolean
-  enabled: boolean
-  implemented: boolean
-  routePath?: string
-  core?: boolean
 }
+
+const modules: Module[] = [
+  {
+    id: "bhv-dashboard",
+    name: "BHV Dashboard",
+    description: "Complete BHV administratie met certificering tracking",
+    category: "core",
+    price: 39,
+    currency: "EUR",
+    features: [
+      "Team overzicht",
+      "Certificaat tracking",
+      "Competentie matrix",
+      "Rooster planning",
+      "Rapportage dashboard",
+    ],
+    icon: "shield",
+    color: "#2563eb",
+    popular: true,
+    active: true,
+    version: "2.1.0",
+    lastUpdated: new Date("2024-01-15"),
+  },
+  {
+    id: "plotkaart-editor",
+    name: "Interactieve Plotkaarten",
+    description: "Digitale plattegronden met real-time status",
+    category: "core",
+    price: 29,
+    currency: "EUR",
+    features: [
+      "Drag & drop editor",
+      "Veiligheidsiconen bibliotheek",
+      "Real-time updates",
+      "PDF export",
+      "Multi-verdieping support",
+    ],
+    icon: "map",
+    color: "#16a34a",
+    popular: true,
+    active: true,
+    version: "1.8.2",
+    lastUpdated: new Date("2024-01-10"),
+  },
+  {
+    id: "incident-management",
+    name: "Incident Management",
+    description: "Snelle incident registratie met workflows",
+    category: "premium",
+    price: 49,
+    currency: "EUR",
+    features: [
+      "Real-time incident logging",
+      "Automatische workflows",
+      "Escalatie procedures",
+      "Rapportage & analytics",
+      "Mobile incident app",
+    ],
+    icon: "alert-triangle",
+    color: "#dc2626",
+    popular: true,
+    active: true,
+    version: "3.0.1",
+    lastUpdated: new Date("2024-01-12"),
+  },
+  {
+    id: "visitor-registration",
+    name: "Bezoeker Registratie",
+    description: "Professionele bezoeker check-in systeem",
+    category: "premium",
+    price: 35,
+    currency: "EUR",
+    features: [
+      "QR code check-in",
+      "Badge printing",
+      "Aanwezigheidsoverzicht",
+      "Evacuatie lijsten",
+      "Contractor management",
+    ],
+    icon: "users",
+    color: "#7c3aed",
+    popular: false,
+    active: true,
+    version: "1.5.0",
+    lastUpdated: new Date("2024-01-08"),
+  },
+  {
+    id: "analytics-reporting",
+    name: "Analytics & Rapportage",
+    description: "Uitgebreide analytics en compliance rapportage",
+    category: "premium",
+    price: 25,
+    currency: "EUR",
+    features: ["Custom dashboards", "Compliance rapportage", "Trend analyse", "Automated reports", "Data export"],
+    icon: "bar-chart",
+    color: "#ea580c",
+    popular: false,
+    active: true,
+    version: "2.3.1",
+    lastUpdated: new Date("2024-01-14"),
+  },
+  {
+    id: "mobile-app",
+    name: "Mobiele App",
+    description: "Complete mobiele toegang voor BHV'ers",
+    category: "addon",
+    price: 19,
+    currency: "EUR",
+    features: [
+      "iOS & Android app",
+      "Offline functionaliteit",
+      "Push notificaties",
+      "QR code scanner",
+      "Emergency button",
+    ],
+    icon: "smartphone",
+    color: "#4f46e5",
+    popular: false,
+    active: true,
+    version: "1.2.3",
+    lastUpdated: new Date("2024-01-11"),
+  },
+  {
+    id: "advanced-notifications",
+    name: "Geavanceerde Notificaties",
+    description: "Multi-channel notificatie systeem",
+    category: "enterprise",
+    price: 59,
+    currency: "EUR",
+    features: ["SMS notificaties", "Email campaigns", "Push notifications", "Voice calls", "Escalation chains"],
+    icon: "bell",
+    color: "#059669",
+    popular: false,
+    active: true,
+    version: "1.0.5",
+    lastUpdated: new Date("2024-01-09"),
+  },
+  {
+    id: "api-integrations",
+    name: "API Integraties",
+    description: "Koppeling met externe systemen",
+    category: "enterprise",
+    price: 79,
+    currency: "EUR",
+    features: ["REST API access", "Webhook support", "Third-party integrations", "Custom connectors", "Real-time sync"],
+    icon: "link",
+    color: "#0891b2",
+    popular: false,
+    active: true,
+    version: "2.0.0",
+    lastUpdated: new Date("2024-01-13"),
+  },
+]
+
+export const AVAILABLE_MODULES: ModuleDefinition[] = [
+  {
+    id: "bhv-aanwezigheid",
+    name: "BHV Aanwezigheid",
+    description: "Real-time tracking van BHV leden",
+    category: "basis",
+    tier: "starter",
+    version: "2.1.0",
+    enabled: true,
+    visible: true,
+    core: true,
+    status: "active",
+    features: ["Real-time tracking", "Status updates", "Locatie monitoring"],
+    pricing: { basePrice: 2900, freeTrialDays: 14 },
+    rating: 4.8,
+    reviews: 45,
+    popularity: 85,
+    implemented: true,
+    routePath: "/bhv-aanwezigheid",
+  },
+  {
+    id: "incident-management",
+    name: "Incident Management",
+    description: "Uitgebreid incident beheer systeem",
+    category: "geavanceerd",
+    tier: "professional",
+    version: "1.8.2",
+    enabled: true,
+    visible: true,
+    core: false,
+    status: "active",
+    features: ["Incident tracking", "Rapportage", "Workflow management"],
+    pricing: { basePrice: 4900, setupFee: 5000 },
+    rating: 4.6,
+    reviews: 32,
+    popularity: 78,
+    implemented: true,
+    routePath: "/incidenten",
+  },
+  {
+    id: "plotkaart-editor",
+    name: "Plotkaart Editor",
+    description: "Interactieve plattegrond editor",
+    category: "basis",
+    tier: "starter",
+    version: "1.5.0",
+    enabled: true,
+    visible: true,
+    core: true,
+    status: "active",
+    features: ["Drag & drop", "Veiligheidsiconen", "PDF export"],
+    pricing: { basePrice: 1900 },
+    rating: 4.7,
+    reviews: 28,
+    popularity: 92,
+    implemented: true,
+    routePath: "/plotkaart",
+  },
+  {
+    id: "visitor-registration",
+    name: "Bezoeker Registratie",
+    description: "Professionele bezoeker check-in",
+    category: "uitgebreid",
+    tier: "professional",
+    version: "2.0.1",
+    enabled: true,
+    visible: true,
+    core: false,
+    status: "active",
+    features: ["QR check-in", "Badge printing", "Evacuatie lijsten"],
+    pricing: { basePrice: 3500, setupFee: 2500 },
+    rating: 4.5,
+    reviews: 19,
+    popularity: 67,
+    implemented: true,
+    routePath: "/visitor-registration",
+  },
+]
 
 export const tierDefinitions: ModuleTier[] = [
   {
     id: "starter",
     name: "Starter",
-    description: "Voor kleine organisaties",
-    priceRange: "€0-50/maand",
+    description: "Basis functionaliteiten voor kleine organisaties",
+    priceRange: "€29-99/maand",
+    features: ["Basis BHV functies", "Tot 25 gebruikers", "E-mail support"],
   },
   {
     id: "professional",
     name: "Professional",
-    description: "Voor middelgrote bedrijven",
-    priceRange: "€50-200/maand",
+    description: "Uitgebreide functies voor middelgrote organisaties",
+    priceRange: "€99-299/maand",
+    features: ["Alle basis functies", "Tot 100 gebruikers", "Geavanceerde rapportage", "Priority support"],
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    description: "Voor grote organisaties",
-    priceRange: "€200+/maand",
-  },
-  {
-    id: "custom",
-    name: "Custom",
-    description: "Op maat gemaakte oplossingen",
-    priceRange: "Op aanvraag",
+    description: "Complete oplossing voor grote organisaties",
+    priceRange: "€299+/maand",
+    features: ["Alle functies", "Onbeperkt gebruikers", "Custom integraties", "24/7 support"],
   },
 ]
 
+// Required named exports
+export const moduleDefinitions = modules
 export const moduleCategories: ModuleCategory[] = [
   {
-    id: "basis",
-    name: "Basis",
-    description: "Essentiële BHV functionaliteiten",
-  },
-  {
-    id: "geavanceerd",
-    name: "Geavanceerd",
-    description: "Uitgebreide BHV tools en rapportages",
+    id: "core",
+    name: "Basis Modules",
+    description: "Essentiële functionaliteiten voor elke organisatie",
+    icon: "shield",
+    color: "#2563eb",
   },
   {
     id: "premium",
-    name: "Premium",
-    description: "Professionele BHV oplossingen",
+    name: "Premium Modules",
+    description: "Geavanceerde functies voor professioneel gebruik",
+    icon: "star",
+    color: "#7c3aed",
   },
   {
     id: "enterprise",
-    name: "Enterprise",
-    description: "Enterprise-grade BHV management",
+    name: "Enterprise Modules",
+    description: "Complete oplossingen voor grote organisaties",
+    icon: "building",
+    color: "#059669",
+  },
+  {
+    id: "addon",
+    name: "Add-on Modules",
+    description: "Aanvullende functionaliteiten en integraties",
+    icon: "puzzle",
+    color: "#ea580c",
   },
 ]
 
-export const moduleDefinitions: ModuleDefinition[] = [
-  {
-    id: "plotkaart",
-    name: "BHV Plotkaart",
-    title: "BHV Plotkaart",
-    description: "Interactieve plotkaart voor BHV procedures en evacuatieroutes",
-    category: "basis",
-    tier: "starter",
-    pricing: {
-      model: "fixed",
-      basePrice: 2900, // €29.00
-      setupFee: 5000, // €50.00
-      freeTrialDays: 14,
-    },
-    pricingModel: "Vaste prijs per organisatie",
-    implemented: true,
-    visible: true,
-    enabled: true,
-    routePath: "/bhv/plotkaart",
-    core: true,
-    features: ["Interactieve editor", "PDF export", "Evacuatieroutes", "Voorzieningen beheer"],
-    rating: 4.8,
-    reviews: 156,
-    popularity: 95,
-    version: "2.1.0",
-    status: "ga",
-  },
-  {
-    id: "incidenten",
-    name: "Incident Management",
-    title: "Incident Management",
-    description: "Registratie en opvolging van BHV incidenten",
-    category: "basis",
-    tier: "starter",
-    pricing: {
-      model: "per_user",
-      basePrice: 150, // €1.50 per user
-      setupFee: 2500, // €25.00
-      freeTrialDays: 30,
-      tierPricing: [
-        { minUsers: 1, maxUsers: 10, pricePerUser: 150 },
-        { minUsers: 11, maxUsers: 50, pricePerUser: 125 },
-        { minUsers: 51, pricePerUser: 100 },
-      ],
-    },
-    pricingModel: "Per gebruiker per maand",
-    implemented: true,
-    visible: true,
-    enabled: true,
-    routePath: "/incidenten",
-    core: true,
-    features: ["Incident registratie", "Workflow management", "Rapportages", "Notificaties"],
-    rating: 4.6,
-    reviews: 89,
-    popularity: 78,
-    version: "1.8.2",
-    status: "ga",
-  },
-  {
-    id: "voorzieningen",
-    name: "Voorzieningen Beheer",
-    title: "Voorzieningen Beheer",
-    description: "Beheer van brandblussers, AED's en andere veiligheidsvoorzieningen",
-    category: "geavanceerd",
-    tier: "professional",
-    pricing: {
-      model: "per_building",
-      basePrice: 1500, // €15.00 per building
-      setupFee: 7500, // €75.00
-      freeTrialDays: 21,
-    },
-    pricingModel: "Per gebouw per maand",
-    implemented: true,
-    visible: true,
-    enabled: true,
-    routePath: "/beheer/voorzieningen",
-    features: ["Voorzieningen database", "Onderhoudsplanning", "QR codes", "Inspectierapporten"],
-    rating: 4.7,
-    reviews: 124,
-    popularity: 82,
-    version: "1.5.1",
-    status: "ga",
-  },
-  {
-    id: "gebruikers",
-    name: "Gebruikers Management",
-    title: "Gebruikers Management",
-    description: "Beheer van BHV medewerkers en hun certificeringen",
-    category: "basis",
-    tier: "starter",
-    pricing: {
-      model: "per_user",
-      basePrice: 200, // €2.00 per user
-      setupFee: 3000, // €30.00
-      freeTrialDays: 14,
-    },
-    pricingModel: "Per gebruiker per maand",
-    implemented: true,
-    visible: true,
-    enabled: true,
-    routePath: "/beheer/gebruikers",
-    core: true,
-    features: ["Gebruikersbeheer", "Rollen & rechten", "Certificering tracking", "Training planning"],
-    rating: 4.5,
-    reviews: 203,
-    popularity: 88,
-    version: "2.0.3",
-  },
-  {
-    id: "rapportages",
-    name: "Rapportages & Analytics",
-    title: "Rapportages & Analytics",
-    description: "Uitgebreide rapportages en analyses van BHV activiteiten",
-    category: "premium",
-    tier: "professional",
-    pricing: {
-      model: "per_customer",
-      basePrice: 4900, // €49.00 per organization
-      setupFee: 15000, // €150.00
-      freeTrialDays: 30,
-    },
-    pricingModel: "Per organisatie per maand",
-    implemented: true,
-    visible: true,
-    enabled: true,
-    routePath: "/beheer/rapportages",
-    features: ["Dashboard analytics", "Custom rapporten", "Data export", "Trend analyse"],
-    rating: 4.9,
-    reviews: 67,
-    popularity: 71,
-    version: "1.3.0",
-  },
-  {
-    id: "mobile-app",
-    name: "Mobile App",
-    title: "BHV360 Mobile App",
-    description: "Mobiele app voor BHV medewerkers in het veld",
-    category: "premium",
-    tier: "professional",
-    pricing: {
-      model: "per_user",
-      basePrice: 300, // €3.00 per user
-      setupFee: 10000, // €100.00
-      freeTrialDays: 30,
-    },
-    pricingModel: "Per gebruiker per maand",
-    implemented: false,
-    visible: true,
-    enabled: true,
-    routePath: "/mobile-app",
-    features: ["Offline functionaliteit", "Push notificaties", "QR scanner", "GPS tracking"],
-    rating: 4.4,
-    reviews: 45,
-    popularity: 65,
-    version: "0.9.0",
-    status: "beta",
-  },
-  {
-    id: "api-integraties",
-    name: "API Integraties",
-    title: "API Integraties",
-    description: "Integraties met externe systemen en API toegang",
-    category: "enterprise",
-    tier: "enterprise",
-    pricing: {
-      model: "per_customer",
-      basePrice: 9900, // €99.00 per organization
-      setupFee: 25000, // €250.00
-      freeTrialDays: 14,
-    },
-    pricingModel: "Per organisatie per maand",
-    implemented: true,
-    visible: true,
-    enabled: true,
-    routePath: "/beheer/api-integraties",
-    features: ["REST API", "Webhooks", "SSO integratie", "Custom connectors"],
-    rating: 4.3,
-    reviews: 28,
-    popularity: 45,
-    version: "1.1.0",
-  },
-]
-
-// Required exports for compatibility
-export const AVAILABLE_MODULES = moduleDefinitions
-
-export function getModuleById(id: string): ModuleDefinition | null {
-  return moduleDefinitions.find((m) => m.id === id) || null
+export function getModuleById(id: string): Module | undefined {
+  return modules.find((module) => module.id === id)
 }
 
-export function getCoreModules(): ModuleDefinition[] {
-  return moduleDefinitions.filter((m) => m.core)
+export function getCoreModules(): Module[] {
+  return modules.filter((module) => module.category === "core")
 }
 
-export function getVisibleModules(): ModuleDefinition[] {
-  return moduleDefinitions.filter((m) => m.visible !== false)
+export function getModulesByCategory(category: Module["category"]): Module[] {
+  return modules.filter((module) => module.category === category)
 }
 
-export function calculateModulePrice(
-  module: ModuleDefinition,
-  users = 1,
-  buildings = 1,
-): { price: number; model: string; explanation: string } {
-  const pricing = module.pricing
-  let price = 0
-  let explanation = ""
+export function getPopularModules(): Module[] {
+  return modules.filter((module) => module.popular)
+}
 
-  switch (pricing.model) {
-    case "per_user": {
-      // Check for tier pricing
-      if (pricing.tierPricing && pricing.tierPricing.length > 0) {
-        const tier =
-          pricing.tierPricing.find((t) => users >= t.minUsers && (!t.maxUsers || users <= t.maxUsers)) ||
-          pricing.tierPricing[pricing.tierPricing.length - 1]
+export function getActiveModules(): Module[] {
+  return modules.filter((module) => module.active)
+}
 
-        price = (tier.pricePerUser / 100) * users
-        explanation = `€${(tier.pricePerUser / 100).toFixed(2)} per gebruiker × ${users} gebruikers`
-      } else {
-        price = (pricing.basePrice / 100) * users
-        explanation = `€${(pricing.basePrice / 100).toFixed(2)} per gebruiker × ${users} gebruikers`
+export function getAllModules(): Module[] {
+  return [...modules]
+}
+
+export function getModulePrice(id: string): number {
+  const module = getModuleById(id)
+  return module ? module.price : 0
+}
+
+export function calculateTotalPrice(moduleIds: string[]): number {
+  return moduleIds.reduce((total, id) => {
+    const module = getModuleById(id)
+    return total + (module ? module.price : 0)
+  }, 0)
+}
+
+export function getModuleDependencies(id: string): Module[] {
+  const module = getModuleById(id)
+  if (!module || !module.dependencies) return []
+
+  return module.dependencies.map((depId) => getModuleById(depId)).filter((dep): dep is Module => dep !== undefined)
+}
+
+export function validateModuleCompatibility(moduleIds: string[]): { valid: boolean; missing: string[] } {
+  const missing: string[] = []
+
+  for (const id of moduleIds) {
+    const module = getModuleById(id)
+    if (module && module.dependencies) {
+      for (const depId of module.dependencies) {
+        if (!moduleIds.includes(depId)) {
+          missing.push(depId)
+        }
       }
-      return { price, model: "Per gebruiker", explanation }
     }
-    case "per_building": {
-      price = (pricing.basePrice / 100) * buildings
-      explanation = `€${(pricing.basePrice / 100).toFixed(2)} per gebouw × ${buildings} gebouwen`
-      return { price, model: "Per gebouw", explanation }
-    }
-    case "per_customer": {
-      price = pricing.basePrice / 100
-      explanation = `€${price.toFixed(2)} per organisatie`
-      return { price, model: "Per organisatie", explanation }
-    }
-    case "fixed":
-    default: {
-      price = pricing.basePrice / 100
-      explanation = `€${price.toFixed(2)} vaste prijs`
-      return { price, model: "Vaste prijs", explanation }
-    }
+  }
+
+  return {
+    valid: missing.length === 0,
+    missing: [...new Set(missing)],
   }
 }
 
-export type ModuleDef = ModuleDefinition
-export type ModuleActivationRequest = ModuleActivationRequest
+export function getModuleDefinitionById(id: string): ModuleDefinition | undefined {
+  return AVAILABLE_MODULES.find((module) => module.id === id)
+}
+
+export function getVisibleModules(): ModuleDefinition[] {
+  return AVAILABLE_MODULES.filter((module) => module.visible)
+}
+
+export function calculateModulePrice(module: ModuleDefinition, userCount: number, buildingCount: number) {
+  const basePrice = module.pricing.basePrice / 100
+  return {
+    price: basePrice,
+    model: "Per maand",
+    explanation: `€${basePrice.toFixed(2)} per maand voor ${userCount} gebruikers`,
+  }
+}
+
+export default modules

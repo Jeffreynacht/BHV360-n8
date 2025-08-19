@@ -13,18 +13,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Remove the experimental.serverActions since it's no longer needed
   experimental: {
-    // serverActions: true, // Remove this line
+    esmExternals: 'loose',
   },
-  // Disable API routes for static export
-  async rewrites() {
-    return []
-  },
-  // Handle dynamic routes for static export
-  async generateStaticParams() {
-    return []
-  }
 }
 
 export default nextConfig

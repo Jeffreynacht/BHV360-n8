@@ -1,103 +1,28 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
 export interface Customer {
   id: string
   name: string
   email: string
-  phone: string
-  address: string
-  contactPerson: string
+  phone?: string
+  address?: string
+  isActive: boolean
   createdAt: string
-  users: number
-  buildings: number
+  updatedAt: string
 }
 
-interface CustomerContextType {
+export interface CustomerContextType {
   customers: Customer[]
   selectedCustomer: Customer | null
   setSelectedCustomer: (customer: Customer | null) => void
-  addCustomer: (customer: Omit<Customer, "id" | "createdAt" | "users" | "buildings">) => void
-  isLoading: boolean
+  loading: boolean
+  error: string | null
+  refreshCustomers: () => Promise<void>
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined)
-
-export function CustomerProvider({ children }: { children: React.ReactNode }) {
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    // Load demo customers
-    const demoCustomers: Customer[] = [
-      {
-        id: "1",
-        name: "Demo Bedrijf BV",
-        email: "info@demobedrijf.nl",
-        phone: "+31 20 123 4567",
-        address: "Hoofdstraat 123, 1000 AB Amsterdam",
-        contactPerson: "Jan de Vries",
-        createdAt: "2024-01-15T10:00:00Z",
-        users: 25,
-        buildings: 3,
-      },
-      {
-        id: "2",
-        name: "Veiligheid Eerst BV",
-        email: "contact@veiligheideerst.nl",
-        phone: "+31 30 987 6543",
-        address: "Veiligheidsweg 456, 3500 CD Utrecht",
-        contactPerson: "Maria Janssen",
-        createdAt: "2024-02-20T14:30:00Z",
-        users: 45,
-        buildings: 5,
-      },
-      {
-        id: "3",
-        name: "BHV Partners",
-        email: "info@bhvpartners.nl",
-        phone: "+31 10 555 7890",
-        address: "Partnerslaan 789, 3000 EF Rotterdam",
-        contactPerson: "Piet van der Berg",
-        createdAt: "2024-03-10T09:15:00Z",
-        users: 12,
-        buildings: 2,
-      },
-    ]
-
-    setCustomers(demoCustomers)
-    setSelectedCustomer(demoCustomers[0])
-    setIsLoading(false)
-  }, [])
-
-  const addCustomer = (customerData: Omit<Customer, "id" | "createdAt" | "users" | "buildings">) => {
-    const newCustomer: Customer = {
-      ...customerData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      users: 0,
-      buildings: 0,
-    }
-    setCustomers((prev) => [...prev, newCustomer])
-  }
-
-  return (
-    <CustomerContext.Provider
-      value={{
-        customers,
-        selectedCustomer,
-        setSelectedCustomer,
-        addCustomer,
-        isLoading,
-      }}
-    >
-      {children}
-    </CustomerContext.Provider>
-  )
-}
 
 export function useCustomer() {
   const context = useContext(CustomerContext)
@@ -105,4 +30,79 @@ export function useCustomer() {
     throw new Error("useCustomer must be used within a CustomerProvider")
   }
   return context
+}
+
+interface CustomerProviderProps {
+  children: ReactNode
+}
+
+export function CustomerProvider({ children }: CustomerProviderProps) {
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const mockCustomers: Customer[] = [
+    {
+      id: "1",
+      name: "Acme Corporation",
+      email: "contact@acme.com",
+      phone: "+31 20 123 4567",
+      address: "Hoofdstraat 123, 1000 AB Amsterdam",
+      isActive: true,
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-01T00:00:00Z",
+    },
+    {
+      id: "2",
+      name: "TechCorp Nederland",
+      email: "info@techcorp.nl",
+      phone: "+31 30 987 6543",
+      address: "Innovatielaan 456, 3500 CD Utrecht",
+      isActive: true,
+      createdAt: "2024-01-02T00:00:00Z",
+      updatedAt: "2024-01-02T00:00:00Z",
+    },
+    {
+      id: "3",
+      name: "Provincie Noord-Brabant",
+      email: "contact@brabant.nl",
+      phone: "+31 73 681 2345",
+      address: "Brabantlaan 1, 5200 BX Den Bosch",
+      isActive: true,
+      createdAt: "2024-01-03T00:00:00Z",
+      updatedAt: "2024-01-03T00:00:00Z",
+    },
+  ]
+
+  const refreshCustomers = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      setCustomers(mockCustomers)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load customers")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    refreshCustomers()
+  }, [])
+
+  const value: CustomerContextType = {
+    customers,
+    selectedCustomer,
+    setSelectedCustomer,
+    loading,
+    error,
+    refreshCustomers,
+  }
+
+  return <CustomerContext.Provider value={value}>{children}</CustomerContext.Provider>
 }
