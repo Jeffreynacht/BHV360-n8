@@ -1,41 +1,37 @@
-export interface DatabaseResult {
+export interface DatabaseResult<T = any> {
   success: boolean
-  data?: any
+  data?: T
   error?: string
-  message?: string
 }
 
 export interface DatabaseConnection {
-  host: string
-  port: number
-  database: string
-  user: string
-  password: string
+  isConnected: boolean
+  host?: string
+  database?: string
+  lastChecked: Date
 }
 
 export class DatabaseAdapter {
-  private connection: DatabaseConnection | null = null
-
-  constructor(connection?: DatabaseConnection) {
-    this.connection = connection || null
+  private connection: DatabaseConnection = {
+    isConnected: false,
+    lastChecked: new Date(),
   }
 
-  async connect(): Promise<DatabaseResult> {
+  async testConnection(): Promise<DatabaseResult<DatabaseConnection>> {
     try {
-      // Mock connection logic
-      if (!this.connection) {
-        return {
-          success: false,
-          error: "No connection configuration provided",
-        }
-      }
-
-      // Simulate connection attempt
+      // Simulate database connection test
       await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      this.connection = {
+        isConnected: true,
+        host: process.env.DATABASE_URL ? "Connected" : "Mock",
+        database: "bhv360_db",
+        lastChecked: new Date(),
+      }
 
       return {
         success: true,
-        message: "Database connected successfully",
+        data: this.connection,
       }
     } catch (error) {
       return {
@@ -45,15 +41,14 @@ export class DatabaseAdapter {
     }
   }
 
-  async query(sql: string, params?: any[]): Promise<DatabaseResult> {
+  async query<T>(sql: string, params?: any[]): Promise<DatabaseResult<T[]>> {
     try {
-      // Mock query execution
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      // Simulate database query
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
       return {
         success: true,
-        data: [],
-        message: "Query executed successfully",
+        data: [] as T[],
       }
     } catch (error) {
       return {
@@ -63,43 +58,9 @@ export class DatabaseAdapter {
     }
   }
 
-  async disconnect(): Promise<DatabaseResult> {
-    try {
-      this.connection = null
-      return {
-        success: true,
-        message: "Database disconnected",
-      }
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Disconnect failed",
-      }
-    }
+  getConnection(): DatabaseConnection {
+    return this.connection
   }
 }
 
-export async function testDatabaseConnection(): Promise<DatabaseResult> {
-  try {
-    const adapter = new DatabaseAdapter({
-      host: process.env.PGHOST || "localhost",
-      port: Number.parseInt(process.env.PGPORT || "5432"),
-      database: process.env.POSTGRES_DATABASE || "bhv360",
-      user: process.env.POSTGRES_USER || "postgres",
-      password: process.env.POSTGRES_PASSWORD || "",
-    })
-
-    const result = await adapter.connect()
-
-    if (result.success) {
-      await adapter.disconnect()
-    }
-
-    return result
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Connection test failed",
-    }
-  }
-}
+export const databaseAdapter = new DatabaseAdapter()

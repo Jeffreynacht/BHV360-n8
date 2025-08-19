@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm run build",
   "installCommand": "corepack enable && corepack use pnpm@10 && pnpm install --frozen-lockfile=false",
-  "framework": "nextjs",
+  "framework": null,
   "outputDirectory": "out",
   "trailingSlash": false,
   "cleanUrls": true,
@@ -10,10 +10,14 @@
       "maxDuration": 30
     }
   },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
+      "src": "/(.*)",
+      "dest": "/$1.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ],
   "headers": [
