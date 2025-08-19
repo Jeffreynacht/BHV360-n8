@@ -300,6 +300,62 @@ export const moduleDefinitions: ModuleDefinition[] = [
     customers: 34,
     lastUpdated: "2024-01-05",
   },
+  {
+    id: "bhv-coordinator",
+    name: "BHV Coordinator Dashboard",
+    description: "Centralized dashboard for BHV coordinators",
+    category: "core",
+    tier: "professional",
+    version: "1.4.0",
+    enabled: true,
+    visible: true,
+    core: false,
+    implemented: true,
+    status: "active",
+    features: ["Team overview", "Schedule management", "Training tracking", "Compliance monitoring", "Reporting tools"],
+    pricing: {
+      basePrice: 3900, // €39.00
+      perUser: 100, // €1.00 per user
+      model: "hybrid",
+    },
+    rating: 4.6,
+    reviews: 78,
+    popularity: 82,
+    routePath: "/bhv-coordinator",
+    customers: 156,
+    lastUpdated: "2024-01-14",
+  },
+  {
+    id: "mobile-app",
+    name: "Mobile App Access",
+    description: "Native mobile app for iOS and Android",
+    category: "premium",
+    tier: "professional",
+    version: "2.0.3",
+    enabled: true,
+    visible: true,
+    core: false,
+    implemented: true,
+    status: "active",
+    features: [
+      "Native iOS/Android apps",
+      "Offline functionality",
+      "Push notifications",
+      "QR code scanning",
+      "Emergency alerts",
+    ],
+    pricing: {
+      basePrice: 1900, // €19.00
+      perUser: 50, // €0.50 per user
+      model: "hybrid",
+    },
+    rating: 4.7,
+    reviews: 234,
+    popularity: 89,
+    routePath: "/mobile-app",
+    customers: 198,
+    lastUpdated: "2024-01-16",
+  },
 ]
 
 export const AVAILABLE_MODULES = moduleDefinitions
@@ -440,6 +496,32 @@ export function hasFreeTrial(moduleId: string): boolean {
 export function getTrialDays(moduleId: string): number {
   const module = getModuleById(moduleId)
   return module?.pricing.freeTrialDays || 0
+}
+
+export function getTotalModuleCost(moduleIds: string[], userCount: number, buildingCount: number): number {
+  return moduleIds.reduce((total, moduleId) => {
+    return total + getModuleActivationCost(moduleId, userCount, buildingCount)
+  }, 0)
+}
+
+export function getTotalSetupCost(moduleIds: string[]): number {
+  return moduleIds.reduce((total, moduleId) => {
+    return total + getModuleSetupCost(moduleId)
+  }, 0)
+}
+
+export function getModuleStats() {
+  return {
+    total: moduleDefinitions.length,
+    core: getCoreModules().length,
+    premium: getModulesByCategory("premium").length,
+    enterprise: getModulesByCategory("enterprise").length,
+    implemented: getImplementedModules().length,
+    active: getModulesByStatus("active").length,
+    beta: getModulesByStatus("beta").length,
+    averageRating: moduleDefinitions.reduce((sum, m) => sum + m.rating, 0) / moduleDefinitions.length,
+    totalCustomers: moduleDefinitions.reduce((sum, m) => sum + (m.customers || 0), 0),
+  }
 }
 
 // Export all interfaces and types for external use

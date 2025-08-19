@@ -1,4 +1,4 @@
-import { type Module, AVAILABLE_MODULES, getModuleById, getCoreModules } from "./module-definitions"
+import { type ModuleDefinition, AVAILABLE_MODULES, getModuleById, getCoreModules } from "./module-definitions"
 
 export interface CustomerModule {
   customerId: string
@@ -42,20 +42,11 @@ export class CustomerModuleService {
     }))
 
     // Add some popular modules for demo
-    const popularModules = [
-      "bhv_coordinator",
-      "bhv_advanced_plotkaart",
-      "nfc_management",
-      "facility_management",
-      "inspection_management",
-      "basic_reporting",
-      "api_access",
-      "mobile_app",
-    ]
+    const popularModules = ["bhv-coordinator", "nfc-integration", "advanced-analytics", "mobile-app"]
 
     for (const moduleId of popularModules) {
       const module = getModuleById(moduleId)
-      if (module && !module.isCore) {
+      if (module && !module.core) {
         defaultModules.push({
           customerId,
           moduleId,
@@ -72,7 +63,7 @@ export class CustomerModuleService {
   }
 
   // Get enabled modules for a customer
-  static async getEnabledModules(customerId: string): Promise<Module[]> {
+  static async getEnabledModules(customerId: string): Promise<ModuleDefinition[]> {
     const customerModules = await this.getCustomerModules(customerId)
     const enabledModuleIds = customerModules.filter((cm) => cm.isEnabled).map((cm) => cm.moduleId)
 
@@ -176,7 +167,7 @@ export class CustomerModuleService {
         return { success: false, error: "Module niet gevonden" }
       }
 
-      if (module.isCore) {
+      if (module.core) {
         return { success: false, error: "Core modules kunnen niet uitgeschakeld worden" }
       }
 

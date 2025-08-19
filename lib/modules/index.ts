@@ -1,12 +1,18 @@
-// Re-export everything from module-definitions
+// Barrel export for modules
 export * from "./module-definitions"
+export * from "./customer-modules"
+export * from "./module-notifications"
+export * from "./pricing-calculator"
 
-// Additional module-related exports
-export { default as CustomerModuleService } from "./customer-modules"
-export { default as ModuleNotificationService } from "./module-notifications"
-export { default as PricingCalculator } from "./pricing-calculator"
+// Re-export commonly used types and interfaces
+import type { ModuleDefinition, ModulePricing } from "./module-definitions"
 
-// Type definitions for compatibility
+// Re-export services
+export { CustomerModuleService, ModuleAuditService } from "./customer-modules"
+export { ModuleNotificationService } from "./module-notifications"
+export { PricingCalculator } from "./pricing-calculator"
+
+// Compatibility layer for legacy Module interface
 export interface Module {
   id: string
   name: string
@@ -26,25 +32,18 @@ export interface Module {
   dependencies?: string[]
   customers?: number
   lastUpdated?: string
-  // Additional properties for backward compatibility
+  // Legacy properties
   price?: number
   currency?: string
   icon?: string
   color?: string
   tier?: string
   isCore?: boolean
-  pricing?: {
-    basePrice: number
-    perUser?: number
-    perBuilding?: number
-    setupFee?: number
-    freeTrialDays?: number
-    model: "fixed" | "per_user" | "per_building" | "hybrid"
-  }
+  pricing?: ModulePricing
 }
 
-// Compatibility functions
-export function convertModuleDefinitionToModule(def: import("./module-definitions").ModuleDefinition): Module {
+// Conversion utilities
+export function convertModuleDefinitionToModule(def: ModuleDefinition): Module {
   return {
     ...def,
     price: def.pricing.basePrice / 100,
@@ -52,10 +51,11 @@ export function convertModuleDefinitionToModule(def: import("./module-definition
     icon: "package",
     color: "blue",
     isCore: def.core,
+    pricing: def.pricing,
   }
 }
 
-export function convertModuleToModuleDefinition(module: Module): import("./module-definitions").ModuleDefinition {
+export function convertModuleToModuleDefinition(module: Module): ModuleDefinition {
   return {
     id: module.id,
     name: module.name,
