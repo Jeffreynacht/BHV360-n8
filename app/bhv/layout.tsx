@@ -1,0 +1,5 @@
+import type React from "react"
+
+export default function BHVLayout({ children }: { children: React.ReactNode }) {
+  return <div className="w-full h-full overflow-auto">{children}</div>
+}
