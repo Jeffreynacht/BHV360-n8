@@ -1,770 +1,534 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useCustomer } from "@/components/customer-context"
-import { useData, type DataContextType } from "@/contexts/data-context"
-import { NoCustomerSelected } from "@/components/no-customer-selected"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { ChevronLeft, Smartphone, Tag, Plus, Trash2, Edit, Save, QrCode, Download, RefreshCw } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+} from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Plus, Edit, Trash2, MapPin, Settings, Scan, Smartphone, Wifi, AlertTriangle } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
-const tagTypes = [
-  { id: "facility", name: "Voorziening", description: "Gekoppeld aan veiligheidsvoorziening" },
-  { id: "location", name: "Locatie", description: "Locatie informatie en navigatie" },
-  { id: "emergency", name: "Noodgeval", description: "Noodprocedures en contacten" },
-  { id: "info", name: "Informatie", description: "Algemene informatie" },
-  { id: "wifi", name: "WiFi", description: "WiFi toegang en instellingen" },
-  { id: "contact", name: "Contact", description: "Contactgegevens" },
-]
-
-const actionTypes = [
-  { id: "url", name: "Website", icon: "🌐" },
-  { id: "wifi", name: "WiFi", icon: "📶" },
-  { id: "contact", name: "Contact", icon: "📞" },
-  { id: "text", name: "Tekst", icon: "📝" },
-  { id: "app", name: "App", icon: "📱" },
-  { id: "emergency", name: "Noodgeval", icon: "🚨" },
-]
-
-export default function BeheerNFCTagsPage() {
-  const { selectedCustomer } = useCustomer()
-  const { getNfcTagsByCustomer, addNfcTag, updateNfcTag, deleteNfcTag } = useData() as DataContextType
-  const [isScanning, setIsScanning] = useState(false)
-  const [scanResult, setScanResult] = useState<string | null>(null)
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [editingTag, setEditingTag] = useState<any>(null)
-  const [isNFCSupported, setIsNFCSupported] = useState(false)
-  const [tags, setTags] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [formData, setFormData] = useState({
-    name: "",
-    uid: "",
-    location: "",
-    floor: "",
-    building: "",
-    zone: "",
-    assignedTo: "",
-    notes: "",
-    tagType: "facility",
-    actions: [] as any[],
+export default function NFCTagsPage() {
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState("tags")
+  const [showForm, setShowForm] = useState(false)
+  const [scanningMode, setScanningMode] = useState(false)
+  const [currentTag, setCurrentTag] = useState({
+    id: 0,
+    tagId: "",
+    naam: "",
+    verdieping: "",
+    locatie: "",
+    type: "checkpoint",
+    laatstGescand: "",
+    status: "actief",
   })
 
-  useEffect(() => {
-    // Check if Web NFC is supported
-    if (typeof window !== "undefined" && "NDEFReader" in window) {
-      setIsNFCSupported(true)
-    }
-  }, [])
+  // Dummy data voor NFC tags
+  const [tags, setTags] = useState([
+    {
+      id: 1,
+      tagId: "04:A2:E9:B2:5C:1F",
+      naam: "Checkpoint Verdieping 1 West",
+      verdieping: "Verdieping 1",
+      locatie: "West",
+      type: "checkpoint",
+      laatstGescand: "2024-02-15 09:45",
+      status: "actief",
+    },
+    {
+      id: 2,
+      tagId: "04:B3:F1:C4:7D:2E",
+      naam: "EHBO-koffer Verdieping 2 Oost",
+      verdieping: "Verdieping 2",
+      locatie: "Oost",
+      type: "apparatuur",
+      laatstGescand: "2024-02-10 14:30",
+      status: "actief",
+    },
+    {
+      id: 3,
+      tagId: "04:D5:E7:F8:9A:3B",
+      naam: "Verzamelplaats Begane Grond",
+      verdieping: "Begane grond",
+      locatie: "Hoofdingang",
+      type: "verzamelplaats",
+      laatstGescand: "2024-02-18 11:20",
+      status: "actief",
+    },
+    {
+      id: 4,
+      tagId: "04:C6:D7:E8:9F:4A",
+      naam: "Brandblusser Verdieping 3 Noord",
+      verdieping: "Verdieping 3",
+      locatie: "Noord",
+      type: "apparatuur",
+      laatstGescand: "2024-02-05 16:15",
+      status: "actief",
+    },
+    {
+      id: 5,
+      tagId: "04:E8:F9:A1:B2:5C",
+      naam: "Nooduitgang Verdieping 5 Zuid",
+      verdieping: "Verdieping 5",
+      locatie: "Zuid",
+      type: "nooduitgang",
+      laatstGescand: "2024-02-12 08:50",
+      status: "actief",
+    },
+  ])
 
-  useEffect(() => {
-    // Fetch NFC tags when selectedCustomer changes
-    async function fetchTags() {
-      if (selectedCustomer) {
-        setIsLoading(true)
-        try {
-          const fetchedTags = await getNfcTagsByCustomer(selectedCustomer.id)
-          setTags(fetchedTags || [])
-        } catch (error) {
-          console.error("Error fetching NFC tags:", error)
-          setTags([])
-        } finally {
-          setIsLoading(false)
-        }
+  // Dummy data voor scan geschiedenis
+  const [scanHistory, setScanHistory] = useState([
+    {
+      id: 1,
+      tagId: "04:A2:E9:B2:5C:1F",
+      tagNaam: "Checkpoint Verdieping 1 West",
+      gebruiker: "Jan Jansen",
+      tijdstip: "2024-02-15 09:45",
+      actie: "Controle ronde",
+    },
+    {
+      id: 2,
+      tagId: "04:B3:F1:C4:7D:2E",
+      tagNaam: "EHBO-koffer Verdieping 2 Oost",
+      gebruiker: "Petra de Vries",
+      tijdstip: "2024-02-10 14:30",
+      actie: "Inspectie",
+    },
+    {
+      id: 3,
+      tagId: "04:D5:E7:F8:9A:3B",
+      tagNaam: "Verzamelplaats Begane Grond",
+      gebruiker: "Mohammed El Amrani",
+      tijdstip: "2024-02-18 11:20",
+      actie: "Ontruimingsoefening",
+    },
+    {
+      id: 4,
+      tagId: "04:C6:D7:E8:9F:4A",
+      tagNaam: "Brandblusser Verdieping 3 Noord",
+      gebruiker: "Sophie Bakker",
+      tijdstip: "2024-02-05 16:15",
+      actie: "Inspectie",
+    },
+    {
+      id: 5,
+      tagId: "04:A2:E9:B2:5C:1F",
+      tagNaam: "Checkpoint Verdieping 1 West",
+      gebruiker: "Willem van Dijk",
+      tijdstip: "2024-02-14 13:25",
+      actie: "Controle ronde",
+    },
+    {
+      id: 6,
+      tagId: "04:E8:F9:A1:B2:5C",
+      tagNaam: "Nooduitgang Verdieping 5 Zuid",
+      gebruiker: "Jan Jansen",
+      tijdstip: "2024-02-12 08:50",
+      actie: "Inspectie",
+    },
+  ])
+
+  const handleAddTag = () => {
+    setCurrentTag({
+      id: 0,
+      tagId: "",
+      naam: "",
+      verdieping: "",
+      locatie: "",
+      type: "checkpoint",
+      laatstGescand: "",
+      status: "actief",
+    })
+    setShowForm(true)
+    setScanningMode(false)
+  }
+
+  const handleEditTag = (tag) => {
+    setCurrentTag(tag)
+    setShowForm(true)
+    setScanningMode(false)
+  }
+
+  const handleDeleteTag = (id) => {
+    setTags(tags.filter((tag) => tag.id !== id))
+  }
+
+  const handleSaveTag = () => {
+    if (currentTag.id === 0) {
+      // Add new tag
+      const newTag = {
+        ...currentTag,
+        id: tags.length + 1,
+        laatstGescand: "",
       }
-    }
-
-    fetchTags()
-  }, [selectedCustomer, getNfcTagsByCustomer])
-
-  if (!selectedCustomer) {
-    return <NoCustomerSelected />
-  }
-
-  const startNFCScan = async () => {
-    if (!isNFCSupported) {
-      alert("NFC wordt niet ondersteund door deze browser. Gebruik Chrome op Android.")
-      return
-    }
-
-    try {
-      setIsScanning(true)
-      setScanResult(null)
-
-      // Use the Web NFC API directly
-      const ndef = new (window as any).NDEFReader()
-
-      await ndef.scan()
-
-      ndef.addEventListener("reading", ({ message, serialNumber }: any) => {
-        setIsScanning(false)
-        setScanResult(serialNumber)
-
-        // Check if tag already exists
-        const existingTag = tags.find((tag) => tag.uid === serialNumber)
-        if (existingTag) {
-          setEditingTag(existingTag)
-          setFormData({
-            name: existingTag.name,
-            uid: existingTag.uid,
-            location: existingTag.location,
-            floor: existingTag.floor,
-            building: existingTag.building,
-            zone: existingTag.zone,
-            assignedTo: existingTag.assignedTo,
-            notes: existingTag.notes,
-            tagType: existingTag.tagType,
-            actions: [],
-          })
-        } else {
-          // New tag - open add dialog
-          setFormData({
-            ...formData,
-            uid: serialNumber,
-            name: `NFC-${serialNumber.slice(-4)}`,
-          })
-          setIsAddDialogOpen(true)
-        }
-      })
-
-      ndef.addEventListener("readingerror", () => {
-        setIsScanning(false)
-        alert("Fout bij het lezen van de NFC tag")
-      })
-    } catch (error) {
-      setIsScanning(false)
-      console.error("NFC scan error:", error)
-      alert("Fout bij het starten van NFC scan: " + error)
-    }
-  }
-
-  const simulateNFCScan = () => {
-    // Simulate scanning for demo purposes
-    const mockUID = `04:52:3A:B2:C1:${Math.floor(Math.random() * 100)
-      .toString()
-      .padStart(2, "0")}`
-    setScanResult(mockUID)
-
-    const existingTag = tags.find((tag) => tag.uid === mockUID)
-    if (existingTag) {
-      setEditingTag(existingTag)
-      setFormData({
-        name: existingTag.name,
-        uid: existingTag.uid,
-        location: existingTag.location,
-        floor: existingTag.floor,
-        building: existingTag.building,
-        zone: existingTag.zone,
-        assignedTo: existingTag.assignedTo,
-        notes: existingTag.notes,
-        tagType: existingTag.tagType,
-        actions: [],
-      })
+      setTags([...tags, newTag])
     } else {
-      setFormData({
-        ...formData,
-        uid: mockUID,
-        name: `NFC-${mockUID.slice(-4)}`,
+      // Update existing tag
+      setTags(tags.map((tag) => (tag.id === currentTag.id ? currentTag : tag)))
+    }
+    setShowForm(false)
+  }
+
+  const startScanningMode = () => {
+    setScanningMode(true)
+    // In een echte applicatie zou hier de NFC scanning worden gestart
+    setTimeout(() => {
+      // Simuleer het vinden van een NFC tag na 3 seconden
+      const mockTagId =
+        "04:" +
+        Math.random()
+          .toString(16)
+          .substring(2, 10)
+          .toUpperCase()
+          .match(/.{1,2}/g)
+          .join(":")
+      setCurrentTag({
+        ...currentTag,
+        tagId: mockTagId,
       })
-      setIsAddDialogOpen(true)
-    }
+      setScanningMode(false)
+    }, 3000)
   }
 
-  const writeNFCTag = async (tag: any) => {
-    if (!isNFCSupported) {
-      alert("NFC schrijven wordt niet ondersteund door deze browser.")
-      return
-    }
-
-    try {
-      const ndef = new (window as any).NDEFReader()
-
-      const records = []
-
-      // Add actions to NFC tag
-      tag.actions?.forEach((action: any) => {
-        if (!action.enabled) return
-
-        switch (action.type) {
-          case "url":
-            records.push({ recordType: "url", data: action.value })
-            break
-          case "wifi":
-            records.push({ recordType: "mime", mediaType: "application/vnd.wfa.wsc", data: action.value })
-            break
-          case "text":
-            records.push({ recordType: "text", data: action.value })
-            break
-        }
-      })
-
-      await ndef.write({ records })
-      alert("NFC tag succesvol geprogrammeerd!")
-    } catch (error) {
-      console.error("NFC write error:", error)
-      alert("Fout bij het schrijven naar NFC tag: " + error)
-    }
-  }
-
-  const addAction = () => {
-    const newAction = {
-      id: `act-${Date.now()}`,
-      type: "url",
-      label: "",
-      value: "",
-      enabled: true,
-    }
-    setFormData({
-      ...formData,
-      actions: [...formData.actions, newAction],
-    })
-  }
-
-  const updateAction = (actionId: string, field: string, value: any) => {
-    setFormData({
-      ...formData,
-      actions: formData.actions.map((action) => (action.id === actionId ? { ...action, [field]: value } : action)),
-    })
-  }
-
-  const removeAction = (actionId: string) => {
-    setFormData({
-      ...formData,
-      actions: formData.actions.filter((action) => action.id !== actionId),
-    })
-  }
-
-  const handleAddTag = async () => {
-    const tagData = {
-      name: formData.name,
-      uid: formData.uid,
-      type: formData.tagType,
-      location: formData.location,
-      building: formData.building,
-      floor: formData.floor,
-      zone: formData.zone,
-      status: "active" as const,
-      batteryLevel: 100,
-      lastSeen: new Date().toLocaleString(),
-      lastScanned: null,
-      assignedTo: formData.assignedTo,
-      notes: formData.notes,
-      tagType: formData.tagType,
-    }
-
-    try {
-      const newTag = await addNfcTag(tagData, selectedCustomer.id)
-      if (newTag) {
-        setTags([...tags, newTag])
-        resetForm()
-        setIsAddDialogOpen(false)
-        alert("NFC tag succesvol toegevoegd!")
-      }
-    } catch (error) {
-      console.error("Error adding tag:", error)
-      alert("Fout bij het toevoegen van de tag: " + error)
-    }
-  }
-
-  const handleUpdateTag = async () => {
-    if (!editingTag) return
-
-    const tagData = {
-      name: formData.name,
-      uid: formData.uid,
-      location: formData.location,
-      floor: formData.floor,
-      building: formData.building,
-      zone: formData.zone,
-      assignedTo: formData.assignedTo,
-      notes: formData.notes,
-      tagType: formData.tagType,
-    }
-
-    try {
-      const updatedTag = await updateNfcTag(editingTag.id, tagData)
-      if (updatedTag) {
-        setTags(tags.map((tag) => (tag.id === editingTag.id ? updatedTag : tag)))
-        setEditingTag(null)
-        resetForm()
-        alert("NFC tag succesvol bijgewerkt!")
-      }
-    } catch (error) {
-      console.error("Error updating tag:", error)
-      alert("Fout bij het bijwerken van de tag: " + error)
-    }
-  }
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      uid: "",
-      location: "",
-      floor: "",
-      building: "",
-      zone: "",
-      assignedTo: "",
-      notes: "",
-      tagType: "facility",
-      actions: [],
-    })
-  }
-
-  const handleDeleteTag = async (tagId: string) => {
-    if (window.confirm("Weet je zeker dat je deze NFC tag wilt verwijderen?")) {
-      try {
-        const success = await deleteNfcTag(tagId)
-        if (success) {
-          setTags(tags.filter((tag) => tag.id !== tagId))
-          alert("NFC tag verwijderd!")
-        }
-      } catch (error) {
-        console.error("Error deleting tag:", error)
-        alert("Fout bij het verwijderen van de tag: " + error)
-      }
-    }
-  }
-
-  const handleScanTag = async (tagId: string) => {
-    try {
-      const updatedTag = await updateNfcTag(tagId, {
-        lastScanned: new Date().toLocaleString(),
-        lastSeen: new Date().toLocaleString(),
-      })
-
-      if (updatedTag) {
-        setTags(tags.map((tag) => (tag.id === tagId ? updatedTag : tag)))
-        alert("NFC tag gescand!")
-      }
-    } catch (error) {
-      console.error("Error scanning tag:", error)
-      alert("Fout bij het scannen van de tag: " + error)
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800"
-      case "inactive":
-        return "bg-gray-100 text-gray-800"
-      case "error":
-        return "bg-red-100 text-red-800"
-      case "unassigned":
-        return "bg-yellow-100 text-yellow-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "active":
-        return "Actief"
-      case "inactive":
-        return "Inactief"
-      case "error":
-        return "Fout"
-      case "unassigned":
-        return "Niet toegewezen"
-      default:
-        return "Onbekend"
-    }
+  const generateQRCode = (tagId) => {
+    alert(`QR-code wordt gegenereerd voor tag ${tagId}`)
+    // In een echte applicatie zou hier de QR-code generatie plaatsvinden
   }
 
   return (
-    <div className="container p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">NFC Tags</h1>
-          <p className="text-muted-foreground">NFC Tags beheer voor {selectedCustomer.name}</p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={isNFCSupported ? startNFCScan : simulateNFCScan} disabled={isScanning}>
-            <Scan className="h-4 w-4 mr-2" />
-            {isScanning ? "Scannen..." : "Scan NFC Tag"}
-          </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Handmatig Toevoegen
-              </Button>
-            </DialogTrigger>
-          </Dialog>
+    <main className="container mx-auto p-4">
+      <div className="mb-4 flex items-center">
+        <Button variant="outline" size="sm" onClick={() => router.push("/beheer")}>
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Terug naar beheer
+        </Button>
+        <div className="ml-4">
+          <h1 className="text-2xl font-bold">NFC Tags Beheer</h1>
+          <p className="text-muted-foreground">Provinciehuis Noord-Brabant</p>
         </div>
       </div>
 
-      {!isNFCSupported && (
-        <Card className="mb-6 border-orange-200 bg-orange-50">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-orange-500" />
-              <div>
-                <p className="font-medium text-orange-800">NFC niet ondersteund</p>
-                <p className="text-sm text-orange-700">
-                  Web NFC wordt alleen ondersteund in Chrome op Android. Gebruik de simulatie functie voor demo
-                  doeleinden.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {scanResult && (
-        <Card className="mb-6 border-green-200 bg-green-50">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Smartphone className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="font-medium text-green-800">NFC Tag Gescand</p>
-                <p className="text-sm text-green-700">UID: {scanResult}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Tabs defaultValue="tags" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="tags">NFC Tags</TabsTrigger>
-          <TabsTrigger value="actions">Acties</TabsTrigger>
-          <TabsTrigger value="settings">
-            <Settings className="h-4 w-4 mr-2" />
-            Instellingen
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="tags">
+            <Tag className="mr-2 h-4 w-4" />
+            NFC Tags
+          </TabsTrigger>
+          <TabsTrigger value="geschiedenis">
+            <Smartphone className="mr-2 h-4 w-4" />
+            Scan Geschiedenis
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="tags">
           <Card>
             <CardHeader>
-              <CardTitle>NFC Tags Overzicht ({tags.length})</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>NFC Tags</CardTitle>
+                <Button onClick={handleAddTag}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nieuwe NFC Tag
+                </Button>
+              </div>
+              <CardDescription>Beheer alle NFC tags en koppel ze aan verdiepingen en locaties</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">NFC tags laden...</p>
+              {showForm ? (
+                <div className="space-y-4 rounded-md border p-4">
+                  <h3 className="text-lg font-medium">{currentTag.id === 0 ? "Nieuwe NFC Tag" : "Bewerk NFC Tag"}</h3>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="tagId">Tag ID</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="tagId"
+                          value={currentTag.tagId}
+                          onChange={(e) => setCurrentTag({ ...currentTag, tagId: e.target.value })}
+                          placeholder="Scan tag of voer ID handmatig in"
+                          disabled={scanningMode}
+                          className="flex-1"
+                        />
+                        <Button
+                          variant={scanningMode ? "default" : "outline"}
+                          onClick={startScanningMode}
+                          disabled={scanningMode}
+                        >
+                          {scanningMode ? (
+                            <>
+                              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                              Scannen...
+                            </>
+                          ) : (
+                            <>
+                              <Smartphone className="mr-2 h-4 w-4" />
+                              Scan
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      {scanningMode && (
+                        <p className="text-xs text-muted-foreground">Houd uw apparaat dicht bij de NFC tag...</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="naam">Naam</Label>
+                      <Input
+                        id="naam"
+                        value={currentTag.naam}
+                        onChange={(e) => setCurrentTag({ ...currentTag, naam: e.target.value })}
+                        placeholder="Bijv. Checkpoint Verdieping 1 West"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="verdieping">Verdieping</Label>
+                      <Select
+                        value={currentTag.verdieping}
+                        onValueChange={(value) => setCurrentTag({ ...currentTag, verdieping: value })}
+                      >
+                        <SelectTrigger id="verdieping">
+                          <SelectValue placeholder="Selecteer verdieping" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Kelderverdiepingen</SelectLabel>
+                            <SelectItem value="Verdieping -2">Verdieping -2</SelectItem>
+                            <SelectItem value="Verdieping -1">Verdieping -1</SelectItem>
+                          </SelectGroup>
+                          <SelectGroup>
+                            <SelectLabel>Begane grond</SelectLabel>
+                            <SelectItem value="Begane grond">Begane grond</SelectItem>
+                          </SelectGroup>
+                          <SelectGroup>
+                            <SelectLabel>Lagere verdiepingen</SelectLabel>
+                            <SelectItem value="Verdieping 1">Verdieping 1</SelectItem>
+                            <SelectItem value="Verdieping 2">Verdieping 2</SelectItem>
+                            <SelectItem value="Verdieping 3">Verdieping 3</SelectItem>
+                            <SelectItem value="Verdieping 4">Verdieping 4</SelectItem>
+                            <SelectItem value="Verdieping 5">Verdieping 5</SelectItem>
+                            <SelectItem value="Verdieping 6">Verdieping 6</SelectItem>
+                            <SelectItem value="Verdieping 7">Verdieping 7</SelectItem>
+                            <SelectItem value="Verdieping 8">Verdieping 8</SelectItem>
+                          </SelectGroup>
+                          <SelectGroup>
+                            <SelectLabel>Middelste verdiepingen</SelectLabel>
+                            <SelectItem value="Verdieping 9">Verdieping 9</SelectItem>
+                            <SelectItem value="Verdieping 10">Verdieping 10</SelectItem>
+                            <SelectItem value="Verdieping 11">Verdieping 11</SelectItem>
+                            <SelectItem value="Verdieping 12">Verdieping 12</SelectItem>
+                            <SelectItem value="Verdieping 13">Verdieping 13</SelectItem>
+                            <SelectItem value="Verdieping 14">Verdieping 14</SelectItem>
+                            <SelectItem value="Verdieping 15">Verdieping 15</SelectItem>
+                            <SelectItem value="Verdieping 16">Verdieping 16</SelectItem>
+                          </SelectGroup>
+                          <SelectGroup>
+                            <SelectLabel>Hogere verdiepingen</SelectLabel>
+                            <SelectItem value="Verdieping 17">Verdieping 17</SelectItem>
+                            <SelectItem value="Verdieping 18">Verdieping 18</SelectItem>
+                            <SelectItem value="Verdieping 19">Verdieping 19</SelectItem>
+                            <SelectItem value="Verdieping 20">Verdieping 20</SelectItem>
+                            <SelectItem value="Verdieping 21">Verdieping 21</SelectItem>
+                            <SelectItem value="Verdieping 22">Verdieping 22</SelectItem>
+                            <SelectItem value="Verdieping 23">Verdieping 23</SelectItem>
+                            <SelectItem value="Verdieping 24">Verdieping 24</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="locatie">Locatie</Label>
+                      <Input
+                        id="locatie"
+                        value={currentTag.locatie}
+                        onChange={(e) => setCurrentTag({ ...currentTag, locatie: e.target.value })}
+                        placeholder="Bijv. West, Noord, Hoofdingang"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="type">Type</Label>
+                      <Select
+                        value={currentTag.type}
+                        onValueChange={(value) => setCurrentTag({ ...currentTag, type: value })}
+                      >
+                        <SelectTrigger id="type">
+                          <SelectValue placeholder="Selecteer type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="checkpoint">Checkpoint</SelectItem>
+                          <SelectItem value="apparatuur">BHV Apparatuur</SelectItem>
+                          <SelectItem value="nooduitgang">Nooduitgang</SelectItem>
+                          <SelectItem value="verzamelplaats">Verzamelplaats</SelectItem>
+                          <SelectItem value="overig">Overig</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={currentTag.status}
+                        onValueChange={(value) => setCurrentTag({ ...currentTag, status: value })}
+                      >
+                        <SelectTrigger id="status">
+                          <SelectValue placeholder="Selecteer status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="actief">Actief</SelectItem>
+                          <SelectItem value="inactief">Inactief</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setShowForm(false)}>
+                      Annuleren
+                    </Button>
+                    <Button onClick={handleSaveTag}>
+                      <Save className="mr-2 h-4 w-4" />
+                      Opslaan
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <>
-                  {tags.length > 0 ? (
-                    <Table>
-                      <TableHeader>
+                  <Alert className="mb-4">
+                    <Smartphone className="h-4 w-4" />
+                    <AlertTitle>NFC Tags programmeren</AlertTitle>
+                    <AlertDescription>
+                      Gebruik de "Scan" knop bij het toevoegen of bewerken van een tag om deze te programmeren. Zorg
+                      ervoor dat uw apparaat NFC ondersteunt en dat NFC is ingeschakeld.
+                    </AlertDescription>
+                  </Alert>
+
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Tag ID</TableHead>
+                        <TableHead>Naam</TableHead>
+                        <TableHead>Verdieping</TableHead>
+                        <TableHead>Locatie</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Laatst gescand</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Acties</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tags.length === 0 ? (
                         <TableRow>
-                          <TableHead>Naam</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>UID</TableHead>
-                          <TableHead>Locatie</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Beheer</TableHead>
+                          <TableCell colSpan={8} className="text-center">
+                            Geen NFC tags gevonden
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {tags.map((tag) => (
+                      ) : (
+                        tags.map((tag) => (
                           <TableRow key={tag.id}>
-                            <TableCell className="font-medium">{tag.name}</TableCell>
+                            <TableCell className="font-mono text-xs">{tag.tagId}</TableCell>
+                            <TableCell>{tag.naam}</TableCell>
+                            <TableCell>{tag.verdieping}</TableCell>
+                            <TableCell>{tag.locatie}</TableCell>
                             <TableCell>
-                              <Badge variant="outline">
-                                {tagTypes.find((t) => t.id === tag.tagType)?.name || tag.tagType}
-                              </Badge>
+                              <span className="capitalize">{tag.type}</span>
                             </TableCell>
-                            <TableCell className="font-mono text-sm">{tag.uid}</TableCell>
+                            <TableCell>{tag.laatstGescand || "Nooit"}</TableCell>
                             <TableCell>
-                              <div className="flex items-center">
-                                <MapPin className="h-4 w-4 mr-1" />
-                                <div>
-                                  <div className="font-medium">{tag.location}</div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {tag.building} - {tag.floor} - {tag.zone}
-                                  </div>
-                                </div>
-                              </div>
+                              <span
+                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                  tag.status === "actief" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {tag.status === "actief" ? "Actief" : "Inactief"}
+                              </span>
                             </TableCell>
-                            <TableCell>
-                              <Badge className={getStatusColor(tag.status)}>{getStatusText(tag.status)}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex space-x-2">
-                                <Button variant="outline" size="sm" onClick={() => handleScanTag(tag.id)}>
-                                  <Scan className="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => writeNFCTag(tag)}>
-                                  <Wifi className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingTag(tag)
-                                    setFormData({
-                                      name: tag.name,
-                                      uid: tag.uid,
-                                      location: tag.location,
-                                      floor: tag.floor,
-                                      building: tag.building,
-                                      zone: tag.zone,
-                                      assignedTo: tag.assignedTo,
-                                      notes: tag.notes,
-                                      tagType: tag.tagType,
-                                      actions: [],
-                                    })
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button variant="destructive" size="sm" onClick={() => handleDeleteTag(tag.id)}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="sm" onClick={() => generateQRCode(tag.tagId)}>
+                                <QrCode className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleEditTag(tag)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDeleteTag(tag.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </TableCell>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Scan className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground">Geen NFC tags gevonden voor {selectedCustomer.name}</p>
-                    </div>
-                  )}
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="actions">
+        <TabsContent value="geschiedenis">
           <Card>
             <CardHeader>
-              <CardTitle>Beschikbare Acties</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Scan Geschiedenis</CardTitle>
+                <Button variant="outline">
+                  <Download className="mr-2 h-4 w-4" />
+                  Exporteren
+                </Button>
+              </div>
+              <CardDescription>Overzicht van alle NFC tag scans</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {actionTypes.map((actionType) => (
-                  <Card key={actionType.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-2xl">{actionType.icon}</span>
-                        <div>
-                          <h3 className="font-medium">{actionType.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {actionType.id === "url" && "Open website of webpagina"}
-                            {actionType.id === "wifi" && "Automatisch verbinden met WiFi"}
-                            {actionType.id === "contact" && "Contactgegevens opslaan"}
-                            {actionType.id === "text" && "Tekst weergeven"}
-                            {actionType.id === "app" && "App openen"}
-                            {actionType.id === "emergency" && "Noodprocedure starten"}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>NFC Instellingen</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Web NFC ingeschakeld</Label>
-                  <p className="text-sm text-muted-foreground">Gebruik Web NFC API voor scannen en schrijven</p>
-                </div>
-                <Checkbox defaultChecked />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Automatisch registreren</Label>
-                  <p className="text-sm text-muted-foreground">Nieuwe tags automatisch toevoegen bij scannen</p>
-                </div>
-                <Checkbox defaultChecked />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Authenticatie vereist</Label>
-                  <p className="text-sm text-muted-foreground">Gebruikers moeten inloggen om tags te scannen</p>
-                </div>
-                <Checkbox />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Scans loggen</Label>
-                  <p className="text-sm text-muted-foreground">Alle tag scans opslaan in logboek</p>
-                </div>
-                <Checkbox defaultChecked />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="scanInterval">Scan interval (seconden)</Label>
-                <Input id="scanInterval" type="number" defaultValue="30" min="1" max="165" />
-              </div>
-
-              <div className="flex justify-end">
-                <Button onClick={() => alert("NFC instellingen opgeslagen!")}>Instellingen Opslaan</Button>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tijdstip</TableHead>
+                    <TableHead>Tag ID</TableHead>
+                    <TableHead>Tag Naam</TableHead>
+                    <TableHead>Gebruiker</TableHead>
+                    <TableHead>Actie</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {scanHistory.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center">
+                        Geen scan geschiedenis gevonden
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    scanHistory.map((scan) => (
+                      <TableRow key={scan.id}>
+                        <TableCell>{scan.tijdstip}</TableCell>
+                        <TableCell className="font-mono text-xs">{scan.tagId}</TableCell>
+                        <TableCell>{scan.tagNaam}</TableCell>
+                        <TableCell>{scan.gebruiker}</TableCell>
+                        <TableCell>{scan.actie}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Add/Edit Tag Dialog */}
-      <Dialog
-        open={isAddDialogOpen || !!editingTag}
-        onOpenChange={(open) => {
-          if (!open) {
-            setIsAddDialogOpen(false)
-            setEditingTag(null)
-            resetForm()
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingTag ? "NFC Tag Bewerken" : `Nieuwe NFC Tag Toevoegen voor ${selectedCustomer.name}`}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="tag-name">Naam</Label>
-                <Input
-                  id="tag-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Bijv. Brandblusser HG-001"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tag-type">Type</Label>
-                <Select
-                  value={formData.tagType}
-                  onValueChange={(value) => setFormData({ ...formData, tagType: value })}
-                >
-                  <SelectTrigger id="tag-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tagTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>
-                        <div>
-                          <div className="font-medium">{type.name}</div>
-                          <div className="text-xs text-muted-foreground">{type.description}</div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tag-uid">UID</Label>
-              <Input
-                id="tag-uid"
-                value={formData.uid}
-                onChange={(e) => setFormData({ ...formData, uid: e.target.value })}
-                placeholder="Bijv. 04:52:3A:B2:C1:80"
-                disabled={!!scanResult}
-              />
-            </div>
-
-            <div className="grid grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="tag-building">Gebouw</Label>
-                <Input
-                  id="tag-building"
-                  value={formData.building}
-                  onChange={(e) => setFormData({ ...formData, building: e.target.value })}
-                  placeholder="Hoofdgebouw"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tag-floor">Verdieping</Label>
-                <Input
-                  id="tag-floor"
-                  value={formData.floor}
-                  onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
-                  placeholder="Begane Grond"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tag-zone">Zone</Label>
-                <Input
-                  id="tag-zone"
-                  value={formData.zone}
-                  onChange={(e) => setFormData({ ...formData, zone: e.target.value })}
-                  placeholder="Noord"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tag-location">Locatie</Label>
-                <Input
-                  id="tag-location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="Hoofdingang"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tag-assigned">Toegewezen aan</Label>
-              <Input
-                id="tag-assigned"
-                value={formData.assignedTo}
-                onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-                placeholder="Jan Jansen"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tag-notes">Opmerkingen</Label>
-              <Textarea
-                id="tag-notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Aanvullende informatie..."
-              />
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsAddDialogOpen(false)
-                  setEditingTag(null)
-                  resetForm()
-                }}
-              >
-                Annuleren
-              </Button>
-              <Button onClick={editingTag ? handleUpdateTag : handleAddTag}>
-                {editingTag ? "Opslaan" : "Toevoegen"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+    </main>
   )
 }

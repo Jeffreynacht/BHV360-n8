@@ -10,25 +10,20 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%; /* Blue-600 */
+    --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 142.1 76.2% 36.3%; /* Green-600 */
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%; /* Blue-600 */
+    --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
-    --chart-1: 221.2 83.2% 53.3%; /* Blue-600 */
-    --chart-2: 142.1 76.2% 36.3%; /* Green-600 */
-    --chart-3: 197.4 71.4% 52.5%; /* Light Blue */
-    --chart-4: 120 60% 50%; /* Light Green */
-    --chart-5: 43.3 96.4% 56.3%; /* Yellow accent */
   }
 
   .dark {
@@ -38,9 +33,9 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 142.1 76.2% 36.3%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
@@ -50,70 +45,43 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 221.2 83.2% 53.3%;
-    --chart-1: 221.2 83.2% 53.3%;
-    --chart-2: 142.1 76.2% 36.3%;
-    --chart-3: 197.4 71.4% 52.5%;
-    --chart-4: 120 60% 50%;
-    --chart-5: 43.3 96.4% 56.3%;
+    --ring: 224.3 76.3% 48%;
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+@media print {
+  @page {
+    size: A3 landscape;
+    margin: 0.5cm;
   }
+
   body {
-    @apply bg-background text-foreground;
+    font-size: 10pt;
   }
-}
 
-/* BHV360 Brand Specific Styles */
-.bhv360-gradient {
-  background: linear-gradient(135deg, #2563eb 0%, #16a34a 100%);
-}
+  .print\:hidden {
+    display: none !important;
+  }
 
-.bhv360-text-gradient {
-  background: linear-gradient(135deg, #2563eb 0%, #16a34a 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+  table {
+    page-break-inside: avoid;
+  }
 
-.bhv360-shadow {
-  box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.15), 0 2px 8px 0 rgba(22, 163, 74, 0.1);
-}
+  tr {
+    page-break-inside: avoid;
+  }
 
-.bhv360-border {
-  border-image: linear-gradient(135deg, #2563eb, #16a34a) 1;
-}
+  h2 {
+    font-size: 12pt;
+    margin-top: 0.3cm;
+  }
 
-/* Safety Icon Animations */
-.safety-icon {
-  transition: all 0.3s ease;
-}
+  input,
+  textarea {
+    border: 1px solid #000;
+  }
 
-.safety-icon:hover {
-  transform: scale(1.1);
-  filter: drop-shadow(0 4px 8px rgba(37, 99, 235, 0.3));
-}
-
-/* Plotkaart specific styles */
-.plotkaart-container {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-.plotkaart-container::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: -1;
-  margin: -2px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, #2563eb, #16a34a);
+  .checkbox {
+    border: 1px solid #000;
+  }
 }
