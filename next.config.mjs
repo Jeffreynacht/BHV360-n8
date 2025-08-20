@@ -2,19 +2,14 @@
 const nextConfig = {
   output: 'export',
   trailingSlash: true,
-  skipTrailingSlashRedirect: true,
-  distDir: 'out',
   images: {
-    unoptimized: true,
-  },
-  experimental: {
-    esmExternals: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
+    unoptimized: true
   },
   eslint: {
     ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
   },
 }
 

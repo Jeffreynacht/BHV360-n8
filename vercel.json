@@ -1,6 +1,6 @@
 {
   "buildCommand": "npm run build",
-  "installCommand": "corepack enable && corepack use pnpm@10 && pnpm install --frozen-lockfile=false",
+  "installCommand": "npm install",
   "framework": null,
   "outputDirectory": "out",
   "trailingSlash": false,

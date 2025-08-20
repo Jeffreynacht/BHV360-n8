@@ -1,255 +1,265 @@
-import { type ModuleDefinition, AVAILABLE_MODULES, getModuleById, getCoreModules } from "./module-definitions"
+import type { ModuleDefinition } from "./module-definitions"
+import { getModuleById, calculateModulePrice } from "./module-definitions"
+
+// Legacy Module interface for backward compatibility
+export interface Module {
+  id: string
+  name: string
+  description: string
+  category: string
+  tier: string
+  enabled: boolean
+  visible: boolean
+  core: boolean
+  implemented: boolean
+  pricing: {
+    basePrice: number
+    model: string
+  }
+  rating: number
+  popularity: number
+}
 
 export interface CustomerModule {
-  customerId: string
-  moduleId: string
-  isEnabled: boolean
-  enabledAt: Date
-  enabledBy: string
-  disabledAt?: Date
-  disabledBy?: string
-  settings?: Record<string, any>
-}
-
-export interface CustomerModuleConfig {
-  customerId: string
-  modules: CustomerModule[]
-  lastUpdated: Date
-  updatedBy: string
-}
-
-export class CustomerModuleService {
-  // Get all modules for a customer
-  static async getCustomerModules(customerId: string): Promise<CustomerModule[]> {
-    // In productie zou dit uit database komen
-    const stored = localStorage.getItem(`customer_modules_${customerId}`)
-    if (stored) {
-      return JSON.parse(stored).map((m: any) => ({
-        ...m,
-        enabledAt: new Date(m.enabledAt),
-        disabledAt: m.disabledAt ? new Date(m.disabledAt) : undefined,
-      }))
-    }
-
-    // Default: alleen core modules enabled
-    const coreModules = getCoreModules()
-    const defaultModules = coreModules.map((module) => ({
-      customerId,
-      moduleId: module.id,
-      isEnabled: true,
-      enabledAt: new Date(),
-      enabledBy: "system",
-    }))
-
-    // Add some popular modules for demo
-    const popularModules = ["bhv-coordinator", "nfc-integration", "advanced-analytics", "mobile-app"]
-
-    for (const moduleId of popularModules) {
-      const module = getModuleById(moduleId)
-      if (module && !module.core) {
-        defaultModules.push({
-          customerId,
-          moduleId,
-          isEnabled: true,
-          enabledAt: new Date(),
-          enabledBy: "system",
-        })
-      }
-    }
-
-    // Store defaults
-    localStorage.setItem(`customer_modules_${customerId}`, JSON.stringify(defaultModules))
-    return defaultModules
-  }
-
-  // Get enabled modules for a customer
-  static async getEnabledModules(customerId: string): Promise<ModuleDefinition[]> {
-    const customerModules = await this.getCustomerModules(customerId)
-    const enabledModuleIds = customerModules.filter((cm) => cm.isEnabled).map((cm) => cm.moduleId)
-
-    return AVAILABLE_MODULES.filter((m) => enabledModuleIds.includes(m.id))
-  }
-
-  // Enable a module for a customer (with approval workflow)
-  static async enableModule(
-    customerId: string,
-    moduleId: string,
-    enabledBy: string,
-    bypassApproval = false,
-  ): Promise<{ success: boolean; error?: string; requiresApproval?: boolean; requestId?: string }> {
-    try {
-      const module = getModuleById(moduleId)
-      if (!module) {
-        return { success: false, error: "Module niet gevonden" }
-      }
-
-      // Check if approval is needed (skip for system/admin actions)
-      if (!bypassApproval && !enabledBy.startsWith("system") && !enabledBy.startsWith("approved_by")) {
-        // Get customer name (in productie uit database)
-        const customerName = `Klant ${customerId}` // Placeholder
-        const requestedByEmail = "user@company.com" // Placeholder - in productie uit user context
-
-        // Request approval instead of direct activation
-        const { ModuleNotificationService } = await import("./module-notifications")
-        const result = await ModuleNotificationService.requestModuleActivation(
-          customerId,
-          customerName,
-          moduleId,
-          enabledBy,
-          requestedByEmail,
-        )
-
-        if (!result.success) {
-          return { success: false, error: result.error }
-        }
-
-        if (result.autoApproved) {
-          // Module was auto-approved and activated
-          return { success: true }
-        } else {
-          // Approval required
-          return {
-            success: true,
-            requiresApproval: true,
-            requestId: result.requestId,
-            error: "Module activatie vereist goedkeuring. Een email is verstuurd naar de beheerder.",
-          }
-        }
-      }
-
-      // Direct activation (for system/approved actions)
-      const customerModules = await this.getCustomerModules(customerId)
-      const existingModule = customerModules.find((cm) => cm.moduleId === moduleId)
-
-      if (existingModule) {
-        existingModule.isEnabled = true
-        existingModule.enabledAt = new Date()
-        existingModule.enabledBy = enabledBy
-        existingModule.disabledAt = undefined
-        existingModule.disabledBy = undefined
-      } else {
-        customerModules.push({
-          customerId,
-          moduleId,
-          isEnabled: true,
-          enabledAt: new Date(),
-          enabledBy,
-        })
-      }
-
-      // Save to storage
-      localStorage.setItem(`customer_modules_${customerId}`, JSON.stringify(customerModules))
-
-      // Log the change
-      await ModuleAuditService.logModuleChange({
-        customerId,
-        moduleId,
-        action: "enabled",
-        performedBy: enabledBy,
-        timestamp: new Date(),
-      })
-
-      return { success: true }
-    } catch (error) {
-      return { success: false, error: "Fout bij inschakelen module" }
-    }
-  }
-
-  // Disable a module for a customer
-  static async disableModule(
-    customerId: string,
-    moduleId: string,
-    disabledBy: string,
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      const module = getModuleById(moduleId)
-      if (!module) {
-        return { success: false, error: "Module niet gevonden" }
-      }
-
-      if (module.core) {
-        return { success: false, error: "Core modules kunnen niet uitgeschakeld worden" }
-      }
-
-      const customerModules = await this.getCustomerModules(customerId)
-      const existingModule = customerModules.find((cm) => cm.moduleId === moduleId)
-
-      if (existingModule) {
-        existingModule.isEnabled = false
-        existingModule.disabledAt = new Date()
-        existingModule.disabledBy = disabledBy
-      }
-
-      // Save to storage
-      localStorage.setItem(`customer_modules_${customerId}`, JSON.stringify(customerModules))
-
-      // Log the change
-      await ModuleAuditService.logModuleChange({
-        customerId,
-        moduleId,
-        action: "disabled",
-        performedBy: disabledBy,
-        timestamp: new Date(),
-      })
-
-      return { success: true }
-    } catch (error) {
-      return { success: false, error: "Fout bij uitschakelen module" }
-    }
-  }
-
-  // Check if customer has module enabled
-  static async hasModule(customerId: string, moduleId: string): Promise<boolean> {
-    const customerModules = await this.getCustomerModules(customerId)
-    const module = customerModules.find((cm) => cm.moduleId === moduleId)
-    return module?.isEnabled || false
-  }
-}
-
-// Audit logging service
-export interface ModuleAuditLog {
   id: string
   customerId: string
   moduleId: string
-  action: "enabled" | "disabled" | "configured"
-  performedBy: string
-  timestamp: Date
-  details?: Record<string, any>
+  activatedAt: Date
+  activatedBy: string
+  status: "active" | "suspended" | "cancelled"
+  billingCycle: "monthly" | "yearly"
+  nextBillingDate: Date
+  monthlyCost: number
+  yearlyCost: number
+  userCount: number
+  buildingCount: number
+  trialEndsAt?: Date
+  cancelledAt?: Date
+  cancelledBy?: string
+  cancellationReason?: string
 }
 
-export class ModuleAuditService {
-  static async logModuleChange(log: Omit<ModuleAuditLog, "id">): Promise<void> {
-    const auditLog: ModuleAuditLog = {
-      id: crypto.randomUUID(),
-      ...log,
-    }
+export interface CustomerModuleUsage {
+  customerId: string
+  moduleId: string
+  month: string
+  activeUsers: number
+  totalBuildings: number
+  apiCalls: number
+  storageUsed: number
+  lastActivity: Date
+}
 
-    // Get existing logs
-    const stored = localStorage.getItem("module_audit_logs")
-    const logs: ModuleAuditLog[] = stored ? JSON.parse(stored) : []
+export class CustomerModuleService {
+  private customerModules: Map<string, CustomerModule[]> = new Map()
+  private moduleUsage: Map<string, CustomerModuleUsage[]> = new Map()
 
-    // Add new log
-    logs.push(auditLog)
-
-    // Keep only last 1000 logs
-    if (logs.length > 1000) {
-      logs.splice(0, logs.length - 1000)
-    }
-
-    // Save back
-    localStorage.setItem("module_audit_logs", JSON.stringify(logs))
+  // Get all modules for a customer
+  getCustomerModules(customerId: string): CustomerModule[] {
+    return this.customerModules.get(customerId) || []
   }
 
-  static async getAuditLogs(customerId?: string): Promise<ModuleAuditLog[]> {
-    const stored = localStorage.getItem("module_audit_logs")
-    const logs: ModuleAuditLog[] = stored ? JSON.parse(stored) : []
+  // Get active modules for a customer
+  getActiveCustomerModules(customerId: string): CustomerModule[] {
+    const modules = this.getCustomerModules(customerId)
+    return modules.filter((module) => module.status === "active")
+  }
 
-    return logs
-      .filter((log) => !customerId || log.customerId === customerId)
-      .map((log) => ({
-        ...log,
-        timestamp: new Date(log.timestamp),
-      }))
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+  // Check if customer has access to a specific module
+  hasModuleAccess(customerId: string, moduleId: string): boolean {
+    const modules = this.getActiveCustomerModules(customerId)
+    return modules.some((module) => module.moduleId === moduleId)
+  }
+
+  // Activate a module for a customer
+  activateModule(
+    customerId: string,
+    moduleId: string,
+    activatedBy: string,
+    userCount: number,
+    buildingCount: number,
+    billingCycle: "monthly" | "yearly" = "monthly",
+  ): CustomerModule {
+    const moduleDefinition = getModuleById(moduleId)
+    if (!moduleDefinition) {
+      throw new Error(`Module ${moduleId} not found`)
+    }
+
+    const pricing = calculateModulePrice(moduleDefinition, userCount, buildingCount)
+    const monthlyCost = pricing.price
+    const yearlyCost = monthlyCost * 12 * 0.9 // 10% discount for yearly
+
+    const customerModule: CustomerModule = {
+      id: `${customerId}-${moduleId}-${Date.now()}`,
+      customerId,
+      moduleId,
+      activatedAt: new Date(),
+      activatedBy,
+      status: "active",
+      billingCycle,
+      nextBillingDate: new Date(Date.now() + (billingCycle === "monthly" ? 30 : 365) * 24 * 60 * 60 * 1000),
+      monthlyCost,
+      yearlyCost,
+      userCount,
+      buildingCount,
+      trialEndsAt: moduleDefinition.pricing.freeTrialDays
+        ? new Date(Date.now() + moduleDefinition.pricing.freeTrialDays * 24 * 60 * 60 * 1000)
+        : undefined,
+    }
+
+    const existingModules = this.customerModules.get(customerId) || []
+    existingModules.push(customerModule)
+    this.customerModules.set(customerId, existingModules)
+
+    return customerModule
+  }
+
+  // Deactivate a module for a customer
+  deactivateModule(customerId: string, moduleId: string, deactivatedBy: string, reason?: string): boolean {
+    const modules = this.customerModules.get(customerId) || []
+    const moduleIndex = modules.findIndex((m) => m.moduleId === moduleId && m.status === "active")
+
+    if (moduleIndex === -1) {
+      return false
+    }
+
+    modules[moduleIndex].status = "cancelled"
+    modules[moduleIndex].cancelledAt = new Date()
+    modules[moduleIndex].cancelledBy = deactivatedBy
+    modules[moduleIndex].cancellationReason = reason
+
+    this.customerModules.set(customerId, modules)
+    return true
+  }
+
+  // Update module configuration
+  updateModuleConfig(customerId: string, moduleId: string, userCount: number, buildingCount: number): boolean {
+    const modules = this.customerModules.get(customerId) || []
+    const moduleIndex = modules.findIndex((m) => m.moduleId === moduleId && m.status === "active")
+
+    if (moduleIndex === -1) {
+      return false
+    }
+
+    const moduleDefinition = getModuleById(moduleId)
+    if (!moduleDefinition) {
+      return false
+    }
+
+    const pricing = calculateModulePrice(moduleDefinition, userCount, buildingCount)
+
+    modules[moduleIndex].userCount = userCount
+    modules[moduleIndex].buildingCount = buildingCount
+    modules[moduleIndex].monthlyCost = pricing.price
+    modules[moduleIndex].yearlyCost = pricing.price * 12 * 0.9
+
+    this.customerModules.set(customerId, modules)
+    return true
+  }
+
+  // Get customer's total monthly cost
+  getCustomerMonthlyCost(customerId: string): number {
+    const activeModules = this.getActiveCustomerModules(customerId)
+    return activeModules.reduce((total, module) => total + module.monthlyCost, 0)
+  }
+
+  // Get customer's total yearly cost
+  getCustomerYearlyCost(customerId: string): number {
+    const activeModules = this.getActiveCustomerModules(customerId)
+    return activeModules.reduce((total, module) => total + module.yearlyCost, 0)
+  }
+
+  // Track module usage
+  trackModuleUsage(
+    customerId: string,
+    moduleId: string,
+    activeUsers: number,
+    totalBuildings: number,
+    apiCalls: number,
+    storageUsed: number,
+  ): void {
+    const month = new Date().toISOString().slice(0, 7) // YYYY-MM format
+    const usageKey = `${customerId}-${month}`
+
+    const existingUsage = this.moduleUsage.get(usageKey) || []
+    const usageIndex = existingUsage.findIndex((u) => u.moduleId === moduleId)
+
+    const usage: CustomerModuleUsage = {
+      customerId,
+      moduleId,
+      month,
+      activeUsers,
+      totalBuildings,
+      apiCalls,
+      storageUsed,
+      lastActivity: new Date(),
+    }
+
+    if (usageIndex >= 0) {
+      existingUsage[usageIndex] = usage
+    } else {
+      existingUsage.push(usage)
+    }
+
+    this.moduleUsage.set(usageKey, existingUsage)
+  }
+
+  // Get module usage for a customer
+  getModuleUsage(customerId: string, month?: string): CustomerModuleUsage[] {
+    const targetMonth = month || new Date().toISOString().slice(0, 7)
+    const usageKey = `${customerId}-${targetMonth}`
+    return this.moduleUsage.get(usageKey) || []
+  }
+
+  // Get all customers using a specific module
+  getModuleCustomers(moduleId: string): string[] {
+    const customers: Set<string> = new Set()
+
+    for (const [customerId, modules] of this.customerModules.entries()) {
+      if (modules.some((m) => m.moduleId === moduleId && m.status === "active")) {
+        customers.add(customerId)
+      }
+    }
+
+    return Array.from(customers)
+  }
+
+  // Get module statistics
+  getModuleStatistics(moduleId: string) {
+    const customers = this.getModuleCustomers(moduleId)
+    const totalRevenue = Array.from(this.customerModules.values())
+      .flat()
+      .filter((m) => m.moduleId === moduleId && m.status === "active")
+      .reduce((sum, m) => sum + m.monthlyCost, 0)
+
+    return {
+      activeCustomers: customers.length,
+      monthlyRevenue: totalRevenue,
+      yearlyRevenue: totalRevenue * 12,
+    }
+  }
+
+  // Convert ModuleDefinition to legacy Module interface
+  static toLegacyModule(moduleDefinition: ModuleDefinition): Module {
+    return {
+      id: moduleDefinition.id,
+      name: moduleDefinition.name,
+      description: moduleDefinition.description,
+      category: moduleDefinition.category,
+      tier: moduleDefinition.tier,
+      enabled: moduleDefinition.enabled,
+      visible: moduleDefinition.visible,
+      core: moduleDefinition.core,
+      implemented: moduleDefinition.implemented,
+      pricing: {
+        basePrice: moduleDefinition.pricing.basePrice,
+        model: moduleDefinition.pricing.model,
+      },
+      rating: moduleDefinition.rating,
+      popularity: moduleDefinition.popularity,
+    }
   }
 }
+
+// Export singleton instance
+export const customerModuleService = new CustomerModuleService()

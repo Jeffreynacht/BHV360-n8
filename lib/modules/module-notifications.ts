@@ -1,181 +1,262 @@
-import { getModuleById, calculateModulePrice, type ModuleActivationRequest } from "./module-definitions"
+import type { ModuleActivationRequest } from "./module-definitions"
+import { getModuleById, calculateModulePrice } from "./module-definitions"
+
+export interface ModuleNotification {
+  id: string
+  type: "activation_request" | "activation_approved" | "activation_rejected" | "module_update" | "billing_alert"
+  title: string
+  message: string
+  customerId: string
+  moduleId?: string
+  createdAt: Date
+  readAt?: Date
+  actionRequired: boolean
+  metadata?: Record<string, any>
+}
 
 export class ModuleNotificationService {
-  static async requestModuleActivation(
+  private notifications: Map<string, ModuleNotification[]> = new Map()
+  private activationRequests: Map<string, ModuleActivationRequest> = new Map()
+
+  // Create activation request
+  createActivationRequest(
+    moduleId: string,
     customerId: string,
     customerName: string,
-    moduleId: string,
     requestedBy: string,
     requestedByEmail: string,
-  ): Promise<{ success: boolean; error?: string; autoApproved?: boolean; requestId?: string }> {
-    try {
-      const module = getModuleById(moduleId)
-      if (!module) {
-        return { success: false, error: "Module niet gevonden" }
-      }
+    userCount: number,
+    buildingCount: number,
+  ): ModuleActivationRequest {
+    const module = getModuleById(moduleId)
+    if (!module) {
+      throw new Error(`Module ${moduleId} not found`)
+    }
 
-      // Calculate costs
-      const pricing = calculateModulePrice(module, 25, 1) // Default values
-      const monthlyCost = pricing.price
-      const yearlyCost = monthlyCost * 12
+    const pricing = calculateModulePrice(module, userCount, buildingCount)
+    const monthlyCost = pricing.price
+    const yearlyCost = monthlyCost * 12 * 0.9 // 10% discount
 
-      // Create activation request
-      const request: ModuleActivationRequest = {
-        id: crypto.randomUUID(),
-        moduleId,
-        customerId,
-        customerName,
-        requestedBy,
-        requestedByEmail,
-        requestedAt: new Date(),
-        status: "pending",
+    const request: ModuleActivationRequest = {
+      id: `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      moduleId,
+      customerId,
+      customerName,
+      requestedBy,
+      requestedByEmail,
+      requestedAt: new Date(),
+      status: "pending",
+      monthlyCost,
+      yearlyCost,
+    }
+
+    this.activationRequests.set(request.id, request)
+
+    // Create notification for admins
+    this.createNotification({
+      type: "activation_request",
+      title: "New Module Activation Request",
+      message: `${customerName} has requested activation of ${module.name}`,
+      customerId: "admin",
+      moduleId,
+      actionRequired: true,
+      metadata: {
+        requestId: request.id,
         monthlyCost,
         yearlyCost,
-      }
-
-      // Check if auto-approval is possible (for core modules or low-cost modules)
-      if (module.core || monthlyCost < 50) {
-        request.status = "auto_approved"
-        request.approvedBy = "system"
-        request.approvedAt = new Date()
-
-        // Store the request
-        await this.storeActivationRequest(request)
-
-        return { success: true, autoApproved: true }
-      }
-
-      // Store the request for manual approval
-      await this.storeActivationRequest(request)
-
-      // Send notification email (mock implementation)
-      await this.sendApprovalNotification(request)
-
-      return { success: true, autoApproved: false, requestId: request.id }
-    } catch (error) {
-      return { success: false, error: "Fout bij aanvragen module activatie" }
-    }
-  }
-
-  private static async storeActivationRequest(request: ModuleActivationRequest): Promise<void> {
-    const stored = localStorage.getItem("module_activation_requests")
-    const requests: ModuleActivationRequest[] = stored ? JSON.parse(stored) : []
-
-    requests.push({
-      ...request,
-      requestedAt: request.requestedAt,
-      approvedAt: request.approvedAt,
+        userCount,
+        buildingCount,
+      },
     })
 
-    localStorage.setItem("module_activation_requests", JSON.stringify(requests))
+    return request
   }
 
-  private static async sendApprovalNotification(request: ModuleActivationRequest): Promise<void> {
-    // Mock email notification
-    console.log(`📧 Approval notification sent for module ${request.moduleId} to admin`)
-
-    // In production, this would send an actual email
-    const emailData = {
-      to: "admin@bhv360.nl",
-      subject: `Module Activatie Aanvraag: ${request.moduleId}`,
-      body: `
-        Nieuwe module activatie aanvraag:
-        
-        Klant: ${request.customerName}
-        Module: ${request.moduleId}
-        Aangevraagd door: ${request.requestedBy} (${request.requestedByEmail})
-        Maandelijkse kosten: €${request.monthlyCost}
-        Jaarlijkse kosten: €${request.yearlyCost}
-        
-        Klik hier om goed te keuren: [APPROVAL_LINK]
-      `,
+  // Approve activation request
+  approveActivationRequest(requestId: string, approvedBy: string): boolean {
+    const request = this.activationRequests.get(requestId)
+    if (!request || request.status !== "pending") {
+      return false
     }
 
-    // Store notification for demo purposes
-    const notifications = JSON.parse(localStorage.getItem("email_notifications") || "[]")
-    notifications.push({
-      id: crypto.randomUUID(),
-      ...emailData,
-      sentAt: new Date(),
-      status: "sent",
+    request.status = "approved"
+    request.approvedBy = approvedBy
+    request.approvedAt = new Date()
+
+    this.activationRequests.set(requestId, request)
+
+    // Notify customer
+    this.createNotification({
+      type: "activation_approved",
+      title: "Module Activation Approved",
+      message: `Your request for ${getModuleById(request.moduleId)?.name} has been approved`,
+      customerId: request.customerId,
+      moduleId: request.moduleId,
+      actionRequired: false,
+      metadata: {
+        requestId,
+        approvedBy,
+        monthlyCost: request.monthlyCost,
+      },
     })
-    localStorage.setItem("email_notifications", JSON.stringify(notifications))
+
+    return true
   }
 
-  static async getActivationRequests(customerId?: string): Promise<ModuleActivationRequest[]> {
-    const stored = localStorage.getItem("module_activation_requests")
-    const requests: ModuleActivationRequest[] = stored ? JSON.parse(stored) : []
+  // Reject activation request
+  rejectActivationRequest(requestId: string, rejectedBy: string, reason: string): boolean {
+    const request = this.activationRequests.get(requestId)
+    if (!request || request.status !== "pending") {
+      return false
+    }
 
-    return requests
-      .filter((req) => !customerId || req.customerId === customerId)
-      .map((req) => ({
-        ...req,
-        requestedAt: new Date(req.requestedAt),
-        approvedAt: req.approvedAt ? new Date(req.approvedAt) : undefined,
-        rejectedAt: req.rejectedAt ? new Date(req.rejectedAt) : undefined,
-      }))
+    request.status = "rejected"
+    request.rejectedBy = rejectedBy
+    request.rejectedAt = new Date()
+    request.rejectionReason = reason
+
+    this.activationRequests.set(requestId, request)
+
+    // Notify customer
+    this.createNotification({
+      type: "activation_rejected",
+      title: "Module Activation Rejected",
+      message: `Your request for ${getModuleById(request.moduleId)?.name} has been rejected: ${reason}`,
+      customerId: request.customerId,
+      moduleId: request.moduleId,
+      actionRequired: false,
+      metadata: {
+        requestId,
+        rejectedBy,
+        reason,
+      },
+    })
+
+    return true
+  }
+
+  // Create notification
+  createNotification(notification: Omit<ModuleNotification, "id" | "createdAt">): ModuleNotification {
+    const newNotification: ModuleNotification = {
+      ...notification,
+      id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date(),
+    }
+
+    const existing = this.notifications.get(notification.customerId) || []
+    existing.push(newNotification)
+    this.notifications.set(notification.customerId, existing)
+
+    return newNotification
+  }
+
+  // Get notifications for customer
+  getNotifications(customerId: string, unreadOnly = false): ModuleNotification[] {
+    const notifications = this.notifications.get(customerId) || []
+
+    if (unreadOnly) {
+      return notifications.filter((n) => !n.readAt)
+    }
+
+    return notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  }
+
+  // Mark notification as read
+  markAsRead(customerId: string, notificationId: string): boolean {
+    const notifications = this.notifications.get(customerId) || []
+    const notification = notifications.find((n) => n.id === notificationId)
+
+    if (!notification) {
+      return false
+    }
+
+    notification.readAt = new Date()
+    this.notifications.set(customerId, notifications)
+    return true
+  }
+
+  // Get pending activation requests
+  getPendingRequests(): ModuleActivationRequest[] {
+    return Array.from(this.activationRequests.values())
+      .filter((req) => req.status === "pending")
       .sort((a, b) => b.requestedAt.getTime() - a.requestedAt.getTime())
   }
 
-  static async approveRequest(requestId: string, approvedBy: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      const stored = localStorage.getItem("module_activation_requests")
-      const requests: ModuleActivationRequest[] = stored ? JSON.parse(stored) : []
-
-      const requestIndex = requests.findIndex((req) => req.id === requestId)
-      if (requestIndex === -1) {
-        return { success: false, error: "Aanvraag niet gevonden" }
-      }
-
-      const request = requests[requestIndex]
-      request.status = "approved"
-      request.approvedBy = approvedBy
-      request.approvedAt = new Date()
-
-      requests[requestIndex] = request
-      localStorage.setItem("module_activation_requests", JSON.stringify(requests))
-
-      // Actually enable the module
-      const { CustomerModuleService } = await import("./customer-modules")
-      await CustomerModuleService.enableModule(
-        request.customerId,
-        request.moduleId,
-        `approved_by_${approvedBy}`,
-        true, // bypass approval since this IS the approval
-      )
-
-      return { success: true }
-    } catch (error) {
-      return { success: false, error: "Fout bij goedkeuren aanvraag" }
-    }
+  // Get activation request by ID
+  getActivationRequest(requestId: string): ModuleActivationRequest | undefined {
+    return this.activationRequests.get(requestId)
   }
 
-  static async rejectRequest(
-    requestId: string,
-    rejectedBy: string,
-    reason: string,
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      const stored = localStorage.getItem("module_activation_requests")
-      const requests: ModuleActivationRequest[] = stored ? JSON.parse(stored) : []
+  // Get all activation requests for a customer
+  getCustomerRequests(customerId: string): ModuleActivationRequest[] {
+    return Array.from(this.activationRequests.values())
+      .filter((req) => req.customerId === customerId)
+      .sort((a, b) => b.requestedAt.getTime() - a.requestedAt.getTime())
+  }
 
-      const requestIndex = requests.findIndex((req) => req.id === requestId)
-      if (requestIndex === -1) {
-        return { success: false, error: "Aanvraag niet gevonden" }
+  // Send module update notification
+  notifyModuleUpdate(moduleId: string, version: string, changes: string[]): void {
+    const module = getModuleById(moduleId)
+    if (!module) return
+
+    // This would typically get customers from the customer service
+    // For now, we'll create a placeholder notification
+    this.createNotification({
+      type: "module_update",
+      title: `${module.name} Updated`,
+      message: `${module.name} has been updated to version ${version}`,
+      customerId: "all", // Special case for broadcast
+      moduleId,
+      actionRequired: false,
+      metadata: {
+        version,
+        changes,
+      },
+    })
+  }
+
+  // Send billing alert
+  sendBillingAlert(customerId: string, moduleId: string, message: string): void {
+    const module = getModuleById(moduleId)
+
+    this.createNotification({
+      type: "billing_alert",
+      title: "Billing Alert",
+      message,
+      customerId,
+      moduleId,
+      actionRequired: true,
+      metadata: {
+        moduleName: module?.name,
+      },
+    })
+  }
+
+  // Get notification statistics
+  getNotificationStats(customerId?: string) {
+    if (customerId) {
+      const notifications = this.getNotifications(customerId)
+      return {
+        total: notifications.length,
+        unread: notifications.filter((n) => !n.readAt).length,
+        actionRequired: notifications.filter((n) => n.actionRequired && !n.readAt).length,
       }
-
-      const request = requests[requestIndex]
-      request.status = "rejected"
-      request.rejectedBy = rejectedBy
-      request.rejectedAt = new Date()
-      request.rejectionReason = reason
-
-      requests[requestIndex] = request
-      localStorage.setItem("module_activation_requests", JSON.stringify(requests))
-
-      return { success: true }
-    } catch (error) {
-      return { success: false, error: "Fout bij afwijzen aanvraag" }
     }
+
+    // Global stats
+    let total = 0
+    let unread = 0
+    let actionRequired = 0
+
+    for (const notifications of this.notifications.values()) {
+      total += notifications.length
+      unread += notifications.filter((n) => !n.readAt).length
+      actionRequired += notifications.filter((n) => n.actionRequired && !n.readAt).length
+    }
+
+    return { total, unread, actionRequired }
   }
 }
+
+// Export singleton instance
+export const moduleNotificationService = new ModuleNotificationService()
