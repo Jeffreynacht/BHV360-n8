@@ -1,125 +1,29 @@
-# Pull Request
-
 ## 📋 Beschrijving
-Beschrijf de wijzigingen in deze PR.
+Beschrijf kort wat deze PR doet.
 
-## 🔄 Type Wijziging
+## 🔗 Gerelateerde Issues
+Fixes #(issue nummer)
+
+## 🧪 Type Wijziging
 - [ ] Bug fix (non-breaking change die een issue oplost)
 - [ ] Nieuwe feature (non-breaking change die functionaliteit toevoegt)
 - [ ] Breaking change (fix of feature die bestaande functionaliteit breekt)
 - [ ] Documentatie update
 
-## 🧪 Testing
-- [ ] Unit tests toegevoegd/bijgewerkt
-- [ ] Integration tests toegevoegd/bijgewerkt
-- [ ] Handmatig getest
-
 ## ✅ Checklist
-- [ ] Code volgt de style guidelines
-- [ ] Self-review uitgevoerd
-- [ ] Code is gecommentarieerd waar nodig
-- [ ] Documentatie bijgewerkt
-- [ ] Tests slagen
-- [ ] Geen merge conflicts
+- [ ] Mijn code volgt de style guidelines van dit project
+- [ ] Ik heb een self-review van mijn code gedaan
+- [ ] Ik heb mijn code gecommentarieerd, vooral in moeilijk te begrijpen delen
+- [ ] Ik heb corresponderende wijzigingen aan de documentatie gemaakt
+- [ ] Mijn wijzigingen genereren geen nieuwe warnings
+- [ ] Ik heb tests toegevoegd die bewijzen dat mijn fix werkt of dat mijn feature werkt
+- [ ] Nieuwe en bestaande unit tests slagen lokaal met mijn wijzigingen
 
-## 📱 Screenshots
-Voeg screenshots toe indien van toepassing.
+## 📱 Screenshots (indien van toepassing)
+Voeg screenshots toe van je wijzigingen.
 
-## 🔗 Gerelateerde Issues
-Fixes #(issue nummer)
+## 🧪 Test Instructies
+Beschrijf hoe reviewers je wijzigingen kunnen testen.
 \`\`\`
 
-```plaintext file=".gitignore"
-# Dependencies
-node_modules/
-/.pnp
-.pnp.js
-
-# Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
-
-# Production
-/build
-
-# Misc
-.DS_Store
-*.tsbuildinfo
-next-env.d.ts
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Local env files
-.env*.local
-.env
-
-# Vercel
-.vercel
-
-# TypeScript
-*.tsbuildinfo
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-Thumbs.db
-
-# Logs
-logs
-*.log
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
-coverage/
-*.lcov
-
-# Dependency directories
-jspm_packages/
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
-
-# Temporary folders
-tmp/
-temp/
-
-# Database
-*.db
-*.sqlite
-
-# Backup files
-*.backup
-*.bak
-
-# Deployment
-deployment-info.json
-deployment-report.md
+Nu maken we een professionele README:

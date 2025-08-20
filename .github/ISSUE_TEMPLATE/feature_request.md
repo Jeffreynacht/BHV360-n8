@@ -1,32 +1,34 @@
 ---
 name: Feature Request
-about: Stel een nieuwe functie voor BHV360 voor
+about: Stel een nieuwe feature voor BHV360 voor
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''
 ---
 
 ## 🚀 Feature Beschrijving
-Een duidelijke beschrijving van de gewenste functionaliteit.
+Een duidelijke beschrijving van welke feature je wilt.
 
-## 💡 Motivatie
-Waarom zou deze functie nuttig zijn? Welk probleem lost het op?
+## 💡 Probleem dat het Oplost
+Beschrijf het probleem dat deze feature zou oplossen.
 
-## 📋 Gewenst Gedrag
-Beschrijf hoe de functie zou moeten werken.
+## 🎯 Voorgestelde Oplossing
+Een duidelijke beschrijving van wat je wilt dat er gebeurt.
 
-## 🎯 Acceptatiecriteria
-- [ ] Criterium 1
-- [ ] Criterium 2
-- [ ] Criterium 3
-
-## 📱 Platform
-- [ ] Web applicatie
-- [ ] Mobile app
-- [ ] Beide
-
-## 🔗 Gerelateerde Issues
-Link naar gerelateerde issues of features.
+## 🔄 Alternatieven
+Beschrijf eventuele alternatieve oplossingen die je hebt overwogen.
 
 ## 📝 Extra Context
-Voeg hier andere context, screenshots of mockups toe.
+Voeg hier screenshots, mockups of andere context toe.
+
+## 🏷️ Labels
+- [ ] Frontend
+- [ ] Backend  
+- [ ] Database
+- [ ] API
+- [ ] UI/UX
+- [ ] Security
+- [ ] Performance
+\`\`\`
+
+Nu maken we een pull request template:

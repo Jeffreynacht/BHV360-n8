@@ -1,50 +1,42 @@
 import { NextResponse } from "next/server"
-
-interface DatabaseResult {
-  success: boolean
-  message: string
-  data?: any
-  error?: string
-}
-
-async function testDatabaseConnection(): Promise<DatabaseResult> {
-  try {
-    return {
-      success: true,
-      message: "Database connection test successful",
-      data: { timestamp: new Date().toISOString() },
-    }
-  } catch (error) {
-    return {
-      success: false,
-      message: "Database connection failed",
-      error: error instanceof Error ? error.message : "Unknown error",
-    }
-  }
-}
+import { debugDatabaseConnection, debugEnvironmentVariables } from "@/lib/debug-database"
+import type { DatabaseResult } from "@/lib/database-adapter"
 
 export async function GET() {
   try {
-    const result: DatabaseResult = await testDatabaseConnection()
+    console.log("🚀 Starting debug check...")
 
-    return NextResponse.json({
-      status: "ok",
+    // Check environment variables
+    const envResult = debugEnvironmentVariables()
+
+    // Test database connection
+    const dbResult: DatabaseResult = await debugDatabaseConnection()
+
+    const response = {
+      success: dbResult.status === "healthy",
       timestamp: new Date().toISOString(),
-      database: result,
+      database: dbResult,
       environment: {
+        hasDatabase: !!process.env.DATABASE_URL,
         nodeEnv: process.env.NODE_ENV,
-        hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-        hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        appUrl: process.env.NEXT_PUBLIC_APP_URL,
+        details: envResult,
       },
-    })
-  } catch (error) {
-    return NextResponse.json(
-      {
-        status: "error",
-        error: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 },
-    )
+    }
+
+    console.log("✅ Debug check completed:", response)
+
+    return NextResponse.json(response)
+  } catch (error: any) {
+    console.error("❌ Debug API error:", error)
+
+    const errorResponse = {
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    }
+
+    return NextResponse.json(errorResponse, { status: 500 })
   }
 }

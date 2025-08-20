@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "⚡ BHV360 Quick Deploy"
-echo "===================="
+echo "🚀 BHV360 QUICK DEPLOY SCRIPT"
+echo "============================="
 
 # Colors for output
 RED='\033[0;31m'
@@ -44,12 +44,6 @@ check_requirements() {
     if ! command -v npm &> /dev/null; then
         print_error "npm is not installed. Please install npm first."
         exit 1
-    fi
-    
-    # Check if Vercel CLI is installed
-    if ! command -v vercel &> /dev/null; then
-        echo "📦 Installing Vercel CLI..."
-        npm install -g vercel
     fi
     
     print_status "All requirements met!"
@@ -135,9 +129,6 @@ main() {
     setup_git
     build_project
     
-    echo "🚀 Deploying..."
-    vercel --prod --yes
-    
     echo ""
     print_status "🎉 BHV360 is ready for deployment!"
     echo ""
@@ -148,7 +139,6 @@ main() {
     echo "4. Push to GitHub and deploy to Vercel"
     echo ""
     print_info "Need help? Run: npm run go-live-wizard"
-    echo "🧪 Test your deployment at /test-modules"
 }
 
 # Run main function
