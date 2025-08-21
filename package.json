@@ -6,7 +6,7 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "prepare": "is-ci || husky install",
+    "prepare": "node -e \"try { require('husky')?.install?.() } catch {}\"",
     "start": "next start"
   },
   "dependencies": {

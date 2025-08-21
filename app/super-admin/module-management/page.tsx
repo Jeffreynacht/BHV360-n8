@@ -9,7 +9,7 @@ import { toast } from "sonner"
 import { AVAILABLE_MODULES, type ModuleDefinition } from "@/lib/modules/module-definitions"
 import { BHV360BrandHeader } from "@/components/bhv360-brand-header"
 import { ModuleTableComponent } from "@/components/module-table-component"
-import { toFixedSafe } from "@/helpers/number"
+import { toFixedSafe, toNumberSafe } from "@/helpers/number"
 
 // Force dynamic rendering to avoid static generation issues
 export const dynamic = "force-dynamic"
@@ -46,8 +46,8 @@ export default function SuperAdminModuleManagementPage() {
 
   // Safe number formatting helper
   const formatPrice = (price: number | undefined): string => {
-    if (typeof price !== "number") return "0.00"
-    return toFixedSafe(price / 100, 2)
+    const safePrice = toNumberSafe(price)
+    return toFixedSafe(safePrice / 100, 2)
   }
 
   // Calculate stats
@@ -56,8 +56,9 @@ export default function SuperAdminModuleManagementPage() {
     const activeModules = modules.filter((m) => m.enabled).length
     const coreModules = modules.filter((m) => m.core).length
     const betaModules = modules.filter((m) => m.status === "beta").length
-    const totalRevenue = modules.reduce((sum, m) => sum + (m.pricing?.basePrice || 0), 0)
-    const averageRating = totalModules > 0 ? modules.reduce((sum, m) => sum + m.rating, 0) / totalModules : 0
+    const totalRevenue = modules.reduce((sum, m) => sum + toNumberSafe(m.pricing?.basePrice), 0)
+    const averageRating =
+      totalModules > 0 ? modules.reduce((sum, m) => sum + toNumberSafe(m.rating), 0) / totalModules : 0
 
     setStats({
       totalModules,

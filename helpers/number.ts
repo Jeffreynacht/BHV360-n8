@@ -1,31 +1,29 @@
 /**
- * Safely converts a value to a fixed decimal string
- * @param value - The value to convert
- * @param decimals - Number of decimal places (default: 2)
- * @returns Fixed decimal string or "0.00" if invalid
+ * Safe toFixed implementation that handles null/undefined values
  */
-export function toFixedSafe(value: unknown, decimals = 2): string {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value.toFixed(decimals)
+export function toFixedSafe(value: number | string | null | undefined, decimals = 2): string {
+  if (value === null || value === undefined) {
+    return Number(0).toFixed(decimals)
   }
-  return "0." + "0".repeat(decimals)
+
+  const numValue = typeof value === "string" ? Number.parseFloat(value) : Number(value)
+
+  if (Number.isNaN(numValue)) {
+    return Number(0).toFixed(decimals)
+  }
+
+  return numValue.toFixed(decimals)
 }
 
 /**
- * Safely converts a value to a number
- * @param value - The value to convert
- * @param fallback - Fallback value if conversion fails (default: 0)
- * @returns Number or fallback
+ * Safe number conversion that handles null/undefined values
  */
-export function toNumberSafe(value: unknown, fallback = 0): number {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value
+export function toNumberSafe(value: number | string | null | undefined): number {
+  if (value === null || value === undefined) {
+    return 0
   }
-  if (typeof value === "string") {
-    const parsed = Number.parseFloat(value)
-    if (Number.isFinite(parsed)) {
-      return parsed
-    }
-  }
-  return fallback
+
+  const numValue = typeof value === "string" ? Number.parseFloat(value) : Number(value)
+
+  return Number.isNaN(numValue) ? 0 : numValue
 }

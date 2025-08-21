@@ -1,5 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 
+// Force dynamic rendering for this route
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 interface InspectionReport {
   id: string
   voorzieningId: string

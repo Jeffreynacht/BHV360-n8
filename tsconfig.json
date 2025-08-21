@@ -16,6 +16,7 @@
     "downlevelIteration": true,
     "forceConsistentCasingInFileNames": true,
     "noPropertyAccessFromIndexSignature": false,
+    "ignoreDeprecations": "5.0",
     "plugins": [
       {
         "name": "next"
