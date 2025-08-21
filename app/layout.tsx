@@ -9,9 +9,17 @@ import { Toaster } from "@/components/ui/sonner"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "BHV Plotkaart Recreation",
-  description: "Professional BHV management system",
+  title: "BHV360 - Professional BHV Management System",
+  description:
+    "Complete BHV management solution with interactive floor plans, incident tracking, and compliance monitoring",
+  keywords: ["BHV", "safety", "emergency", "floor plans", "incident management"],
     generator: 'v0.app'
+}
+
+export const viewport = {
+  themeColor: "#ea580c",
+  width: "device-width",
+  initialScale: 1,
 }
 
 export default function RootLayout({

@@ -1,7 +1,7 @@
-import NextAuth from "next-auth"
+import NextAuth, { type NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -11,11 +11,22 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         if (credentials?.email && credentials?.password) {
-          return {
-            id: "1",
-            email: credentials.email,
-            name: "Test User",
-            role: "admin",
+          // In production, validate against your database
+          if (credentials.email === "admin@bhv360.nl" && credentials.password === "admin123") {
+            return {
+              id: "1",
+              email: credentials.email,
+              name: "BHV Admin",
+              role: "super_admin",
+            }
+          }
+          if (credentials.email === "demo@bhv360.nl" && credentials.password === "demo123") {
+            return {
+              id: "2",
+              email: credentials.email,
+              name: "Demo User",
+              role: "customer_admin",
+            }
           }
         }
         return null
@@ -33,12 +44,16 @@ const handler = NextAuth({
       return token
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.role = token.role
+      if (token && session.user) {
+        session.user.role = token.role as string
       }
       return session
     },
   },
-})
+  session: {
+    strategy: "jwt",
+  },
+}
 
+const handler = NextAuth(authOptions)
 export { handler as GET, handler as POST }

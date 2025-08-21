@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { useAuth } from "@/contexts/auth-context"
 import {
   AlertTriangle,
   Plus,
@@ -27,7 +26,6 @@ import {
   Clock,
   User,
   MapPin,
-  Mail,
   Building,
   Users,
   Calendar,
@@ -36,9 +34,11 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Building2,
-  Briefcase,
 } from "lucide-react"
+
+// Force dynamic rendering
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 interface Incident {
   id: number
@@ -139,7 +139,6 @@ const mockIncidents: Incident[] = [
 ]
 
 export default function IncidentenPage() {
-  const { user } = useAuth()
   const [incidents, setIncidents] = useState<Incident[]>(mockIncidents)
   const [filteredIncidents, setFilteredIncidents] = useState<Incident[]>(mockIncidents)
   const [searchTerm, setSearchTerm] = useState("")
@@ -148,14 +147,9 @@ export default function IncidentenPage() {
   const [isNewIncidentOpen, setIsNewIncidentOpen] = useState(false)
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null)
 
-  // Filter incidents based on user role and search/filter criteria
+  // Filter incidents based on search/filter criteria
   useEffect(() => {
     let filtered = incidents
-
-    // Filter by user role - Super Admin sees all, others see only their customer's incidents
-    if (user?.role !== "super-admin") {
-      filtered = filtered.filter((incident) => incident.customer_id === user?.customerId)
-    }
 
     // Apply search filter
     if (searchTerm) {
@@ -181,7 +175,7 @@ export default function IncidentenPage() {
     }
 
     setFilteredIncidents(filtered)
-  }, [incidents, searchTerm, statusFilter, severityFilter, user])
+  }, [incidents, searchTerm, statusFilter, severityFilter])
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -248,11 +242,11 @@ export default function IncidentenPage() {
       location: formData.location,
       building: formData.building,
       floor: formData.floor,
-      reported_by: user?.name || "Onbekend",
+      reported_by: "Huidige Gebruiker",
       reported_at: new Date().toISOString(),
-      customer_id: user?.customerId || 1,
+      customer_id: 1,
       customer_name: "Huidige Klant",
-      customer_contact: user?.email || "",
+      customer_contact: "contact@klant.nl",
     }
     setIncidents([newIncident, ...incidents])
     setIsNewIncidentOpen(false)
@@ -267,11 +261,7 @@ export default function IncidentenPage() {
             <AlertTriangle className="mr-3 h-8 w-8 text-red-600" />
             Incident Management
           </h1>
-          <p className="text-muted-foreground mt-1">
-            {user?.role === "super-admin"
-              ? "Overzicht van alle incidenten across het platform"
-              : "Beheer en volg incidenten binnen uw organisatie"}
-          </p>
+          <p className="text-muted-foreground mt-1">Beheer en volg incidenten binnen uw organisatie</p>
         </div>
         <Dialog open={isNewIncidentOpen} onOpenChange={setIsNewIncidentOpen}>
           <DialogTrigger asChild>
@@ -298,9 +288,7 @@ export default function IncidentenPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder={
-                    user?.role === "super-admin" ? "Zoek incidenten, klanten, partners..." : "Zoek incidenten..."
-                  }
+                  placeholder="Zoek incidenten..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -377,28 +365,6 @@ export default function IncidentenPage() {
                       <span>{formatDate(incident.reported_at)}</span>
                     </div>
 
-                    {/* Super Admin sees customer and partner info */}
-                    {user?.role === "super-admin" && (
-                      <>
-                        <div className="flex items-center">
-                          <Building2 className="h-4 w-4 mr-2 text-orange-500" />
-                          <span>Klant: {incident.customer_name}</span>
-                        </div>
-                        {incident.customer_contact && (
-                          <div className="flex items-center">
-                            <Mail className="h-4 w-4 mr-2 text-blue-500" />
-                            <span>Contact: {incident.customer_contact}</span>
-                          </div>
-                        )}
-                        {incident.whitelabel_partner && (
-                          <div className="flex items-center">
-                            <Briefcase className="h-4 w-4 mr-2 text-purple-500" />
-                            <span>Partner: {incident.whitelabel_partner}</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-
                     {incident.assigned_to && (
                       <div className="flex items-center">
                         <Users className="h-4 w-4 mr-2 text-red-500" />
@@ -448,7 +414,6 @@ export default function IncidentenPage() {
           incident={selectedIncident}
           isOpen={!!selectedIncident}
           onClose={() => setSelectedIncident(null)}
-          showCustomerInfo={user?.role === "super-admin"}
         />
       )}
     </div>
@@ -572,13 +537,66 @@ function IncidentDetailModal({
   incident,
   isOpen,
   onClose,
-  showCustomerInfo,
 }: {
   incident: Incident
   isOpen: boolean
   onClose: () => void
-  showCustomerInfo: boolean
 }) {
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case "critical":
+        return "bg-red-100 text-red-800 border-red-200"
+      case "high":
+        return "bg-orange-100 text-orange-800 border-orange-200"
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "low":
+        return "bg-green-100 text-green-800 border-green-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "open":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      case "in_progress":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "resolved":
+        return "bg-green-100 text-green-800 border-green-200"
+      case "closed":
+        return "bg-gray-100 text-gray-800 border-gray-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "open":
+        return <AlertCircle className="h-4 w-4" />
+      case "in_progress":
+        return <Clock className="h-4 w-4" />
+      case "resolved":
+        return <CheckCircle className="h-4 w-4" />
+      case "closed":
+        return <XCircle className="h-4 w-4" />
+      default:
+        return <AlertCircle className="h-4 w-4" />
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString("nl-NL", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -657,37 +675,6 @@ function IncidentDetailModal({
               </div>
             </div>
           </div>
-
-          {showCustomerInfo && (
-            <>
-              <Separator />
-              <div>
-                <h4 className="font-semibold mb-3">Klant & Partner Informatie</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <Building2 className="h-4 w-4 mr-2 text-orange-500" />
-                      <span>Klant: {incident.customer_name}</span>
-                    </div>
-                    {incident.customer_contact && (
-                      <div className="flex items-center">
-                        <Mail className="h-4 w-4 mr-2 text-blue-500" />
-                        <span>Contact: {incident.customer_contact}</span>
-                      </div>
-                    )}
-                  </div>
-                  {incident.whitelabel_partner && (
-                    <div className="space-y-2">
-                      <div className="flex items-center">
-                        <Briefcase className="h-4 w-4 mr-2 text-purple-500" />
-                        <span>Partner: {incident.whitelabel_partner}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
         </div>
 
         <div className="flex justify-end gap-3 pt-4">
@@ -702,59 +689,4 @@ function IncidentDetailModal({
       </DialogContent>
     </Dialog>
   )
-}
-
-function getSeverityColor(severity: string) {
-  switch (severity) {
-    case "critical":
-      return "bg-red-100 text-red-800 border-red-200"
-    case "high":
-      return "bg-orange-100 text-orange-800 border-orange-200"
-    case "medium":
-      return "bg-yellow-100 text-yellow-800 border-yellow-200"
-    case "low":
-      return "bg-green-100 text-green-800 border-green-200"
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-200"
-  }
-}
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case "open":
-      return "bg-blue-100 text-blue-800 border-blue-200"
-    case "in_progress":
-      return "bg-yellow-100 text-yellow-800 border-yellow-200"
-    case "resolved":
-      return "bg-green-100 text-green-800 border-green-200"
-    case "closed":
-      return "bg-gray-100 text-gray-800 border-gray-200"
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-200"
-  }
-}
-
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleString("nl-NL", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
-
-function getStatusIcon(status: string) {
-  switch (status) {
-    case "open":
-      return <AlertCircle className="h-4 w-4" />
-    case "in_progress":
-      return <Clock className="h-4 w-4" />
-    case "resolved":
-      return <CheckCircle className="h-4 w-4" />
-    case "closed":
-      return <XCircle className="h-4 w-4" />
-    default:
-      return <AlertCircle className="h-4 w-4" />
-  }
 }

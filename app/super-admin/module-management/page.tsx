@@ -5,13 +5,15 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Settings, Package, Euro, Star, Eye, CheckCircle, XCircle, Clock, Power } from "lucide-react"
-import { toast } from "@/components/ui/toast"
+import { toast } from "sonner"
 import { AVAILABLE_MODULES, type ModuleDefinition } from "@/lib/modules/module-definitions"
 import { BHV360BrandHeader } from "@/components/bhv360-brand-header"
 import { ModuleTableComponent } from "@/components/module-table-component"
+import { toFixedSafe } from "@/helpers/number"
 
 // Force dynamic rendering to avoid static generation issues
 export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 interface ModuleStats {
   totalModules: number
@@ -43,12 +45,9 @@ export default function SuperAdminModuleManagementPage() {
   const [editingModule, setEditingModule] = useState<ModuleDefinition | null>(null)
 
   // Safe number formatting helper
-  const formatPrice = (price: number): string => {
-    try {
-      return (price / 100).toFixed(2)
-    } catch {
-      return "0.00"
-    }
+  const formatPrice = (price: number | undefined): string => {
+    if (typeof price !== "number") return "0.00"
+    return toFixedSafe(price / 100, 2)
   }
 
   // Calculate stats
@@ -58,7 +57,7 @@ export default function SuperAdminModuleManagementPage() {
     const coreModules = modules.filter((m) => m.core).length
     const betaModules = modules.filter((m) => m.status === "beta").length
     const totalRevenue = modules.reduce((sum, m) => sum + (m.pricing?.basePrice || 0), 0)
-    const averageRating = modules.reduce((sum, m) => sum + m.rating, 0) / totalModules
+    const averageRating = totalModules > 0 ? modules.reduce((sum, m) => sum + m.rating, 0) / totalModules : 0
 
     setStats({
       totalModules,
@@ -120,15 +119,12 @@ export default function SuperAdminModuleManagementPage() {
       setModules(updatedModules)
       setEditingModule(null)
 
-      toast({
-        title: "Prijzen Bijgewerkt",
+      toast.success("Prijzen Bijgewerkt", {
         description: "De module prijzen zijn succesvol bijgewerkt.",
       })
     } catch (error) {
-      toast({
-        title: "Fout",
+      toast.error("Fout", {
         description: "Er is een fout opgetreden bij het bijwerken van de prijzen.",
-        variant: "destructive",
       })
     } finally {
       setLoading(false)
@@ -233,7 +229,7 @@ export default function SuperAdminModuleManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Gemiddelde Rating</p>
-                  <p className="text-2xl font-bold">{stats.averageRating.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">{toFixedSafe(stats.averageRating, 1)}</p>
                 </div>
                 <Star className="h-8 w-8 text-yellow-600" />
               </div>
@@ -266,7 +262,7 @@ export default function SuperAdminModuleManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Totale Omzet</p>
-                  <p className="text-2xl font-bold">{formatPrice(stats.totalRevenue)}</p>
+                  <p className="text-2xl font-bold">€{formatPrice(stats.totalRevenue)}</p>
                 </div>
                 <Euro className="h-8 w-8 text-gray-600" />
               </div>

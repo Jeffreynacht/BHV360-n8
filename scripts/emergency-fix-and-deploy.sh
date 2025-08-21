@@ -1,7 +1,6 @@
 #!/bin/bash
 
-echo "🚨 EMERGENCY DEPLOYMENT STARTING..."
-echo "=================================="
+echo "🚀 Starting Emergency Production Deployment..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -12,19 +11,19 @@ NC='\033[0m' # No Color
 
 # Function to print colored output
 print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+    echo -e "${GREEN}✅ $1${NC}"
 }
 
 print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+    echo -e "${BLUE}[INFO]${NC} $1"
 }
 
 print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+    echo -e "${YELLOW}⚠️  $1${NC}"
 }
 
 print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    echo -e "${RED}❌ $1${NC}"
 }
 
 # Check if we're in the right directory
@@ -36,21 +35,21 @@ fi
 print_status "Starting emergency deployment process..."
 
 # 1. Clean up any existing build artifacts
-print_status "Cleaning build artifacts..."
+print_status "Cleaning up build cache..."
 rm -rf .next
-rm -rf out
 rm -rf node_modules/.cache
 
 # 2. Install dependencies
 print_status "Installing dependencies..."
-npm install --legacy-peer-deps
+npm install
 
 # 3. Run type checking
-print_status "Running TypeScript checks..."
-npx tsc --noEmit
+print_status "Running type check..."
+npm run type-check
 
 if [ $? -ne 0 ]; then
-    print_warning "TypeScript errors found, but continuing with deployment..."
+    print_error "TypeScript errors found. Please fix them before deploying."
+    exit 1
 fi
 
 # 4. Build the application
@@ -58,7 +57,7 @@ print_status "Building application..."
 npm run build
 
 if [ $? -ne 0 ]; then
-    print_error "Build failed! Stopping deployment."
+    print_error "Build failed. Please check the errors above."
     exit 1
 fi
 
@@ -74,30 +73,24 @@ if ! command -v vercel &> /dev/null; then
 fi
 
 # Deploy with force flag to override any issues
-vercel --prod --force --yes
+vercel --prod --yes
 
 if [ $? -eq 0 ]; then
-    print_success "🎉 EMERGENCY DEPLOYMENT SUCCESSFUL!"
-    print_success "Your professional BHV360 homepage is now live!"
+    print_status "🎉 Deployment successful!"
+    print_status "Your BHV360 application is now live with all fixes applied!"
     echo ""
-    echo "✅ Homepage with green-blue gradient tiles"
-    echo "✅ Professional BHV content from attachment"
-    echo "✅ All 'use client' directives fixed"
-    echo "✅ Complete WiFi management page"
-    echo "✅ Full AED monitoring system"
-    echo "✅ Customer context properly implemented"
+    echo "✅ Fixed NextAuth v4 configuration"
+    echo "✅ Fixed revalidate exports"
+    echo "✅ Added dynamic exports for cookie/searchParams pages"
+    echo "✅ Fixed toFixed null-checks"
+    echo "✅ Updated package.json with correct engines"
+    echo "✅ Fixed TypeScript errors"
+    echo "✅ Added green-blue gradient tiles"
     echo ""
-    print_status "Visit your deployment URL to see the changes!"
+    print_status "🌐 Check your deployment at: https://your-domain.vercel.app"
 else
-    print_error "Deployment failed!"
-    print_status "Trying alternative deployment method..."
-    
-    # Alternative: Push to GitHub and let Vercel auto-deploy
-    git add .
-    git commit -m "🚨 Emergency fix: Professional homepage with green-blue gradients"
-    git push origin main
-    
-    print_status "Changes pushed to GitHub. Vercel will auto-deploy shortly."
+    print_error "Deployment failed. Please check the Vercel logs."
+    exit 1
 fi
 
 echo ""
