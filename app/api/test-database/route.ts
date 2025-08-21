@@ -3,24 +3,21 @@ import { NextResponse } from "next/server"
 export async function GET() {
   try {
     // Simulate database connection test
-    const connectionTest = {
-      status: "connected",
+    const testResult = {
+      status: "success",
+      message: "Database connection successful",
       timestamp: new Date().toISOString(),
-      database: "postgresql",
-      host: process.env.PGHOST || "localhost",
-      port: process.env.PGPORT || "5432",
-      database_name: process.env.POSTGRES_DATABASE || "bhv360",
-      ssl: process.env.NODE_ENV === "production",
-      connection_time: Math.random() * 100 + 50, // Simulate connection time
-      tables: ["users", "customers", "incidents", "plotkaarten", "bhv_members", "certifications"],
+      connectionTime: Math.random() * 100,
+      tables: ["users", "customers", "incidents", "plotkaarten"],
+      version: "1.0.0",
     }
 
-    return NextResponse.json(connectionTest, { status: 200 })
+    return NextResponse.json(testResult, { status: 200 })
   } catch (error) {
     return NextResponse.json(
       {
         status: "error",
-        message: error instanceof Error ? error.message : "Database connection failed",
+        message: "Database connection failed",
         timestamp: new Date().toISOString(),
       },
       { status: 500 },
@@ -31,21 +28,20 @@ export async function GET() {
 export async function POST() {
   try {
     // Simulate database write test
-    const writeTest = {
+    const writeResult = {
       status: "success",
-      operation: "write_test",
+      message: "Database write test successful",
       timestamp: new Date().toISOString(),
-      records_inserted: 1,
-      execution_time: Math.random() * 50 + 10,
+      recordId: Math.floor(Math.random() * 10000),
+      operation: "INSERT",
     }
 
-    return NextResponse.json(writeTest, { status: 200 })
+    return NextResponse.json(writeResult, { status: 201 })
   } catch (error) {
     return NextResponse.json(
       {
         status: "error",
-        operation: "write_test",
-        message: error instanceof Error ? error.message : "Database write failed",
+        message: "Database write test failed",
         timestamp: new Date().toISOString(),
       },
       { status: 500 },

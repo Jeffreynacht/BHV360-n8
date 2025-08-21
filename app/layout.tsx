@@ -9,27 +9,46 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "BHV360 - Professionele BHV Software",
   description:
-    "Complete BHV management oplossing met interactieve plattegronden, incident tracking en compliance monitoring voor moderne organisaties.",
+    "Van papieren chaos naar digitale controle. BHV360 maakt veiligheidsmanagement eenvoudig, compliant en effectief voor elke organisatie.",
   keywords: "BHV, bedrijfshulpverlening, veiligheid, plotkaarten, incident management, compliance",
-  authors: [{ name: "BHV360 Team" }],
+  authors: [{ name: "BHV360" }],
   creator: "BHV360",
   publisher: "BHV360",
-  robots: "index, follow",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL("https://bhv360.nl"),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    type: "website",
-    locale: "nl_NL",
-    url: "https://bhv360.nl",
     title: "BHV360 - Professionele BHV Software",
-    description: "Complete BHV management oplossing voor moderne organisaties",
+    description:
+      "Van papieren chaos naar digitale controle. BHV360 maakt veiligheidsmanagement eenvoudig, compliant en effectief voor elke organisatie.",
+    url: "https://bhv360.nl",
     siteName: "BHV360",
+    locale: "nl_NL",
+    type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "BHV360 - Professionele BHV Software",
-    description: "Complete BHV management oplossing voor moderne organisaties",
+    description:
+      "Van papieren chaos naar digitale controle. BHV360 maakt veiligheidsmanagement eenvoudig, compliant en effectief voor elke organisatie.",
   },
-  viewport: "width=device-width, initial-scale=1",
-  themeColor: "#10b981",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
     generator: 'v0.app'
 }
 
@@ -40,14 +59,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="nl" suppressHydrationWarning>
-      <head>
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <meta name="msapplication-TileColor" content="#10b981" />
-        <meta name="theme-color" content="#10b981" />
-      </head>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>
       </body>

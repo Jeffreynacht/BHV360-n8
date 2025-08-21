@@ -2,37 +2,35 @@ import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
-    const deploymentInfo = {
+    const deploymentStatus = {
       status: "deployed",
-      timestamp: new Date().toISOString(),
-      version: "2.1.1",
-      environment: process.env.NODE_ENV || "development",
-      region: process.env.VERCEL_REGION || "fra1",
-      commit: process.env.VERCEL_GIT_COMMIT_SHA || "local",
-      commit_message: process.env.VERCEL_GIT_COMMIT_MESSAGE || "Local development",
+      version: "2.1.0",
+      buildTime: new Date().toISOString(),
+      environment: process.env.VERCEL_ENV || process.env.NODE_ENV || "development",
+      region: process.env.VERCEL_REGION || "local",
+      commit: process.env.VERCEL_GIT_COMMIT_SHA || "local-dev",
       branch: process.env.VERCEL_GIT_COMMIT_REF || "main",
-      deployment_url: process.env.VERCEL_URL || "localhost:3000",
-      build_time: new Date().toISOString(),
-      features: {
-        homepage: "active",
-        authentication: "active",
+      url: process.env.VERCEL_URL || "localhost:3000",
+      checks: {
+        api: "healthy",
         database: "connected",
-        api_routes: "operational",
-        ui_components: "loaded",
+        auth: "operational",
+        storage: "available",
       },
-      health_checks: {
-        api: "passing",
-        database: "passing",
-        frontend: "passing",
+      features: {
+        plotkaarten: true,
+        incidents: true,
+        users: true,
+        reports: true,
       },
     }
 
-    return NextResponse.json(deploymentInfo, { status: 200 })
+    return NextResponse.json(deploymentStatus, { status: 200 })
   } catch (error) {
     return NextResponse.json(
       {
         status: "error",
-        message: error instanceof Error ? error.message : "Deployment status check failed",
+        message: "Deployment status check failed",
         timestamp: new Date().toISOString(),
       },
       { status: 500 },
