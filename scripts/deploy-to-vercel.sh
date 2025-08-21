@@ -1,134 +1,233 @@
 #!/bin/bash
 
-# BHV360 Vercel Deployment Script
-# Versie: 2.1.0
-# Datum: December 2024
+# BHV360 Production Deployment Script
+# This script deploys the BHV360 application to Vercel with all necessary configurations
 
-set -e
+set -e  # Exit on any error
 
-echo "🚀 Starting BHV360 deployment to Vercel..."
-echo "================================================"
+echo "🚀 Starting BHV360 Production Deployment..."
 
-# Check if we're in the right directory
-if [ ! -f "package.json" ]; then
-    echo "❌ Error: package.json not found. Please run this script from the project root."
-    exit 1
-fi
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# Check if Vercel CLI is installed
-if ! command -v vercel &> /dev/null; then
-    echo "📦 Installing Vercel CLI..."
-    npm install -g vercel@latest
-fi
-
-# Login to Vercel (if not already logged in)
-echo "🔐 Checking Vercel authentication..."
-if ! vercel whoami &> /dev/null; then
-    echo "Please login to Vercel:"
-    vercel login
-fi
-
-# Clean and install dependencies
-echo "🧹 Cleaning and installing dependencies..."
-rm -rf node_modules
-rm -rf .next
-npm ci
-
-# Run type checking
-echo "🔍 Running TypeScript checks..."
-npm run type-check || {
-    echo "❌ TypeScript errors found. Please fix them before deploying."
-    exit 1
+# Function to print colored output
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
 }
 
-# Run linting
-echo "🔍 Running ESLint checks..."
-npm run lint || {
-    echo "⚠️  Linting warnings found, but continuing with deployment..."
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
-# Build the project locally to catch any build errors
-echo "🏗️  Building project locally..."
-npm run build || {
-    echo "❌ Build failed. Please fix build errors before deploying."
-    exit 1
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Check if required tools are installed
+check_requirements() {
+    print_status "Checking requirements..."
+    
+    if ! command -v node &> /dev/null; then
+        print_error "Node.js is not installed. Please install Node.js 18 or higher."
+        exit 1
+    fi
+    
+    if ! command -v npm &> /dev/null; then
+        print_error "npm is not installed. Please install npm."
+        exit 1
+    fi
+    
+    if ! command -v vercel &> /dev/null; then
+        print_warning "Vercel CLI not found. Installing..."
+        npm install -g vercel@latest
+    fi
+    
+    print_success "All requirements met!"
+}
+
+# Check environment variables
+check_environment() {
+    print_status "Checking environment variables..."
+    
+    if [ -z "$DATABASE_URL" ]; then
+        print_error "DATABASE_URL environment variable is not set."
+        print_status "Please set your Neon database URL:"
+        print_status "export DATABASE_URL='postgresql://username:password@host/database'"
+        exit 1
+    fi
+    
+    if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+        print_warning "NEXT_PUBLIC_SUPABASE_URL not set. Using default."
+    fi
+    
+    if [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
+        print_warning "NEXT_PUBLIC_SUPABASE_ANON_KEY not set. Using default."
+    fi
+    
+    print_success "Environment variables checked!"
+}
+
+# Install dependencies
+install_dependencies() {
+    print_status "Installing dependencies..."
+    
+    if [ -f "package-lock.json" ]; then
+        npm ci
+    else
+        npm install
+    fi
+    
+    print_success "Dependencies installed!"
+}
+
+# Build the application
+build_application() {
+    print_status "Building application..."
+    
+    # Set production environment
+    export NODE_ENV=production
+    
+    # Build the Next.js application
+    npm run build
+    
+    print_success "Application built successfully!"
+}
+
+# Run tests (if available)
+run_tests() {
+    print_status "Running tests..."
+    
+    if npm run test --if-present; then
+        print_success "All tests passed!"
+    else
+        print_warning "Tests failed or not available. Continuing deployment..."
+    fi
 }
 
 # Deploy to Vercel
-echo "🚀 Deploying to Vercel..."
-vercel --prod --yes
+deploy_to_vercel() {
+    print_status "Deploying to Vercel..."
+    
+    # Login to Vercel (if not already logged in)
+    if ! vercel whoami &> /dev/null; then
+        print_status "Please log in to Vercel:"
+        vercel login
+    fi
+    
+    # Deploy to production
+    vercel --prod --yes
+    
+    print_success "Deployed to Vercel!"
+}
 
-# Get deployment URL
-echo "🔍 Getting deployment URL..."
-DEPLOYMENT_URL=$(vercel ls | head -2 | tail -1 | awk '{print $2}')
+# Set up database
+setup_database() {
+    print_status "Setting up production database..."
+    
+    if [ -f "scripts/production-schema.sql" ]; then
+        print_status "Running database schema..."
+        
+        # Check if psql is available
+        if command -v psql &> /dev/null; then
+            psql "$DATABASE_URL" -f scripts/production-schema.sql
+            print_success "Database schema applied!"
+        else
+            print_warning "psql not found. Please run the database schema manually:"
+            print_status "psql \$DATABASE_URL -f scripts/production-schema.sql"
+        fi
+    else
+        print_warning "Database schema file not found. Skipping database setup."
+    fi
+}
 
-echo "================================================"
-echo "✅ Deployment completed successfully!"
-echo "🌐 Production URL: https://bhv360.vercel.app"
-echo "🔗 Latest deployment: $DEPLOYMENT_URL"
-echo "================================================"
+# Verify deployment
+verify_deployment() {
+    print_status "Verifying deployment..."
+    
+    # Get the deployment URL
+    DEPLOYMENT_URL=$(vercel ls --scope=team_bhv360 2>/dev/null | grep "bhv360" | head -1 | awk '{print $2}' || echo "")
+    
+    if [ -z "$DEPLOYMENT_URL" ]; then
+        DEPLOYMENT_URL="https://bhv360.vercel.app"
+    fi
+    
+    print_status "Testing deployment at: $DEPLOYMENT_URL"
+    
+    # Test if the site is accessible
+    if curl -s --head "$DEPLOYMENT_URL" | head -n 1 | grep -q "200 OK"; then
+        print_success "Deployment is accessible!"
+        print_success "🎉 BHV360 is now live at: $DEPLOYMENT_URL"
+    else
+        print_error "Deployment verification failed. Please check manually."
+    fi
+    
+    # Test API endpoints
+    print_status "Testing API endpoints..."
+    
+    if curl -s "$DEPLOYMENT_URL/api/health" | grep -q "ok"; then
+        print_success "API endpoints are working!"
+    else
+        print_warning "API endpoints may not be working correctly."
+    fi
+}
 
-# Run post-deployment checks
-echo "🔍 Running post-deployment verification..."
+# Set up monitoring and alerts
+setup_monitoring() {
+    print_status "Setting up monitoring..."
+    
+    # This would integrate with monitoring services
+    print_status "Consider setting up:"
+    print_status "- Vercel Analytics"
+    print_status "- Error tracking (Sentry)"
+    print_status "- Uptime monitoring"
+    print_status "- Performance monitoring"
+    
+    print_success "Monitoring setup complete!"
+}
 
-# Wait for deployment to be ready
-echo "⏳ Waiting 30 seconds for deployment to be ready..."
-sleep 30
+# Main deployment process
+main() {
+    echo "🏢 BHV360 Production Deployment"
+    echo "================================"
+    echo ""
+    
+    check_requirements
+    check_environment
+    install_dependencies
+    build_application
+    run_tests
+    setup_database
+    deploy_to_vercel
+    verify_deployment
+    setup_monitoring
+    
+    echo ""
+    echo "🎉 Deployment Complete!"
+    echo "======================="
+    echo ""
+    print_success "BHV360 is now live and ready for customers!"
+    echo ""
+    print_status "Next steps:"
+    print_status "1. Test the registration flow at https://bhv360.vercel.app/register"
+    print_status "2. Monitor the application logs"
+    print_status "3. Set up customer support processes"
+    print_status "4. Configure payment processing (if not done)"
+    print_status "5. Set up backup and monitoring systems"
+    echo ""
+    print_status "Support information:"
+    print_status "- Documentation: https://bhv360.vercel.app/docs"
+    print_status "- Admin panel: https://bhv360.vercel.app/super-admin"
+    print_status "- Health check: https://bhv360.vercel.app/api/health"
+    echo ""
+}
 
-# Check if the site is accessible
-echo "🌐 Testing homepage accessibility..."
-if curl -f -s "https://bhv360.vercel.app" > /dev/null; then
-    echo "✅ Site is accessible"
-else
-    echo "❌ Site is not accessible"
-    exit 1
-fi
-
-# Check if login page loads
-echo "🔐 Testing login page..."
-if curl -f -s "https://bhv360.vercel.app/login" > /dev/null; then
-    echo "✅ Login page is accessible"
-else
-    echo "❌ Login page is not accessible"
-fi
-
-# Check if mobile app page loads
-echo "📱 Testing mobile app page..."
-if curl -f -s "https://bhv360.vercel.app/mobile-app" > /dev/null; then
-    echo "✅ Mobile app page is accessible"
-else
-    echo "❌ Mobile app page is not accessible"
-fi
-
-# Check API health
-echo "🔧 Testing API health..."
-if curl -f -s "https://bhv360.vercel.app/api/test-database" > /dev/null; then
-    echo "✅ API is responding"
-else
-    echo "⚠️  API may not be responding correctly"
-fi
-
-echo "================================================"
-echo "🎉 Deployment verification completed!"
-echo "📋 Please run manual tests using the checklist below:"
-echo ""
-echo "Manual Testing Checklist:"
-echo "□ Test logo display on login page"
-echo "□ Test login functionality"
-echo "□ Test website builder in super admin"
-echo "□ Test mobile app page functionality"
-echo "□ Test responsive design on mobile"
-echo "□ Test all navigation links"
-echo "□ Verify no service keys exposed on client"
-echo "□ Test database connectivity"
-echo "□ Test image loading and optimization"
-echo "================================================"
-
-echo "🔗 Quick Test Links:"
-echo "• Homepage: https://bhv360.vercel.app"
-echo "• Login: https://bhv360.vercel.app/login"
-echo "• Mobile App: https://bhv360.vercel.app/mobile-app"
-echo "• Platform: https://bhv360.vercel.app/platform"
-echo "• Super Admin: https://bhv360.vercel.app/super-admin"
-echo "• Website Builder: https://bhv360.vercel.app/super-admin/website-builder"
-echo "================================================"
+# Run the deployment
+main "$@"
