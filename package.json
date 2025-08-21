@@ -5,18 +5,22 @@
   "scripts": {
     "build": "next build",
     "clean": "rm -rf .next node_modules",
-    "deploy": "bash scripts/deploy-to-vercel.sh",
+    "deploy": "npx tsx scripts/deploy-production-complete.ts",
     "deploy:preview": "vercel",
     "deploy:prod": "vercel --prod",
-    "deploy:quick": "bash scripts/quick-deploy.sh",
+    "deploy:quick": "bash scripts/deploy-production.sh",
+    "deploy:shell": "bash scripts/deploy-production.sh",
     "dev": "next dev",
+    "health": "curl -s https://bhv360.vercel.app/api/health | jq",
     "postinstall": "npm run type-check",
     "lint": "next lint",
+    "reset": "npm run clean && npm install",
     "start": "next start",
     "test": "npm run type-check && npm run lint",
+    "test:db": "npx tsx scripts/test-database-connection.ts",
     "type-check": "tsc --noEmit",
     "verify": "npx tsx scripts/verify-deployment.ts",
-    "verify:url": "npx tsx scripts/verify-deployment.ts"
+    "verify:url": "npx tsx scripts/verify-deployment.ts https://bhv360.vercel.app"
   },
   "dependencies": {
     "@auth/core": "latest",

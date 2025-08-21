@@ -1,66 +1,104 @@
 import { NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
-
 export async function GET() {
   try {
-    const startTime = Date.now()
+    const sql = neon(process.env.DATABASE_URL!)
 
     // Test basic connection
-    const result = await sql`SELECT NOW() as current_time, version() as database_version`
-    const responseTime = Date.now() - startTime
+    const connectionTest = await sql`SELECT 1 as test`
 
-    // Test customers table
-    let customersCount = 0
-    try {
-      const customerResult = await sql`SELECT COUNT(*) as count FROM customers WHERE status != 'deleted'`
-      customersCount = Number.parseInt(customerResult[0]?.count || "0")
-    } catch (error) {
-      console.log("Customers table doesn't exist yet, will be created on first access")
+    if (!connectionTest || connectionTest[0]?.test !== 1) {
+      throw new Error("Database connection test failed")
     }
 
-    // Test users table
-    let usersCount = 0
-    try {
-      const userResult = await sql`SELECT COUNT(*) as count FROM users WHERE active = true`
-      usersCount = Number.parseInt(userResult[0]?.count || "0")
-    } catch (error) {
-      console.log("Users table doesn't exist yet")
-    }
+    // Test table existence
+    const tables = await sql`
+      SELECT 
+        table_name,
+        table_type
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+      ORDER BY table_name
+    `
+
+    // Test demo customer
+    const demoCustomer = await sql`
+      SELECT 
+        id,
+        name,
+        email,
+        subscription_status,
+        created_at
+      FROM customers 
+      WHERE email = 'demo@bhv360.nl'
+      LIMIT 1
+    `
+
+    // Test subscription plans
+    const plans = await sql`
+      SELECT 
+        id,
+        name,
+        plan_type,
+        price_monthly
+      FROM subscription_plans
+      WHERE is_active = true
+      ORDER BY price_monthly
+    `
 
     return NextResponse.json({
       success: true,
-      status: "connected",
-      message: "Database connection successful",
-      timestamp: result[0].current_time,
-      database_version: result[0].database_version,
-      response_time_ms: responseTime,
-      statistics: {
-        customers_count: customersCount,
-        users_count: usersCount,
-        tables_accessible: customersCount > 0 ? 1 : 0,
+      timestamp: new Date().toISOString(),
+      tests: {
+        connection: {
+          status: "passed",
+          message: "Database connection successful",
+        },
+        tables: {
+          status: "passed",
+          count: tables.length,
+          tables: tables.map((t) => ({
+            name: t.table_name,
+            type: t.table_type,
+          })),
+        },
+        demoData: {
+          status: demoCustomer.length > 0 ? "passed" : "warning",
+          customer: demoCustomer[0] || null,
+          message: demoCustomer.length > 0 ? "Demo customer exists" : "Demo customer not found",
+        },
+        subscriptionPlans: {
+          status: plans.length > 0 ? "passed" : "failed",
+          count: plans.length,
+          plans: plans.map((p) => ({
+            id: p.id,
+            name: p.name,
+            type: p.plan_type,
+            price: p.price_monthly,
+          })),
+        },
       },
-      environment: {
-        database_url_configured: !!process.env.DATABASE_URL,
-        connection_pooling: process.env.DATABASE_URL?.includes("pooler") || false,
+      summary: {
+        allTestsPassed: tables.length > 0 && plans.length > 0,
+        totalTables: tables.length,
+        hasDemo: demoCustomer.length > 0,
+        planCount: plans.length,
       },
     })
   } catch (error) {
-    console.error("Database connection error:", error)
+    console.error("Database test failed:", error)
 
     return NextResponse.json(
       {
         success: false,
-        status: "error",
-        message: "Database connection failed",
-        error: error instanceof Error ? error.message : "Unknown error",
         timestamp: new Date().toISOString(),
-        environment: {
-          database_url_configured: !!process.env.DATABASE_URL,
-          database_url_preview: process.env.DATABASE_URL
-            ? `${process.env.DATABASE_URL.substring(0, 20)}...`
-            : "Not configured",
+        error: error instanceof Error ? error.message : "Unknown database error",
+        tests: {
+          connection: {
+            status: "failed",
+            message: error instanceof Error ? error.message : "Connection failed",
+          },
         },
       },
       { status: 500 },
