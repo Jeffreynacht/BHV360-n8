@@ -1,37 +1,66 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  trailingSlash: true,
-  skipTrailingSlashRedirect: true,
-  distDir: 'out',
-  basePath: '',
-  assetPrefix: '',
+  reactStrictMode: true,
+  swcMinify: true,
+  experimental: {
+    serverComponentsExternalPackages: ["@neondatabase/serverless"],
+  },
+  env: {
+    NEXT_TELEMETRY_DISABLED: "1",
+    CUSTOM_KEY: "my-value",
+  },
   images: {
-    unoptimized: true,
+    domains: ["placeholder.com", "via.placeholder.com", "images.unsplash.com"],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'blob.v0.dev',
-        port: '',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "**",
       },
     ],
+    unoptimized: true,
   },
-  experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  async headers() {
+    return [
+      {
+        source: "/api/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, DELETE, OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization" },
+        ],
       },
-    },
-    missingSuspenseWithCSRBailout: false,
+    ]
+  },
+  async redirects() {
+    return [
+      {
+        source: "/admin",
+        destination: "/dashboard",
+        permanent: false,
+      },
+    ]
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/health",
+        destination: "/api/health",
+      },
+      {
+        source: "/status",
+        destination: "/api/deployment-status",
+      },
+    ]
   },
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Optimize for production
-    if (!dev && !isServer) {
+    // Ignore node-specific modules when bundling for the browser
+    if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
@@ -41,91 +70,15 @@ const nextConfig = {
       }
     }
 
-    // Add custom webpack optimizations
-    config.optimization = {
-      ...config.optimization,
-      splitChunks: {
-        chunks: 'all',
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
-          },
-          common: {
-            name: 'common',
-            minChunks: 2,
-            chunks: 'all',
-            enforce: true,
-          },
-        },
-      },
-    }
-
-    // Add module resolution for TypeScript paths
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': require('path').resolve(__dirname, './'),
-    }
-
     return config
   },
-  env: {
-    CUSTOM_KEY: 'BHV360_PRODUCTION_V665',
-    BUILD_TIME: new Date().toISOString(),
-    VERSION: '1.0.0-v665',
-    NEXT_PUBLIC_APP_VERSION: '1.0.0-v665',
-    NEXT_PUBLIC_BUILD_ID: '665',
-    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
-    NEXT_PUBLIC_DEPLOYMENT_ENV: 'production'
-  },
+  output: "standalone",
   poweredByHeader: false,
-  reactStrictMode: true,
-  swcMinify: true,
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  // Performance optimizations
   compress: true,
   generateEtags: false,
   httpAgentOptions: {
     keepAlive: true,
   },
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on'
-          },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload'
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block'
-          }
-        ]
-      }
-    ]
-  }
 }
 
 export default nextConfig

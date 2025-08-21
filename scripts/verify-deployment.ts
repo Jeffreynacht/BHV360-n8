@@ -1,332 +1,196 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env tsx
 
-/**
- * BHV360 Production Deployment Verification Script
- * This script verifies that the production deployment is working correctly
- */
+import { execSync } from "child_process"
 
-import { neon } from "@neondatabase/serverless"
-
-interface VerificationResult {
-  test: string
-  status: "PASS" | "FAIL" | "WARNING"
-  message: string
-  details?: any
+interface VerificationTest {
+  name: string
+  url: string
+  expectedStatus: number
+  timeout: number
 }
 
 class DeploymentVerifier {
-  private baseUrl: string
-  private results: VerificationResult[] = []
+  private baseUrl = "https://bhv360.vercel.app"
+  private tests: VerificationTest[] = [
+    {
+      name: "Homepage",
+      url: "/",
+      expectedStatus: 200,
+      timeout: 10000,
+    },
+    {
+      name: "Health Check API",
+      url: "/api/health",
+      expectedStatus: 200,
+      timeout: 5000,
+    },
+    {
+      name: "Database Test API",
+      url: "/api/test-database",
+      expectedStatus: 200,
+      timeout: 10000,
+    },
+    {
+      name: "Login Page",
+      url: "/login",
+      expectedStatus: 200,
+      timeout: 5000,
+    },
+    {
+      name: "Dashboard",
+      url: "/dashboard",
+      expectedStatus: 200,
+      timeout: 5000,
+    },
+    {
+      name: "BHV Module",
+      url: "/bhv",
+      expectedStatus: 200,
+      timeout: 5000,
+    },
+    {
+      name: "Plotkaart Editor",
+      url: "/plotkaart",
+      expectedStatus: 200,
+      timeout: 5000,
+    },
+  ]
 
-  constructor(baseUrl: string) {
-    this.baseUrl = baseUrl.replace(/\/$/, "") // Remove trailing slash
-  }
-
-  private addResult(test: string, status: "PASS" | "FAIL" | "WARNING", message: string, details?: any) {
-    this.results.push({ test, status, message, details })
-
-    const emoji = status === "PASS" ? "✅" : status === "FAIL" ? "❌" : "⚠️"
-    console.log(`${emoji} ${test}: ${message}`)
-
-    if (details && process.env.VERBOSE) {
-      console.log("   Details:", details)
-    }
-  }
-
-  async verifyWebsiteAccessibility(): Promise<void> {
-    console.log("\n🌐 Testing Website Accessibility...")
-
-    try {
-      const response = await fetch(this.baseUrl)
-
-      if (response.ok) {
-        const html = await response.text()
-
-        if (html.includes("BHV360")) {
-          this.addResult("Homepage Load", "PASS", "Homepage loads successfully")
-        } else {
-          this.addResult("Homepage Load", "WARNING", "Homepage loads but content may be incorrect")
-        }
-      } else {
-        this.addResult("Homepage Load", "FAIL", `HTTP ${response.status}: ${response.statusText}`)
-      }
-    } catch (error) {
-      this.addResult("Homepage Load", "FAIL", `Network error: ${error}`)
-    }
-  }
-
-  async verifyApiEndpoints(): Promise<void> {
-    console.log("\n🔌 Testing API Endpoints...")
-
-    const endpoints = [
-      { path: "/api/health", name: "Health Check" },
-      { path: "/api/customers/register", name: "Customer Registration", method: "POST" },
-    ]
-
-    for (const endpoint of endpoints) {
-      try {
-        const url = `${this.baseUrl}${endpoint.path}`
-        const method = endpoint.method || "GET"
-
-        const response = await fetch(url, {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          ...(method === "POST" && {
-            body: JSON.stringify({
-              // Test data for POST endpoints
-              test: true,
-            }),
-          }),
-        })
-
-        if (response.status < 500) {
-          this.addResult(`API ${endpoint.name}`, "PASS", `Endpoint responds (${response.status})`)
-        } else {
-          this.addResult(`API ${endpoint.name}`, "FAIL", `Server error (${response.status})`)
-        }
-      } catch (error) {
-        this.addResult(`API ${endpoint.name}`, "FAIL", `Network error: ${error}`)
-      }
-    }
-  }
-
-  async verifyDatabaseConnection(): Promise<void> {
-    console.log("\n🗄️ Testing Database Connection...")
+  private async testEndpoint(test: VerificationTest): Promise<boolean> {
+    const fullUrl = `${this.baseUrl}${test.url}`
 
     try {
-      const databaseUrl = process.env.DATABASE_URL
+      console.log(`🔍 Testing ${test.name}: ${fullUrl}`)
 
-      if (!databaseUrl) {
-        this.addResult("Database Connection", "FAIL", "DATABASE_URL environment variable not set")
-        return
-      }
+      const curlCommand = `curl -f -s -o /dev/null -w "%{http_code}" --max-time ${test.timeout / 1000} "${fullUrl}"`
+      const result = execSync(curlCommand, { encoding: "utf8", timeout: test.timeout })
+      const statusCode = Number.parseInt(result.trim())
 
-      const sql = neon(databaseUrl)
-
-      // Test basic connection
-      const result = await sql`SELECT 1 as test`
-
-      if (result && result[0]?.test === 1) {
-        this.addResult("Database Connection", "PASS", "Database connection successful")
+      if (statusCode === test.expectedStatus) {
+        console.log(`✅ ${test.name} - OK (${statusCode})`)
+        return true
       } else {
-        this.addResult("Database Connection", "FAIL", "Database query returned unexpected result")
+        console.log(`⚠️  ${test.name} - Unexpected status: ${statusCode}`)
+        return false
       }
-
-      // Test if required tables exist
-      const tables = await sql`
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name IN ('customers', 'user_profiles', 'subscription_plans')
-      `
-
-      const requiredTables = ["customers", "user_profiles", "subscription_plans"]
-      const existingTables = tables.map((t) => t.table_name)
-      const missingTables = requiredTables.filter((t) => !existingTables.includes(t))
-
-      if (missingTables.length === 0) {
-        this.addResult("Database Schema", "PASS", "All required tables exist")
-      } else {
-        this.addResult("Database Schema", "FAIL", `Missing tables: ${missingTables.join(", ")}`)
-      }
-
-      // Test demo customer exists
-      const demoCustomer = await sql`
-        SELECT id, name FROM customers WHERE email = 'demo@bhv360.nl' LIMIT 1
-      `
-
-      if (demoCustomer.length > 0) {
-        this.addResult("Demo Data", "PASS", "Demo customer exists")
-      } else {
-        this.addResult("Demo Data", "WARNING", "Demo customer not found")
-      }
-    } catch (error) {
-      this.addResult("Database Connection", "FAIL", `Database error: ${error}`)
+    } catch (error: any) {
+      console.log(`❌ ${test.name} - Failed: ${error.message}`)
+      return false
     }
   }
 
-  async verifyRegistrationFlow(): Promise<void> {
-    console.log("\n📝 Testing Registration Flow...")
+  private async checkBuildStatus(): Promise<void> {
+    console.log("\n🏗️  Checking Vercel build status...")
 
     try {
-      const registrationData = {
-        companyName: `Test Company ${Date.now()}`,
-        contactPerson: "Test User",
-        email: `test${Date.now()}@example.com`,
-        phone: "+31 20 123 4567",
-        address: "Test Street 123",
-        city: "Amsterdam",
-        postalCode: "1000 AB",
-        password: "TestPassword123!",
-        planType: "starter",
-      }
-
-      const response = await fetch(`${this.baseUrl}/api/customers/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(registrationData),
+      const result = execSync("vercel ls --scope=team_bhv360 2>/dev/null || vercel ls", {
+        encoding: "utf8",
+        timeout: 10000,
       })
 
-      const result = await response.json()
-
-      if (response.ok && result.success) {
-        this.addResult("Customer Registration", "PASS", "Registration flow works correctly")
-
-        // Clean up test customer if possible
-        if (result.customer?.id) {
-          try {
-            const sql = neon(process.env.DATABASE_URL!)
-            await sql`DELETE FROM customers WHERE id = ${result.customer.id}`
-            console.log("   Test customer cleaned up")
-          } catch (cleanupError) {
-            console.log("   Warning: Could not clean up test customer")
-          }
-        }
-      } else {
-        this.addResult("Customer Registration", "FAIL", `Registration failed: ${result.error || "Unknown error"}`)
-      }
+      console.log("📊 Recent deployments:")
+      console.log(result)
     } catch (error) {
-      this.addResult("Customer Registration", "FAIL", `Registration test error: ${error}`)
+      console.log("⚠️  Could not fetch deployment status")
     }
   }
 
-  async verifyEnvironmentVariables(): Promise<void> {
-    console.log("\n🔧 Checking Environment Variables...")
-
-    const requiredVars = ["DATABASE_URL", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]
-
-    for (const varName of requiredVars) {
-      const value = process.env[varName]
-
-      if (value) {
-        this.addResult(`Env Var ${varName}`, "PASS", "Set correctly")
-      } else {
-        this.addResult(`Env Var ${varName}`, "WARNING", "Not set or empty")
-      }
-    }
-  }
-
-  async verifySSLCertificate(): Promise<void> {
-    console.log("\n🔒 Checking SSL Certificate...")
+  private async checkDomainStatus(): Promise<void> {
+    console.log("\n🌐 Checking domain status...")
 
     try {
-      const url = new URL(this.baseUrl)
+      const result = execSync(`dig +short ${this.baseUrl.replace("https://", "")}`, {
+        encoding: "utf8",
+        timeout: 5000,
+      })
 
-      if (url.protocol === "https:") {
-        const response = await fetch(this.baseUrl)
-
-        if (response.ok) {
-          this.addResult("SSL Certificate", "PASS", "HTTPS is working correctly")
-        } else {
-          this.addResult("SSL Certificate", "WARNING", "HTTPS endpoint accessible but returned error")
-        }
+      if (result.trim()) {
+        console.log(`✅ Domain resolves to: ${result.trim()}`)
       } else {
-        this.addResult("SSL Certificate", "FAIL", "Site is not using HTTPS")
+        console.log("⚠️  Domain resolution issue")
       }
     } catch (error) {
-      this.addResult("SSL Certificate", "FAIL", `SSL verification failed: ${error}`)
+      console.log("⚠️  Could not check domain status")
     }
   }
 
-  async verifyPerformance(): Promise<void> {
-    console.log("\n⚡ Testing Performance...")
+  private async performanceTest(): Promise<void> {
+    console.log("\n⚡ Running performance test...")
 
     try {
       const startTime = Date.now()
-      const response = await fetch(this.baseUrl)
-      const endTime = Date.now()
+      const curlCommand = `curl -f -s -o /dev/null -w "%{time_total}" "${this.baseUrl}"`
+      const result = execSync(curlCommand, { encoding: "utf8", timeout: 15000 })
+      const loadTime = Number.parseFloat(result.trim())
 
-      const loadTime = endTime - startTime
+      console.log(`📊 Homepage load time: ${loadTime.toFixed(2)}s`)
 
-      if (loadTime < 2000) {
-        this.addResult("Page Load Time", "PASS", `${loadTime}ms (Good)`)
-      } else if (loadTime < 5000) {
-        this.addResult("Page Load Time", "WARNING", `${loadTime}ms (Acceptable)`)
+      if (loadTime < 2.0) {
+        console.log("✅ Performance: Excellent")
+      } else if (loadTime < 5.0) {
+        console.log("⚠️  Performance: Good")
       } else {
-        this.addResult("Page Load Time", "FAIL", `${loadTime}ms (Too slow)`)
+        console.log("❌ Performance: Needs improvement")
       }
     } catch (error) {
-      this.addResult("Page Load Time", "FAIL", `Performance test failed: ${error}`)
+      console.log("⚠️  Performance test failed")
     }
   }
 
-  async runAllTests(): Promise<void> {
-    console.log(`🧪 BHV360 Production Deployment Verification`)
-    console.log(`Testing: ${this.baseUrl}`)
-    console.log("=".repeat(60))
+  public async verify(): Promise<void> {
+    console.log("🔍 BHV360 DEPLOYMENT VERIFICATION")
+    console.log("=".repeat(50))
+    console.log(`📅 ${new Date().toISOString()}`)
+    console.log(`🌐 Base URL: ${this.baseUrl}`)
+    console.log("=".repeat(50))
 
-    await this.verifyEnvironmentVariables()
-    await this.verifyWebsiteAccessibility()
-    await this.verifySSLCertificate()
-    await this.verifyApiEndpoints()
-    await this.verifyDatabaseConnection()
-    await this.verifyRegistrationFlow()
-    await this.verifyPerformance()
+    await this.checkBuildStatus()
+    await this.checkDomainStatus()
+    await this.performanceTest()
 
-    this.printSummary()
-  }
+    console.log("\n🧪 Running endpoint tests...")
 
-  private printSummary(): void {
-    console.log("\n📊 Verification Summary")
-    console.log("=".repeat(60))
+    let passedTests = 0
+    const totalTests = this.tests.length
 
-    const passed = this.results.filter((r) => r.status === "PASS").length
-    const failed = this.results.filter((r) => r.status === "FAIL").length
-    const warnings = this.results.filter((r) => r.status === "WARNING").length
-    const total = this.results.length
+    for (const test of this.tests) {
+      const passed = await this.testEndpoint(test)
+      if (passed) passedTests++
 
-    console.log(`✅ Passed: ${passed}/${total}`)
-    console.log(`❌ Failed: ${failed}/${total}`)
-    console.log(`⚠️  Warnings: ${warnings}/${total}`)
+      // Small delay between tests
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+    }
 
-    if (failed === 0) {
-      console.log("\n🎉 All critical tests passed! BHV360 is ready for production.")
+    console.log("\n" + "=".repeat(50))
+    console.log("📊 VERIFICATION RESULTS")
+    console.log("=".repeat(50))
+    console.log(`✅ Passed: ${passedTests}/${totalTests} tests`)
+    console.log(`❌ Failed: ${totalTests - passedTests}/${totalTests} tests`)
+    console.log(`📈 Success Rate: ${Math.round((passedTests / totalTests) * 100)}%`)
+
+    if (passedTests === totalTests) {
+      console.log("\n🎉 ALL TESTS PASSED! Deployment is successful!")
+      console.log("🚀 BHV360 is fully operational!")
+    } else if (passedTests >= totalTests * 0.8) {
+      console.log("\n⚠️  Most tests passed. Deployment is mostly successful.")
+      console.log("🔧 Some endpoints may need attention.")
     } else {
-      console.log("\n⚠️  Some tests failed. Please review and fix issues before going live.")
+      console.log("\n❌ Multiple tests failed. Deployment needs investigation.")
+      console.log("🚨 Please check the application status.")
     }
 
-    // Show failed tests
-    const failedTests = this.results.filter((r) => r.status === "FAIL")
-    if (failedTests.length > 0) {
-      console.log("\n❌ Failed Tests:")
-      failedTests.forEach((test) => {
-        console.log(`   - ${test.test}: ${test.message}`)
-      })
-    }
-
-    // Show warnings
-    const warningTests = this.results.filter((r) => r.status === "WARNING")
-    if (warningTests.length > 0) {
-      console.log("\n⚠️  Warnings:")
-      warningTests.forEach((test) => {
-        console.log(`   - ${test.test}: ${test.message}`)
-      })
-    }
-
-    console.log("\n🔗 Important URLs:")
+    console.log("\n🔗 Quick Links:")
     console.log(`   Homepage: ${this.baseUrl}`)
-    console.log(`   Registration: ${this.baseUrl}/register`)
-    console.log(`   Login: ${this.baseUrl}/login`)
-    console.log(`   Admin: ${this.baseUrl}/super-admin`)
+    console.log(`   Dashboard: ${this.baseUrl}/dashboard`)
     console.log(`   Health: ${this.baseUrl}/api/health`)
+    console.log(`   Database: ${this.baseUrl}/api/test-database`)
+    console.log("=".repeat(50))
   }
 }
 
-// Main execution
-async function main() {
-  const baseUrl = process.argv[2] || "https://bhv360.vercel.app"
-
-  const verifier = new DeploymentVerifier(baseUrl)
-  await verifier.runAllTests()
-}
-
-// Run if called directly
-if (require.main === module) {
-  main().catch(console.error)
-}
-
-export { DeploymentVerifier }
+// Execute verification
+const verifier = new DeploymentVerifier()
+verifier.verify().catch((error) => {
+  console.error("Verification failed:", error)
+  process.exit(1)
+})

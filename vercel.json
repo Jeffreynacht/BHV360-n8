@@ -1,22 +1,23 @@
 {
   "version": 2,
-  "name": "bhv360-plotkaart",
+  "name": "bhv360",
   "alias": ["bhv360.vercel.app"],
-  "regions": ["ams1"],
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "installCommand": "npm ci",
-  "devCommand": "npm run dev",
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "https://ybxmvuzgqevqpusimgmm.supabase.co",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlieG12dXpncWV2cXB1c2ltZ21tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NDk4NDEsImV4cCI6MjA2NjMyNTg0MX0.MFB7ytqPId2c3HEm5KyK2RFZCO-cBrpmiO-FwHJXSv4",
-    "NEXT_PUBLIC_SITE_URL": "https://bhv360.vercel.app"
-  },
+  "regions": ["fra1"],
   "build": {
     "env": {
+      "NODE_ENV": "production",
       "NEXT_TELEMETRY_DISABLED": "1"
     }
+  },
+  "env": {
+    "DATABASE_URL": "@database-url",
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase-anon-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key",
+    "NEXTAUTH_SECRET": "@nextauth-secret",
+    "NEXT_PUBLIC_SITE_URL": "https://bhv360.vercel.app",
+    "VERCEL_GIT_COMMIT_SHA": "@vercel-git-commit-sha",
+    "VERCEL_REGION": "fra1"
   },
   "functions": {
     "app/api/**/*.ts": {
@@ -25,43 +26,38 @@
   },
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "/api/(.*)",
       "headers": [
         {
-          "key": "X-Frame-Options",
-          "value": "DENY"
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
         },
         {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
         },
         {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
         }
       ]
-    },
-    {
-      "source": "/images/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    }
-  ],
-  "redirects": [
-    {
-      "source": "/dashboard",
-      "destination": "/platform",
-      "permanent": false
     }
   ],
   "rewrites": [
     {
-      "source": "/api/health",
-      "destination": "/api/test-database"
+      "source": "/health",
+      "destination": "/api/health"
+    },
+    {
+      "source": "/status",
+      "destination": "/api/deployment-status"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/admin",
+      "destination": "/dashboard",
+      "permanent": false
     }
   ]
 }
