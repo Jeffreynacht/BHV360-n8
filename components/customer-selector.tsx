@@ -17,7 +17,7 @@ import {
 import { useCustomer } from "@/components/customer-context"
 import { Building, Users, Plus, Check, ChevronDown } from "lucide-react"
 
-export default function CustomerSelector() {
+export function CustomerSelector() {
   const { customers, selectedCustomer, setSelectedCustomer, addCustomer, isLoading } = useCustomer()
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showSelector, setShowSelector] = useState(false)
@@ -182,3 +182,5 @@ export default function CustomerSelector() {
     </div>
   )
 }
+
+export default CustomerSelector

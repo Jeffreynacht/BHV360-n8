@@ -1,8 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useCustomer } from "@/components/customer-context"
-import { NoCustomerSelected } from "@/components/no-customer-selected"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Wifi, WifiOff, Signal, Users, Shield, Settings, Plus, Trash2 } from "lucide-react"
+
+export const dynamic = "force-dynamic"
 
 interface WiFiNetwork {
   id: string
@@ -130,7 +130,6 @@ const initialAccessPoints: AccessPoint[] = [
 ]
 
 export default function WiFiPage() {
-  const { selectedCustomer } = useCustomer()
   const [networks, setNetworks] = useState<WiFiNetwork[]>(initialNetworks)
   const [accessPoints, setAccessPoints] = useState<AccessPoint[]>(initialAccessPoints)
   const [newNetwork, setNewNetwork] = useState({
@@ -141,10 +140,6 @@ export default function WiFiPage() {
     channel: 36,
     isGuest: false,
   })
-
-  if (!selectedCustomer) {
-    return <NoCustomerSelected />
-  }
 
   const toggleNetworkStatus = (networkId: string) => {
     setNetworks((prev) =>
@@ -219,7 +214,7 @@ export default function WiFiPage() {
     <div className="container p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">WiFi Beheer</h1>
-        <p className="text-muted-foreground">Beheer WiFi netwerken en access points voor {selectedCustomer.name}</p>
+        <p className="text-muted-foreground">Beheer WiFi netwerken en access points</p>
       </div>
 
       {/* Statistics */}

@@ -113,12 +113,10 @@ class DeploymentRunner {
   private async checkPrerequisites(): Promise<void> {
     this.logStep("Checking prerequisites")
 
-    // Check if we're in the right directory
     if (!existsSync("package.json")) {
       throw new Error("package.json not found. Are you in the project root?")
     }
 
-    // Check required commands
     const requiredCommands = ["git", "node", "npm", "curl"]
     for (const cmd of requiredCommands) {
       try {
@@ -128,7 +126,6 @@ class DeploymentRunner {
       }
     }
 
-    // Check and install Vercel CLI if needed
     try {
       await this.executeCommand("command -v vercel", "Checking Vercel CLI", { silent: true })
     } catch (error) {
@@ -136,7 +133,6 @@ class DeploymentRunner {
       await this.executeCommand("npm install -g vercel", "Installing Vercel CLI", { timeout: 300000 })
     }
 
-    // Check git status
     try {
       await this.executeCommand("git status", "Checking git status", { silent: true })
     } catch (error) {
@@ -179,13 +175,11 @@ VERCEL_REGION=fra1`
     const packagePath = join(process.cwd(), "package.json")
     const packageJson = JSON.parse(readFileSync(packagePath, "utf8"))
 
-    // Update version
     const currentVersion = packageJson.version || "2.1.0"
     const versionParts = currentVersion.split(".")
     versionParts[2] = (Number.parseInt(versionParts[2]) + 1).toString()
     const newVersion = versionParts.join(".")
 
-    // Update package.json with deployment info
     packageJson.version = newVersion
     packageJson.deployment = {
       lastDeployment: new Date().toISOString(),
@@ -202,7 +196,6 @@ VERCEL_REGION=fra1`
       ],
     }
 
-    // Ensure React versions are correct
     packageJson.dependencies = {
       ...packageJson.dependencies,
       react: "^18.2.0",
@@ -216,7 +209,6 @@ VERCEL_REGION=fra1`
       tsx: "^4.16.2",
     }
 
-    // Add deployment scripts
     packageJson.scripts = {
       ...packageJson.scripts,
       "deploy:emergency": "npx tsx scripts/run-deployment.ts",
@@ -234,12 +226,10 @@ VERCEL_REGION=fra1`
   private async cleanAndInstall(): Promise<void> {
     this.logStep("Cleaning project and installing dependencies")
 
-    // Clean previous builds
     await this.executeCommand("rm -rf .next", "Removing .next directory")
     await this.executeCommand("rm -rf node_modules", "Removing node_modules")
     await this.executeCommand("rm -f package-lock.json", "Removing package-lock.json")
 
-    // Install dependencies
     await this.executeCommand("npm install", "Installing dependencies", { timeout: 300000 })
 
     this.logSuccess("Clean installation completed")
@@ -248,7 +238,6 @@ VERCEL_REGION=fra1`
   private async buildProject(): Promise<void> {
     this.logStep("Building Next.js project")
 
-    // Set environment variables for build
     process.env.NODE_ENV = "production"
     process.env.NEXT_TELEMETRY_DISABLED = "1"
 
@@ -260,10 +249,8 @@ VERCEL_REGION=fra1`
   private async commitAndPush(version: string): Promise<void> {
     this.logStep("Committing and pushing changes to GitHub")
 
-    // Add all changes
     await this.executeCommand("git add .", "Adding all changes to git")
 
-    // Create commit message
     const commitMessage = `🚀 Emergency deployment v${version} - Context Provider Fixes
 
 ✅ Fixed Issues:
@@ -296,10 +283,8 @@ VERCEL_REGION=fra1`
 - Health: ${this.config.baseUrl}/api/health
 - Database: ${this.config.baseUrl}/api/test-database`
 
-    // Commit changes
     await this.executeCommand(`git commit -m "${commitMessage}"`, "Committing changes")
 
-    // Push to main branch
     await this.executeCommand(`git push origin ${this.config.branch}`, "Pushing to GitHub")
 
     this.logSuccess("Changes pushed to GitHub successfully")
@@ -318,7 +303,7 @@ VERCEL_REGION=fra1`
   private async waitForDeployment(): Promise<void> {
     this.logStep("Waiting for deployment to propagate")
 
-    const waitTime = 20000 // 20 seconds
+    const waitTime = 20000
     this.logInfo(`Waiting ${waitTime / 1000} seconds for deployment to be ready...`)
 
     await new Promise((resolve) => setTimeout(resolve, waitTime))
@@ -366,7 +351,6 @@ VERCEL_REGION=fra1`
         testResults[endpoint.name] = false
       }
 
-      // Small delay between tests
       await new Promise((resolve) => setTimeout(resolve, 1000))
     }
 
@@ -423,7 +407,6 @@ VERCEL_REGION=fra1`
 
   public async execute(): Promise<void> {
     try {
-      // Execute all deployment steps
       await this.checkPrerequisites()
       await this.updateEnvironmentVariables()
       const version = await this.updatePackageVersion()
@@ -433,10 +416,8 @@ VERCEL_REGION=fra1`
       await this.deployToVercel()
       await this.waitForDeployment()
 
-      // Test the deployment
       const testResults = await this.testEndpoints()
 
-      // Generate final report
       this.generateReport(version, testResults)
 
       const passedTests = Object.values(testResults).filter(Boolean).length
@@ -457,13 +438,11 @@ VERCEL_REGION=fra1`
   }
 }
 
-// Execute the deployment
 async function main() {
   const runner = new DeploymentRunner()
   await runner.execute()
 }
 
-// Run if called directly
 if (require.main === module) {
   main().catch((error) => {
     console.error("Deployment runner failed:", error)
