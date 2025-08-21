@@ -135,9 +135,22 @@ main() {
     setup_git
     build_project
     
+    # Check if logged in to Vercel
+    if ! vercel whoami &> /dev/null; then
+        echo "🔐 Please login to Vercel first:"
+        vercel login
+    fi
+
+    # Quick type check
+    echo "🔍 Quick type check..."
+    npm run type-check || {
+        echo "❌ TypeScript errors found."
+        exit 1
+    }
+
     echo "🚀 Deploying..."
     vercel --prod --yes
-    
+
     echo ""
     print_status "🎉 BHV360 is ready for deployment!"
     echo ""
@@ -149,6 +162,18 @@ main() {
     echo ""
     print_info "Need help? Run: npm run go-live-wizard"
     echo "🧪 Test your deployment at /test-modules"
+    
+    echo "🌐 URL: https://bhv360.vercel.app"
+    echo "⏳ Running quick verification in 30 seconds..."
+    
+    sleep 30
+    
+    # Quick health check
+    if curl -f -s "https://bhv360.vercel.app" > /dev/null; then
+        echo "✅ Site is live and accessible!"
+    else
+        echo "⚠️  Site may not be ready yet, please check manually."
+    fi
 }
 
 # Run main function
