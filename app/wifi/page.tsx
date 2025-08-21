@@ -1,512 +1,638 @@
 "use client"
 
 import { useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Wifi, WifiOff, Signal, Users, Shield, Settings, Plus, Trash2 } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Wifi,
+  Signal,
+  Settings,
+  Users,
+  Activity,
+  Lock,
+  Unlock,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle,
+  Router,
+  Smartphone,
+  Laptop,
+  Tablet,
+  Monitor,
+  Clock,
+  BarChart3,
+  TrendingUp,
+} from "lucide-react"
 
-export const dynamic = "force-dynamic"
-
-interface WiFiNetwork {
+interface WifiNetwork {
   id: string
   name: string
-  password: string
-  security: string
-  band: string
-  channel: number
-  isEnabled: boolean
-  connectedDevices: number
-  signalStrength: number
-  isGuest: boolean
+  signal: number
+  security: "WPA2" | "WPA3" | "Open"
+  frequency: "2.4GHz" | "5GHz"
+  connected: boolean
+  password?: string
 }
 
-interface AccessPoint {
+interface ConnectedDevice {
   id: string
   name: string
-  location: string
-  building: string
-  floor: string
-  ipAddress: string
-  status: "online" | "offline" | "warning"
-  connectedDevices: number
-  signalStrength: number
-  lastSeen: string
+  type: "smartphone" | "laptop" | "tablet" | "desktop"
+  ip: string
+  mac: string
+  connected: string
+  bandwidth: number
 }
 
-const initialNetworks: WiFiNetwork[] = [
-  {
-    id: "net-1",
-    name: "BedrijfsWiFi-Secure",
-    password: "SecurePass2024!",
-    security: "WPA3",
-    band: "5GHz",
-    channel: 36,
-    isEnabled: true,
-    connectedDevices: 45,
-    signalStrength: 85,
-    isGuest: false,
-  },
-  {
-    id: "net-2",
-    name: "BedrijfsWiFi-Guest",
-    password: "GuestAccess123",
-    security: "WPA2",
-    band: "2.4GHz",
-    channel: 6,
-    isEnabled: true,
-    connectedDevices: 12,
-    signalStrength: 78,
-    isGuest: true,
-  },
-  {
-    id: "net-3",
-    name: "BHV-Emergency",
-    password: "Emergency2024",
-    security: "WPA3",
-    band: "5GHz",
-    channel: 149,
-    isEnabled: true,
-    connectedDevices: 3,
-    signalStrength: 92,
-    isGuest: false,
-  },
-]
-
-const initialAccessPoints: AccessPoint[] = [
-  {
-    id: "ap-1",
-    name: "AP-Hoofdgebouw-BG",
-    location: "Receptie",
-    building: "Hoofdgebouw",
-    floor: "Begane Grond",
-    ipAddress: "192.168.1.10",
-    status: "online",
-    connectedDevices: 23,
-    signalStrength: 88,
-    lastSeen: "Nu online",
-  },
-  {
-    id: "ap-2",
-    name: "AP-Hoofdgebouw-1V",
-    location: "Vergaderzaal A",
-    building: "Hoofdgebouw",
-    floor: "1e Verdieping",
-    ipAddress: "192.168.1.11",
-    status: "online",
-    connectedDevices: 15,
-    signalStrength: 82,
-    lastSeen: "Nu online",
-  },
-  {
-    id: "ap-3",
-    name: "AP-Bijgebouw-BG",
-    location: "Magazijn",
-    building: "Bijgebouw A",
-    floor: "Begane Grond",
-    ipAddress: "192.168.1.12",
-    status: "warning",
-    connectedDevices: 7,
-    signalStrength: 65,
-    lastSeen: "5 minuten geleden",
-  },
-  {
-    id: "ap-4",
-    name: "AP-Parkeergarage-N1",
-    location: "Sector A",
-    building: "Parkeergarage",
-    floor: "Niveau -1",
-    ipAddress: "192.168.1.13",
-    status: "offline",
-    connectedDevices: 0,
-    signalStrength: 0,
-    lastSeen: "2 uur geleden",
-  },
-]
+interface NetworkStats {
+  totalDevices: number
+  activeDevices: number
+  totalBandwidth: number
+  usedBandwidth: number
+  uptime: string
+}
 
 export default function WiFiPage() {
-  const [networks, setNetworks] = useState<WiFiNetwork[]>(initialNetworks)
-  const [accessPoints, setAccessPoints] = useState<AccessPoint[]>(initialAccessPoints)
-  const [newNetwork, setNewNetwork] = useState({
-    name: "",
-    password: "",
-    security: "WPA3",
-    band: "5GHz",
-    channel: 36,
-    isGuest: false,
-  })
+  const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [isScanning, setIsScanning] = useState(false)
+  const [password, setPassword] = useState("")
 
-  const toggleNetworkStatus = (networkId: string) => {
-    setNetworks((prev) =>
-      prev.map((network) => (network.id === networkId ? { ...network, isEnabled: !network.isEnabled } : network)),
-    )
-    // Simulate API call
-    setTimeout(() => {
-      alert(
-        `Netwerk ${networks.find((n) => n.id === networkId)?.name} ${networks.find((n) => n.id === networkId)?.isEnabled ? "uitgeschakeld" : "ingeschakeld"}`,
-      )
-    }, 500)
-  }
-
-  const addNetwork = () => {
-    if (!newNetwork.name.trim()) {
-      alert("Netwerknaam is verplicht")
-      return
-    }
-    if (!newNetwork.password.trim() || newNetwork.password.length < 8) {
-      alert("Wachtwoord moet minimaal 8 karakters zijn")
-      return
-    }
-
-    const network: WiFiNetwork = {
-      id: `net-${Date.now()}`,
-      ...newNetwork,
-      connectedDevices: 0,
-      signalStrength: Math.floor(Math.random() * 40) + 60, // Random signal 60-100%
-      isEnabled: true,
-    }
-    setNetworks((prev) => [...prev, network])
-    setNewNetwork({
-      name: "",
-      password: "",
+  // Mock data for WiFi networks
+  const [wifiNetworks, setWifiNetworks] = useState<WifiNetwork[]>([
+    {
+      id: "1",
+      name: "BHV360-Office",
+      signal: 95,
       security: "WPA3",
-      band: "5GHz",
-      channel: 36,
-      isGuest: false,
-    })
-    alert(`WiFi netwerk "${network.name}" succesvol toegevoegd!`)
+      frequency: "5GHz",
+      connected: true,
+      password: "BHV360Secure2024!",
+    },
+    {
+      id: "2",
+      name: "BHV360-Guest",
+      signal: 88,
+      security: "WPA2",
+      frequency: "2.4GHz",
+      connected: false,
+      password: "GuestAccess123",
+    },
+    {
+      id: "3",
+      name: "BHV360-IoT",
+      signal: 76,
+      security: "WPA2",
+      frequency: "2.4GHz",
+      connected: false,
+      password: "IoTDevices2024",
+    },
+    {
+      id: "4",
+      name: "Neighbor_WiFi",
+      signal: 45,
+      security: "WPA2",
+      frequency: "2.4GHz",
+      connected: false,
+    },
+    {
+      id: "5",
+      name: "Public_Hotspot",
+      signal: 32,
+      security: "Open",
+      frequency: "2.4GHz",
+      connected: false,
+    },
+  ])
+
+  // Mock data for connected devices
+  const connectedDevices: ConnectedDevice[] = [
+    {
+      id: "1",
+      name: "iPhone 15 Pro",
+      type: "smartphone",
+      ip: "192.168.1.101",
+      mac: "AA:BB:CC:DD:EE:01",
+      connected: "2 uur geleden",
+      bandwidth: 25.6,
+    },
+    {
+      id: "2",
+      name: "MacBook Pro",
+      type: "laptop",
+      ip: "192.168.1.102",
+      mac: "AA:BB:CC:DD:EE:02",
+      connected: "5 minuten geleden",
+      bandwidth: 156.8,
+    },
+    {
+      id: "3",
+      name: "iPad Air",
+      type: "tablet",
+      ip: "192.168.1.103",
+      mac: "AA:BB:CC:DD:EE:03",
+      connected: "1 uur geleden",
+      bandwidth: 45.2,
+    },
+    {
+      id: "4",
+      name: "Desktop PC",
+      type: "desktop",
+      ip: "192.168.1.104",
+      mac: "AA:BB:CC:DD:EE:04",
+      connected: "30 minuten geleden",
+      bandwidth: 89.4,
+    },
+  ]
+
+  // Mock network statistics
+  const networkStats: NetworkStats = {
+    totalDevices: 12,
+    activeDevices: 8,
+    totalBandwidth: 1000,
+    usedBandwidth: 317,
+    uptime: "15 dagen, 8 uur",
   }
 
-  const removeNetwork = (networkId: string) => {
-    setNetworks(networks.filter((network) => network.id !== networkId))
+  const handleScanNetworks = () => {
+    setIsScanning(true)
+    setTimeout(() => {
+      setIsScanning(false)
+      // Simulate finding new networks or updating signal strength
+    }, 3000)
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "online":
-        return "bg-green-500"
-      case "warning":
-        return "bg-orange-500"
-      case "offline":
-        return "bg-red-500"
+  const handleConnectNetwork = (networkId: string) => {
+    const network = wifiNetworks.find((n) => n.id === networkId)
+    if (network && network.security !== "Open" && !password) {
+      alert("Voer het wachtwoord in")
+      return
+    }
+
+    // Simulate connection
+    setWifiNetworks((prev) =>
+      prev.map((network) => ({
+        ...network,
+        connected: network.id === networkId,
+      })),
+    )
+    setPassword("")
+    setSelectedNetwork(null)
+  }
+
+  const getDeviceIcon = (type: string) => {
+    switch (type) {
+      case "smartphone":
+        return <Smartphone className="w-5 h-5" />
+      case "laptop":
+        return <Laptop className="w-5 h-5" />
+      case "tablet":
+        return <Tablet className="w-5 h-5" />
+      case "desktop":
+        return <Monitor className="w-5 h-5" />
       default:
-        return "bg-gray-500"
+        return <Router className="w-5 h-5" />
     }
   }
 
-  const getSignalIcon = (strength: number) => {
-    if (strength >= 80) return <Signal className="h-4 w-4 text-green-500" />
-    if (strength >= 60) return <Signal className="h-4 w-4 text-orange-500" />
-    if (strength >= 40) return <Signal className="h-4 w-4 text-red-500" />
-    return <WifiOff className="h-4 w-4 text-gray-500" />
+  const getSignalIcon = (signal: number) => {
+    if (signal >= 80) return <Signal className="w-5 h-5 text-green-500" />
+    if (signal >= 60) return <Signal className="w-5 h-5 text-yellow-500" />
+    if (signal >= 40) return <Signal className="w-5 h-5 text-orange-500" />
+    return <Signal className="w-5 h-5 text-red-500" />
   }
 
-  const totalDevices = networks.reduce((sum, network) => sum + network.connectedDevices, 0)
-  const activeNetworks = networks.filter((network) => network.isEnabled).length
-  const onlineAccessPoints = accessPoints.filter((ap) => ap.status === "online").length
+  const getSecurityIcon = (security: string) => {
+    if (security === "Open") return <Unlock className="w-4 h-4 text-red-500" />
+    return <Lock className="w-4 h-4 text-green-500" />
+  }
 
   return (
-    <div className="container p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">WiFi Beheer</h1>
-        <p className="text-muted-foreground">Beheer WiFi netwerken en access points</p>
-      </div>
-
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Totaal Apparaten</p>
-                <p className="text-2xl font-bold">{totalDevices}</p>
-              </div>
-              <Users className="h-8 w-8 text-blue-500" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-xl flex items-center justify-center shadow-lg">
+              <Wifi className="w-6 h-6 text-white" />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Actieve Netwerken</p>
-                <p className="text-2xl font-bold">{activeNetworks}</p>
-              </div>
-              <Wifi className="h-8 w-8 text-green-500" />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">WiFi Beheer</h1>
+              <p className="text-gray-600">Beheer netwerkverbindingen en apparaten</p>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Online Access Points</p>
-                <p className="text-2xl font-bold">
-                  {onlineAccessPoints}/{accessPoints.length}
-                </p>
-              </div>
-              <Signal className="h-8 w-8 text-orange-500" />
+          </div>
+
+          {/* Network Status */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <Card className="bg-gradient-to-br from-green-50 to-blue-50 border-0 shadow-lg">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Verbonden Apparaten</p>
+                    <p className="text-2xl font-bold text-gray-900">{networkStats.activeDevices}</p>
+                  </div>
+                  <Users className="w-8 h-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-green-50 to-blue-50 border-0 shadow-lg">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Bandbreedte Gebruik</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {Math.round((networkStats.usedBandwidth / networkStats.totalBandwidth) * 100)}%
+                    </p>
+                  </div>
+                  <Activity className="w-8 h-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-green-50 to-blue-50 border-0 shadow-lg">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Netwerk Uptime</p>
+                    <p className="text-lg font-bold text-gray-900">{networkStats.uptime}</p>
+                  </div>
+                  <Clock className="w-8 h-8 text-purple-500" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-green-50 to-blue-50 border-0 shadow-lg">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Netwerk Status</p>
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span className="text-sm font-medium text-green-600">Online</span>
+                    </div>
+                  </div>
+                  <Router className="w-8 h-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <Tabs defaultValue="networks" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 bg-white shadow-lg">
+            <TabsTrigger value="networks" className="flex items-center space-x-2">
+              <Wifi className="w-4 h-4" />
+              <span>Netwerken</span>
+            </TabsTrigger>
+            <TabsTrigger value="devices" className="flex items-center space-x-2">
+              <Users className="w-4 h-4" />
+              <span>Apparaten</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center space-x-2">
+              <BarChart3 className="w-4 h-4" />
+              <span>Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center space-x-2">
+              <Settings className="w-4 h-4" />
+              <span>Instellingen</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Networks Tab */}
+          <TabsContent value="networks" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Beschikbare Netwerken</h2>
+              <Button
+                onClick={handleScanNetworks}
+                disabled={isScanning}
+                className="bg-gradient-to-r from-blue-500 to-green-500 text-white"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isScanning ? "animate-spin" : ""}`} />
+                {isScanning ? "Scannen..." : "Scan Netwerken"}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Beveiliging</p>
-                <p className="text-2xl font-bold">WPA3</p>
-              </div>
-              <Shield className="h-8 w-8 text-purple-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      <Tabs defaultValue="networks" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="networks">WiFi Netwerken</TabsTrigger>
-          <TabsTrigger value="access-points">Access Points</TabsTrigger>
-          <TabsTrigger value="settings">Instellingen</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="networks" className="space-y-6">
-          {/* Add New Network */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Nieuw WiFi Netwerk Toevoegen</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="network-name">Netwerknaam</Label>
-                  <Input
-                    id="network-name"
-                    value={newNetwork.name}
-                    onChange={(e) => setNewNetwork({ ...newNetwork, name: e.target.value })}
-                    placeholder="Bijv. BedrijfsWiFi"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="network-password">Wachtwoord</Label>
-                  <Input
-                    id="network-password"
-                    type="password"
-                    value={newNetwork.password}
-                    onChange={(e) => setNewNetwork({ ...newNetwork, password: e.target.value })}
-                    placeholder="Sterk wachtwoord"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="network-security">Beveiliging</Label>
-                  <Select
-                    value={newNetwork.security}
-                    onValueChange={(value) => setNewNetwork({ ...newNetwork, security: value })}
-                  >
-                    <SelectTrigger id="network-security">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="WPA3">WPA3</SelectItem>
-                      <SelectItem value="WPA2">WPA2</SelectItem>
-                      <SelectItem value="WEP">WEP (niet aanbevolen)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="network-band">Frequentieband</Label>
-                  <Select
-                    value={newNetwork.band}
-                    onValueChange={(value) => setNewNetwork({ ...newNetwork, band: value })}
-                  >
-                    <SelectTrigger id="network-band">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="2.4GHz">2.4GHz</SelectItem>
-                      <SelectItem value="5GHz">5GHz</SelectItem>
-                      <SelectItem value="6GHz">6GHz</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="network-channel">Kanaal</Label>
-                  <Input
-                    id="network-channel"
-                    type="number"
-                    value={newNetwork.channel}
-                    onChange={(e) => setNewNetwork({ ...newNetwork, channel: Number.parseInt(e.target.value) })}
-                    min="1"
-                    max="165"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={addNetwork} className="w-full">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Toevoegen
-                  </Button>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2 mt-4">
-                <Switch
-                  id="guest-network"
-                  checked={newNetwork.isGuest}
-                  onCheckedChange={(checked) => setNewNetwork({ ...newNetwork, isGuest: checked })}
-                />
-                <Label htmlFor="guest-network">Gastnetwerk</Label>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Networks List */}
-          <Card>
-            <CardHeader>
-              <CardTitle>WiFi Netwerken</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {networks.map((network) => (
-                  <div key={network.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        {network.isEnabled ? (
-                          <Wifi className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <WifiOff className="h-5 w-5 text-gray-500" />
-                        )}
+            <div className="grid gap-4">
+              {wifiNetworks.map((network) => (
+                <Card
+                  key={network.id}
+                  className={`shadow-lg hover:shadow-xl transition-all duration-300 border-0 cursor-pointer ${
+                    network.connected
+                      ? "bg-gradient-to-r from-green-50 to-blue-50 ring-2 ring-green-500"
+                      : "bg-white hover:bg-gradient-to-r hover:from-green-50 hover:to-blue-50"
+                  }`}
+                  onClick={() => setSelectedNetwork(selectedNetwork === network.id ? null : network.id)}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2">
+                          {getSignalIcon(network.signal)}
+                          {network.connected && <CheckCircle className="w-5 h-5 text-green-500" />}
+                        </div>
                         <div>
-                          <h3 className="font-medium">{network.name}</h3>
-                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                            <span>{network.security}</span>
-                            <span>•</span>
-                            <span>{network.band}</span>
-                            <span>•</span>
-                            <span>Kanaal {network.channel}</span>
-                            {network.isGuest && (
-                              <>
-                                <span>•</span>
-                                <Badge variant="secondary">Gast</Badge>
-                              </>
-                            )}
+                          <h3 className="text-lg font-semibold text-gray-900">{network.name}</h3>
+                          <div className="flex items-center space-x-4 text-sm text-gray-600">
+                            <span className="flex items-center space-x-1">
+                              {getSecurityIcon(network.security)}
+                              <span>{network.security}</span>
+                            </span>
+                            <span>{network.frequency}</span>
+                            <span>Signaal: {network.signal}%</span>
                           </div>
                         </div>
                       </div>
+                      <div className="flex items-center space-x-2">
+                        {network.connected && <Badge className="bg-green-100 text-green-800">Verbonden</Badge>}
+                        <Badge variant="outline">{network.frequency}</Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-4">
+
+                    {selectedNetwork === network.id && !network.connected && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        {network.security !== "Open" && (
+                          <div className="space-y-3">
+                            <Label htmlFor="password">Wachtwoord</Label>
+                            <div className="flex space-x-2">
+                              <div className="relative flex-1">
+                                <Input
+                                  id="password"
+                                  type={showPassword ? "text" : "password"}
+                                  value={password}
+                                  onChange={(e) => setPassword(e.target.value)}
+                                  placeholder="Voer wachtwoord in"
+                                  className="pr-10"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-3"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                >
+                                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </Button>
+                              </div>
+                              <Button
+                                onClick={() => handleConnectNetwork(network.id)}
+                                className="bg-gradient-to-r from-blue-500 to-green-500 text-white"
+                              >
+                                Verbinden
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        {network.security === "Open" && (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2 text-orange-600">
+                              <AlertTriangle className="w-4 h-4" />
+                              <span className="text-sm">Open netwerk - niet beveiligd</span>
+                            </div>
+                            <Button
+                              onClick={() => handleConnectNetwork(network.id)}
+                              className="bg-gradient-to-r from-blue-500 to-green-500 text-white"
+                            >
+                              Verbinden
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* Devices Tab */}
+          <TabsContent value="devices" className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Verbonden Apparaten</h2>
+
+            <div className="grid gap-4">
+              {connectedDevices.map((device) => (
+                <Card
+                  key={device.id}
+                  className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-r from-green-50 to-blue-50"
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-xl flex items-center justify-center text-white">
+                          {getDeviceIcon(device.type)}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">{device.name}</h3>
+                          <div className="flex items-center space-x-4 text-sm text-gray-600">
+                            <span>IP: {device.ip}</span>
+                            <span>MAC: {device.mac}</span>
+                            <span>Verbonden: {device.connected}</span>
+                          </div>
+                        </div>
+                      </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium">{network.connectedDevices} apparaten</p>
-                        <div className="flex items-center space-x-1">
-                          {getSignalIcon(network.signalStrength)}
-                          <span className="text-sm text-muted-foreground">{network.signalStrength}%</span>
-                        </div>
+                        <div className="text-lg font-semibold text-gray-900">{device.bandwidth} Mbps</div>
+                        <div className="text-sm text-gray-600">Bandbreedte</div>
                       </div>
-                      <Switch checked={network.isEnabled} onCheckedChange={() => toggleNetworkStatus(network.id)} />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeNetwork(network.id)}
-                        className="text-red-500 hover:text-red-700"
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Netwerk Analytics</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card className="shadow-lg border-0 bg-gradient-to-br from-green-50 to-blue-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <TrendingUp className="w-5 h-5 text-green-500" />
+                    <span>Bandbreedte Gebruik</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Gebruikt</span>
+                      <span className="text-sm font-medium">{networkStats.usedBandwidth} Mbps</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full"
+                        style={{
+                          width: `${(networkStats.usedBandwidth / networkStats.totalBandwidth) * 100}%`,
+                        }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>0 Mbps</span>
+                      <span>{networkStats.totalBandwidth} Mbps</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg border-0 bg-gradient-to-br from-green-50 to-blue-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Users className="w-5 h-5 text-blue-500" />
+                    <span>Apparaat Activiteit</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Actief</span>
+                      <span className="text-sm font-medium">{networkStats.activeDevices}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full"
+                        style={{
+                          width: `${(networkStats.activeDevices / networkStats.totalDevices) * 100}%`,
+                        }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>0</span>
+                      <span>{networkStats.totalDevices} apparaten</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg border-0 bg-gradient-to-br from-green-50 to-blue-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Clock className="w-5 h-5 text-purple-500" />
+                    <span>Netwerk Uptime</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-gray-900 mb-2">{networkStats.uptime}</div>
+                    <div className="text-sm text-gray-600">Zonder onderbreking</div>
+                    <div className="mt-4">
+                      <Badge className="bg-green-100 text-green-800">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Stabiel
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">WiFi Instellingen</h2>
+
+            <div className="grid gap-6">
+              <Card className="shadow-lg border-0 bg-gradient-to-br from-green-50 to-blue-50">
+                <CardHeader>
+                  <CardTitle>Netwerk Configuratie</CardTitle>
+                  <CardDescription>Beheer je WiFi netwerk instellingen</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="network-name">Netwerk Naam (SSID)</Label>
+                      <Input id="network-name" defaultValue="BHV360-Office" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="network-password">Wachtwoord</Label>
+                      <Input id="network-password" type="password" defaultValue="BHV360Secure2024!" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="security-type">Beveiliging</Label>
+                      <select
+                        id="security-type"
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        defaultValue="WPA3"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        <option value="WPA3">WPA3</option>
+                        <option value="WPA2">WPA2</option>
+                        <option value="Open">Open</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="frequency">Frequentie</Label>
+                      <select
+                        id="frequency"
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        defaultValue="5GHz"
+                      >
+                        <option value="5GHz">5GHz</option>
+                        <option value="2.4GHz">2.4GHz</option>
+                        <option value="Dual">Dual Band</option>
+                      </select>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                </CardContent>
+              </Card>
 
-        <TabsContent value="access-points" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Access Points</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {accessPoints.map((ap) => (
-                  <div key={ap.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-3 h-3 rounded-full ${getStatusColor(ap.status)}`} />
-                      <div>
-                        <h3 className="font-medium">{ap.name}</h3>
-                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                          <span>{ap.building}</span>
-                          <span>•</span>
-                          <span>{ap.floor}</span>
-                          <span>•</span>
-                          <span>{ap.location}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{ap.ipAddress}</p>
-                      </div>
+              <Card className="shadow-lg border-0 bg-gradient-to-br from-green-50 to-blue-50">
+                <CardHeader>
+                  <CardTitle>Geavanceerde Instellingen</CardTitle>
+                  <CardDescription>Configureer geavanceerde netwerk opties</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="guest-network">Gast Netwerk</Label>
+                      <p className="text-sm text-gray-600">Schakel een apart gast netwerk in</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">{ap.connectedDevices} apparaten</p>
-                      <div className="flex items-center justify-end space-x-1">
-                        {getSignalIcon(ap.signalStrength)}
-                        <span className="text-sm text-muted-foreground">{ap.signalStrength}%</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{ap.lastSeen}</p>
-                    </div>
+                    <Switch id="guest-network" defaultChecked />
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="settings" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>WiFi Instellingen</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Algemene Instellingen</h3>
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="auto-channel">Automatische kanaal selectie</Label>
-                    <Switch id="auto-channel" defaultChecked />
+                    <div>
+                      <Label htmlFor="bandwidth-limit">Bandbreedte Limiet</Label>
+                      <p className="text-sm text-gray-600">Beperk bandbreedte per apparaat</p>
+                    </div>
+                    <Switch id="bandwidth-limit" />
                   </div>
+
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="band-steering">Band steering</Label>
-                    <Switch id="band-steering" defaultChecked />
+                    <div>
+                      <Label htmlFor="access-control">Toegangscontrole</Label>
+                      <p className="text-sm text-gray-600">Beheer welke apparaten kunnen verbinden</p>
+                    </div>
+                    <Switch id="access-control" defaultChecked />
                   </div>
+
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="load-balancing">Load balancing</Label>
-                    <Switch id="load-balancing" defaultChecked />
+                    <div>
+                      <Label htmlFor="auto-disconnect">Automatisch Verbreken</Label>
+                      <p className="text-sm text-gray-600">Verbreek inactieve verbindingen automatisch</p>
+                    </div>
+                    <Switch id="auto-disconnect" />
                   </div>
-                </div>
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Beveiliging</h3>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="wps-enabled">WPS ingeschakeld</Label>
-                    <Switch id="wps-enabled" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="mac-filtering">MAC adres filtering</Label>
-                    <Switch id="mac-filtering" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="guest-isolation">Gast isolatie</Label>
-                    <Switch id="guest-isolation" defaultChecked />
-                  </div>
-                </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-end space-x-4">
+                <Button variant="outline">Annuleren</Button>
+                <Button className="bg-gradient-to-r from-green-500 to-blue-500 text-white">Instellingen Opslaan</Button>
               </div>
-              <div className="pt-4">
-                <Button>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Instellingen Opslaan
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   )
 }
