@@ -1,14 +1,11 @@
 import { createClient } from "@supabase/supabase-js"
 import type { User, Session } from "@supabase/supabase-js"
 
-// Supabase configuration with fallbacks for development
+// Supabase configuration - ALLEEN client-side keys
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://ybxmvuzgqevqpusimgmm.supabase.co"
 const supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlieG12dXpncWV2cXB1c2ltZ21tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NDk4NDEsImV4cCI6MjA2NjMyNTg0MX0.MFB7ytqPId2c3HEm5KyK2RFZCO-cBrpmiO-FwHJXSv4"
-const supabaseServiceKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlieG12dXpncWV2cXB1c2ltZ21tIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDc0OTg0MSwiZXhwIjoyMDY2MzI1ODQxfQ.9sDOiFEbnx4hn69ay6P9J-YTaC_2DTBWiFSGRDul7dI"
 
 // Validate required environment variables
 if (!supabaseUrl) {
@@ -43,7 +40,6 @@ export const supabase = (() => {
       })
     } catch (error) {
       console.error("Failed to initialize Supabase client:", error)
-      // Return a mock client for development
       return createMockSupabaseClient()
     }
   }
@@ -51,28 +47,7 @@ export const supabase = (() => {
   return supabaseClient || createMockSupabaseClient()
 })()
 
-// Server-side admin client
-export const supabaseAdmin = (() => {
-  if (supabaseUrl && supabaseServiceKey) {
-    try {
-      return createClient(supabaseUrl, supabaseServiceKey, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-        db: {
-          schema: "public",
-        },
-      })
-    } catch (error) {
-      console.error("Failed to initialize Supabase admin client:", error)
-      return createMockSupabaseClient()
-    }
-  }
-  return createMockSupabaseClient()
-})()
-
-// Mock Supabase client for development/fallback
+// Mock Supabase client voor development/fallback
 function createMockSupabaseClient() {
   return {
     auth: {
@@ -162,7 +137,7 @@ export interface Customer {
   updated_at: string
 }
 
-// Authentication service class
+// Authentication service class - ALLEEN CLIENT-SIDE
 export class SupabaseAuthService {
   // Sign up new user
   static async signUp(
@@ -317,86 +292,6 @@ export class SupabaseAuthService {
       return { data, error }
     } catch (error) {
       return { success: false, error: "An unexpected error occurred" }
-    }
-  }
-
-  // Get customers (admin only)
-  static async getCustomers() {
-    try {
-      const { data, error } = await supabase.from("customers").select("*").order("name")
-
-      if (error) {
-        return { success: false, error: error.message, data: [] }
-      }
-
-      return { success: true, error: null, data }
-    } catch (error) {
-      return { success: false, error: "An unexpected error occurred", data: [] }
-    }
-  }
-
-  // Get users for a customer (admin only)
-  static async getCustomerUsers(customerId: string) {
-    try {
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .eq("customer_id", customerId)
-        .order("name")
-
-      if (error) {
-        return { success: false, error: error.message, data: [] }
-      }
-
-      return { success: true, error: null, data }
-    } catch (error) {
-      return { success: false, error: "An unexpected error occurred", data: [] }
-    }
-  }
-
-  // Create customer (super admin only)
-  static async createCustomer(customerData: Partial<Customer>) {
-    try {
-      const { data, error } = await supabase.from("customers").insert([customerData]).select().single()
-
-      if (error) {
-        return { success: false, error: error.message, data: null }
-      }
-
-      return { success: true, error: null, data }
-    } catch (error) {
-      return { success: false, error: "An unexpected error occurred", data: null }
-    }
-  }
-
-  // Invite user to customer
-  static async inviteUser(
-    email: string,
-    customerData: {
-      customer_id: string
-      role: string
-      name: string
-      department?: string
-    },
-  ) {
-    try {
-      const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        data: {
-          name: customerData.name,
-          role: customerData.role,
-          customer_id: customerData.customer_id,
-          department: customerData.department,
-        },
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/accept-invite`,
-      })
-
-      if (error) {
-        return { success: false, error: error.message, data: null }
-      }
-
-      return { success: true, error: null, data }
-    } catch (error) {
-      return { success: false, error: "An unexpected error occurred", data: null }
     }
   }
 }

@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,551 +8,760 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
+import { toast } from "@/hooks/use-toast"
 import {
   Save,
   Eye,
-  ImageIcon,
-  Type,
-  Layout,
-  Smartphone,
   Monitor,
   Tablet,
-  Globe,
-  Settings,
+  Smartphone,
+  Upload,
   Palette,
-  Code,
+  Settings,
   FileText,
+  Code,
+  RefreshCw,
 } from "lucide-react"
-import { BHV360BrandHeader } from "@/components/bhv360-brand-header"
-import { toast } from "@/hooks/use-toast"
 
-interface PageContent {
-  id: string
-  title: string
-  description: string
-  content: string
-  images: string[]
-  lastModified: Date
-  status: "draft" | "published"
-}
-
-interface WebsiteSettings {
-  siteName: string
-  tagline: string
-  primaryColor: string
-  secondaryColor: string
-  logoUrl: string
-  faviconUrl: string
-  contactEmail: string
-  contactPhone: string
-  address: string
+interface WebsiteContent {
+  homepage: {
+    hero: {
+      title: string
+      subtitle: string
+      ctaText: string
+      ctaLink: string
+      backgroundImage: string
+    }
+    features: Array<{
+      title: string
+      description: string
+      icon: string
+    }>
+    testimonials: Array<{
+      name: string
+      company: string
+      text: string
+      rating: number
+    }>
+    contact: {
+      email: string
+      phone: string
+      address: string
+    }
+  }
+  pages: Array<{
+    id: string
+    title: string
+    slug: string
+    content: string
+    published: boolean
+  }>
+  settings: {
+    siteName: string
+    siteDescription: string
+    logo: string
+    favicon: string
+    primaryColor: string
+    secondaryColor: string
+    font: string
+  }
 }
 
 export default function WebsiteBuilderPage() {
-  const [activeTab, setActiveTab] = useState("pages")
-  const [selectedPage, setSelectedPage] = useState<string>("homepage")
-  const [pages, setPages] = useState<PageContent[]>([
-    {
-      id: "homepage",
-      title: "Homepage",
-      description: "Hoofdpagina van BHV360",
-      content: `# Welkom bij BHV360
-      
-Het meest complete BHV platform van Nederland. Beheer uw veiligheid professioneel en efficiënt.
-
-## Onze Diensten
-- BHV Plotkaarten
-- Incident Management  
-- Gebruikersbeheer
-- Mobiele App
-- Real-time Monitoring
-
-## Waarom BHV360?
-✅ Gebruiksvriendelijk
-✅ Volledig compliant
-✅ 24/7 Support
-✅ Nederlandse kwaliteit`,
-      images: ["/images/bhv360-logo-full.png"],
-      lastModified: new Date(),
-      status: "published",
+  const [content, setContent] = useState<WebsiteContent>({
+    homepage: {
+      hero: {
+        title: "Professionele BHV Software voor Moderne Bedrijven",
+        subtitle:
+          "Beheer uw BHV organisatie efficiënt met onze geavanceerde software. Van plotkaarten tot incidentenbeheer.",
+        ctaText: "Start Gratis Trial",
+        ctaLink: "/register",
+        backgroundImage: "/images/hero-bg.jpg",
+      },
+      features: [
+        {
+          title: "Digitale Plotkaarten",
+          description: "Interactieve plattegronden met real-time updates",
+          icon: "map",
+        },
+        {
+          title: "Incident Management",
+          description: "Snelle registratie en opvolging van incidenten",
+          icon: "alert",
+        },
+        {
+          title: "BHV Beheer",
+          description: "Complete administratie van BHV-ers en certificaten",
+          icon: "users",
+        },
+      ],
+      testimonials: [
+        {
+          name: "Jan Janssen",
+          company: "TechCorp BV",
+          text: "BHV360 heeft onze veiligheidsprocedures gerevolutioneerd.",
+          rating: 5,
+        },
+      ],
+      contact: {
+        email: "info@bhv360.nl",
+        phone: "+31 20 123 4567",
+        address: "Businesspark 123, 1234 AB Amsterdam",
+      },
     },
-    {
-      id: "features",
-      title: "Functionaliteiten",
-      description: "Overzicht van alle BHV360 features",
-      content: `# BHV360 Functionaliteiten
-
-## Core Modules
-### BHV Plotkaart
-Interactieve plattegronden met veiligheidsvoorzieningen
-
-### Incident Management
-Complete incident registratie en opvolging
-
-### Gebruikersbeheer
-Geavanceerd rollen- en rechtenbeheer
-
-## Premium Modules
-### Mobiele App
-Native iOS en Android applicaties
-
-### Real-time Monitoring
-Live status van alle veiligheidsvoorzieningen
-
-### Advanced Analytics
-Uitgebreide rapportages en dashboards`,
-      images: [],
-      lastModified: new Date(),
-      status: "published",
+    pages: [
+      {
+        id: "1",
+        title: "Over Ons",
+        slug: "over-ons",
+        content: "# Over BHV360\n\nWij zijn specialist in BHV software...",
+        published: true,
+      },
+      {
+        id: "2",
+        title: "Prijzen",
+        slug: "prijzen",
+        content: "# Prijzen\n\nOnze transparante prijsstructuur...",
+        published: true,
+      },
+    ],
+    settings: {
+      siteName: "BHV360",
+      siteDescription: "Professionele BHV Software",
+      logo: "/images/bhv360-logo-full.png",
+      favicon: "/favicon.ico",
+      primaryColor: "#ea580c",
+      secondaryColor: "#dc2626",
+      font: "Inter",
     },
-    {
-      id: "pricing",
-      title: "Prijzen",
-      description: "Transparante prijsstructuur",
-      content: `# BHV360 Prijzen
-
-## Starter Pakket - €49/maand
-- Tot 25 gebruikers
-- Basis plotkaart
-- Incident registratie
-- Email support
-
-## Professional Pakket - €149/maand  
-- Tot 100 gebruikers
-- Alle core modules
-- Mobiele app
-- Priority support
-- Advanced analytics
-
-## Enterprise Pakket - Op maat
-- Onbeperkt gebruikers
-- White-label opties
-- Custom integraties
-- Dedicated support
-- SLA garantie`,
-      images: [],
-      lastModified: new Date(),
-      status: "published",
-    },
-  ])
-
-  const [websiteSettings, setWebsiteSettings] = useState<WebsiteSettings>({
-    siteName: "BHV360",
-    tagline: "Het Complete BHV Platform",
-    primaryColor: "#2563eb",
-    secondaryColor: "#1e40af",
-    logoUrl: "/images/bhv360-logo-full.png",
-    faviconUrl: "/favicon.ico",
-    contactEmail: "info@bhv360.nl",
-    contactPhone: "+31 85 130 5000",
-    address: "Technologiepark 1, 2628 XJ Delft",
   })
 
-  const [currentContent, setCurrentContent] = useState("")
+  const [activeTab, setActiveTab] = useState("homepage")
   const [previewMode, setPreviewMode] = useState<"desktop" | "tablet" | "mobile">("desktop")
-  const [saving, setSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [selectedPage, setSelectedPage] = useState<string>("1")
 
-  useEffect(() => {
-    const page = pages.find((p) => p.id === selectedPage)
-    if (page) {
-      setCurrentContent(page.content)
-    }
-  }, [selectedPage, pages])
-
-  const handleSavePage = async () => {
-    setSaving(true)
+  const handleSave = async () => {
+    setIsLoading(true)
     try {
-      setPages((prev) =>
-        prev.map((page) =>
-          page.id === selectedPage ? { ...page, content: currentContent, lastModified: new Date() } : page,
-        ),
-      )
-
+      // Hier zou je de content opslaan naar de database
+      await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate API call
       toast({
-        title: "Pagina Opgeslagen",
-        description: "De wijzigingen zijn succesvol opgeslagen.",
+        title: "Wijzigingen opgeslagen",
+        description: "De website content is succesvol bijgewerkt.",
       })
     } catch (error) {
       toast({
-        title: "Fout bij Opslaan",
+        title: "Fout bij opslaan",
         description: "Er is een fout opgetreden bij het opslaan.",
         variant: "destructive",
       })
     } finally {
-      setSaving(false)
+      setIsLoading(false)
     }
   }
 
-  const handlePublishPage = async () => {
-    setSaving(true)
-    try {
-      setPages((prev) =>
-        prev.map((page) =>
-          page.id === selectedPage ? { ...page, status: "published", lastModified: new Date() } : page,
-        ),
-      )
-
-      toast({
-        title: "Pagina Gepubliceerd",
-        description: "De pagina is live gezet op de website.",
-      })
-    } catch (error) {
-      toast({
-        title: "Fout bij Publiceren",
-        description: "Er is een fout opgetreden bij het publiceren.",
-        variant: "destructive",
-      })
-    } finally {
-      setSaving(false)
-    }
+  const handlePreview = () => {
+    window.open("/", "_blank")
   }
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      // In een echte implementatie zou je de afbeelding uploaden naar een server
-      const imageUrl = URL.createObjectURL(file)
-      setCurrentContent((prev) => prev + `\n\n![Afbeelding](${imageUrl})`)
-    }
+  const updateHomepageContent = (section: string, field: string, value: any) => {
+    setContent((prev) => ({
+      ...prev,
+      homepage: {
+        ...prev.homepage,
+        [section]: {
+          ...prev.homepage[section as keyof typeof prev.homepage],
+          [field]: value,
+        },
+      },
+    }))
   }
 
-  const currentPage = pages.find((p) => p.id === selectedPage)
+  const updateSettings = (field: string, value: string) => {
+    setContent((prev) => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        [field]: value,
+      },
+    }))
+  }
 
-  const previewSizeClasses = {
-    desktop: "w-full max-w-6xl",
-    tablet: "w-full max-w-2xl",
-    mobile: "w-full max-w-sm",
+  const addFeature = () => {
+    setContent((prev) => ({
+      ...prev,
+      homepage: {
+        ...prev.homepage,
+        features: [
+          ...prev.homepage.features,
+          { title: "Nieuwe Feature", description: "Beschrijving...", icon: "star" },
+        ],
+      },
+    }))
+  }
+
+  const removeFeature = (index: number) => {
+    setContent((prev) => ({
+      ...prev,
+      homepage: {
+        ...prev.homepage,
+        features: prev.homepage.features.filter((_, i) => i !== index),
+      },
+    }))
+  }
+
+  const addPage = () => {
+    const newPage = {
+      id: Date.now().toString(),
+      title: "Nieuwe Pagina",
+      slug: "nieuwe-pagina",
+      content: "# Nieuwe Pagina\n\nContent hier...",
+      published: false,
+    }
+    setContent((prev) => ({
+      ...prev,
+      pages: [...prev.pages, newPage],
+    }))
+    setSelectedPage(newPage.id)
+  }
+
+  const updatePage = (pageId: string, field: string, value: any) => {
+    setContent((prev) => ({
+      ...prev,
+      pages: prev.pages.map((page) => (page.id === pageId ? { ...page, [field]: value } : page)),
+    }))
+  }
+
+  const deletePage = (pageId: string) => {
+    setContent((prev) => ({
+      ...prev,
+      pages: prev.pages.filter((page) => page.id !== pageId),
+    }))
+    if (selectedPage === pageId) {
+      setSelectedPage(content.pages[0]?.id || "")
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <BHV360BrandHeader customerName="Super Admin" userRole="Website Beheerder" />
+    <div className="container mx-auto p-6 max-w-7xl">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Website Builder</h1>
+          <p className="text-gray-600 mt-1">Beheer alle content, design en instellingen van uw website</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <Button
+              variant={previewMode === "desktop" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setPreviewMode("desktop")}
+            >
+              <Monitor className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={previewMode === "tablet" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setPreviewMode("tablet")}
+            >
+              <Tablet className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={previewMode === "mobile" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setPreviewMode("mobile")}
+            >
+              <Smartphone className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button variant="outline" onClick={handlePreview}>
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
+          </Button>
+          <Button onClick={handleSave} disabled={isLoading}>
+            {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            Opslaan
+          </Button>
+        </div>
+      </div>
 
-      <div className="container mx-auto p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Website Builder</h1>
-          <p className="text-gray-600">Beheer alle content van de BHV360 website en app pagina's</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Editor Panel */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Code className="h-5 w-5" />
+                Content Editor
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="homepage">Homepage</TabsTrigger>
+                  <TabsTrigger value="pages">Pagina's</TabsTrigger>
+                  <TabsTrigger value="design">Design</TabsTrigger>
+                  <TabsTrigger value="settings">Instellingen</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="homepage" className="space-y-6 mt-6">
+                  {/* Hero Section */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Hero Sectie</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label htmlFor="hero-title">Hoofdtitel</Label>
+                        <Input
+                          id="hero-title"
+                          value={content.homepage.hero.title}
+                          onChange={(e) => updateHomepageContent("hero", "title", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="hero-subtitle">Ondertitel</Label>
+                        <Textarea
+                          id="hero-subtitle"
+                          value={content.homepage.hero.subtitle}
+                          onChange={(e) => updateHomepageContent("hero", "subtitle", e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="cta-text">CTA Tekst</Label>
+                          <Input
+                            id="cta-text"
+                            value={content.homepage.hero.ctaText}
+                            onChange={(e) => updateHomepageContent("hero", "ctaText", e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="cta-link">CTA Link</Label>
+                          <Input
+                            id="cta-link"
+                            value={content.homepage.hero.ctaLink}
+                            onChange={(e) => updateHomepageContent("hero", "ctaLink", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Features Section */}
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">Features</CardTitle>
+                        <Button onClick={addFeature} size="sm">
+                          Toevoegen
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {content.homepage.features.map((feature, index) => (
+                        <div key={index} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Badge variant="outline">Feature {index + 1}</Badge>
+                            <Button variant="destructive" size="sm" onClick={() => removeFeature(index)}>
+                              Verwijderen
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label>Titel</Label>
+                              <Input
+                                value={feature.title}
+                                onChange={(e) => {
+                                  const newFeatures = [...content.homepage.features]
+                                  newFeatures[index].title = e.target.value
+                                  setContent((prev) => ({
+                                    ...prev,
+                                    homepage: { ...prev.homepage, features: newFeatures },
+                                  }))
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <Label>Icon</Label>
+                              <Select
+                                value={feature.icon}
+                                onValueChange={(value) => {
+                                  const newFeatures = [...content.homepage.features]
+                                  newFeatures[index].icon = value
+                                  setContent((prev) => ({
+                                    ...prev,
+                                    homepage: { ...prev.homepage, features: newFeatures },
+                                  }))
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="map">Map</SelectItem>
+                                  <SelectItem value="alert">Alert</SelectItem>
+                                  <SelectItem value="users">Users</SelectItem>
+                                  <SelectItem value="star">Star</SelectItem>
+                                  <SelectItem value="shield">Shield</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Beschrijving</Label>
+                            <Textarea
+                              value={feature.description}
+                              onChange={(e) => {
+                                const newFeatures = [...content.homepage.features]
+                                newFeatures[index].description = e.target.value
+                                setContent((prev) => ({
+                                  ...prev,
+                                  homepage: { ...prev.homepage, features: newFeatures },
+                                }))
+                              }}
+                              rows={2}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="pages" className="space-y-6 mt-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Pagina Beheer</h3>
+                    <Button onClick={addPage}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Nieuwe Pagina
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Pagina's</Label>
+                      <div className="space-y-1">
+                        {content.pages.map((page) => (
+                          <div
+                            key={page.id}
+                            className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                              selectedPage === page.id ? "bg-orange-50 border-orange-200" : "hover:bg-gray-50"
+                            }`}
+                            onClick={() => setSelectedPage(page.id)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">{page.title}</span>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={page.published ? "default" : "secondary"}>
+                                  {page.published ? "Live" : "Concept"}
+                                </Badge>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    deletePage(page.id)
+                                  }}
+                                >
+                                  ×
+                                </Button>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600">/{page.slug}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      {selectedPage && content.pages.find((p) => p.id === selectedPage) && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Pagina Editor</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            {(() => {
+                              const page = content.pages.find((p) => p.id === selectedPage)!
+                              return (
+                                <>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <Label>Titel</Label>
+                                      <Input
+                                        value={page.title}
+                                        onChange={(e) => updatePage(page.id, "title", e.target.value)}
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label>URL Slug</Label>
+                                      <Input
+                                        value={page.slug}
+                                        onChange={(e) => updatePage(page.id, "slug", e.target.value)}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label>Content (Markdown)</Label>
+                                    <Textarea
+                                      value={page.content}
+                                      onChange={(e) => updatePage(page.id, "content", e.target.value)}
+                                      rows={12}
+                                      className="font-mono"
+                                    />
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Switch
+                                      checked={page.published}
+                                      onCheckedChange={(checked) => updatePage(page.id, "published", checked)}
+                                    />
+                                    <Label>Pagina publiceren</Label>
+                                  </div>
+                                </>
+                              )
+                            })()}
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="design" className="space-y-6 mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Palette className="h-5 w-5" />
+                        Design Instellingen
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Primaire Kleur</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="color"
+                              value={content.settings.primaryColor}
+                              onChange={(e) => updateSettings("primaryColor", e.target.value)}
+                              className="w-16 h-10"
+                            />
+                            <Input
+                              value={content.settings.primaryColor}
+                              onChange={(e) => updateSettings("primaryColor", e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Secundaire Kleur</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="color"
+                              value={content.settings.secondaryColor}
+                              onChange={(e) => updateSettings("secondaryColor", e.target.value)}
+                              className="w-16 h-10"
+                            />
+                            <Input
+                              value={content.settings.secondaryColor}
+                              onChange={(e) => updateSettings("secondaryColor", e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>Lettertype</Label>
+                        <Select value={content.settings.font} onValueChange={(value) => updateSettings("font", value)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Inter">Inter</SelectItem>
+                            <SelectItem value="Roboto">Roboto</SelectItem>
+                            <SelectItem value="Open Sans">Open Sans</SelectItem>
+                            <SelectItem value="Lato">Lato</SelectItem>
+                            <SelectItem value="Poppins">Poppins</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <Separator />
+
+                      <div className="space-y-4">
+                        <h4 className="font-semibold">Logo & Branding</h4>
+                        <div>
+                          <Label>Logo URL</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={content.settings.logo}
+                              onChange={(e) => updateSettings("logo", e.target.value)}
+                            />
+                            <Button variant="outline" size="sm">
+                              <Upload className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Favicon URL</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={content.settings.favicon}
+                              onChange={(e) => updateSettings("favicon", e.target.value)}
+                            />
+                            <Button variant="outline" size="sm">
+                              <Upload className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="settings" className="space-y-6 mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Settings className="h-5 w-5" />
+                        Website Instellingen
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label>Site Naam</Label>
+                        <Input
+                          value={content.settings.siteName}
+                          onChange={(e) => updateSettings("siteName", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label>Site Beschrijving</Label>
+                        <Textarea
+                          value={content.settings.siteDescription}
+                          onChange={(e) => updateSettings("siteDescription", e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+
+                      <Separator />
+
+                      <div className="space-y-4">
+                        <h4 className="font-semibold">Contact Informatie</h4>
+                        <div>
+                          <Label>E-mail</Label>
+                          <Input
+                            value={content.homepage.contact.email}
+                            onChange={(e) => updateHomepageContent("contact", "email", e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label>Telefoon</Label>
+                          <Input
+                            value={content.homepage.contact.phone}
+                            onChange={(e) => updateHomepageContent("contact", "phone", e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label>Adres</Label>
+                          <Textarea
+                            value={content.homepage.contact.address}
+                            onChange={(e) => updateHomepageContent("contact", "address", e.target.value)}
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="pages" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Pagina's
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Instellingen
-            </TabsTrigger>
-            <TabsTrigger value="design" className="flex items-center gap-2">
-              <Palette className="h-4 w-4" />
-              Design
-            </TabsTrigger>
-            <TabsTrigger value="preview" className="flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              Preview
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pages" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Pagina Selector */}
-              <Card className="lg:col-span-1">
-                <CardHeader>
-                  <CardTitle className="text-lg">Pagina's</CardTitle>
-                  <CardDescription>Selecteer een pagina om te bewerken</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {pages.map((page) => (
-                    <Button
-                      key={page.id}
-                      variant={selectedPage === page.id ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setSelectedPage(page.id)}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span>{page.title}</span>
-                        <Badge variant={page.status === "published" ? "default" : "secondary"}>{page.status}</Badge>
+        {/* Preview Panel */}
+        <div className="lg:col-span-1">
+          <Card className="sticky top-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Live Preview
+              </CardTitle>
+              <CardDescription>Preview van uw wijzigingen in {previewMode} modus</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div
+                className={`border rounded-lg overflow-hidden ${
+                  previewMode === "desktop"
+                    ? "aspect-video"
+                    : previewMode === "tablet"
+                      ? "aspect-[4/5]"
+                      : "aspect-[9/16]"
+                }`}
+              >
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 p-4 h-full overflow-y-auto">
+                  <div className="bg-white rounded-lg shadow-sm p-4 space-y-4">
+                    {/* Mini Hero Preview */}
+                    <div className="text-center space-y-2">
+                      <h3 className="font-bold text-sm">{content.homepage.hero.title}</h3>
+                      <p className="text-xs text-gray-600 line-clamp-2">{content.homepage.hero.subtitle}</p>
+                      <div
+                        className="inline-block px-3 py-1 rounded text-xs text-white"
+                        style={{ backgroundColor: content.settings.primaryColor }}
+                      >
+                        {content.homepage.hero.ctaText}
                       </div>
-                    </Button>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* Content Editor */}
-              <Card className="lg:col-span-3">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>{currentPage?.title}</CardTitle>
-                      <CardDescription>{currentPage?.description}</CardDescription>
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={handleSavePage} disabled={saving}>
-                        <Save className="h-4 w-4 mr-2" />
-                        Opslaan
-                      </Button>
-                      <Button onClick={handlePublishPage} disabled={saving}>
-                        <Globe className="h-4 w-4 mr-2" />
-                        Publiceren
-                      </Button>
+
+                    {/* Mini Features Preview */}
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-xs">Features</h4>
+                      {content.homepage.features.slice(0, 3).map((feature, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: content.settings.primaryColor }}
+                          />
+                          <span className="text-xs">{feature.title}</span>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Editor Toolbar */}
-                  <div className="flex items-center gap-2 p-2 border rounded-lg bg-gray-50">
-                    <Button variant="ghost" size="sm">
-                      <Type className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Layout className="h-4 w-4" />
-                    </Button>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                      <Button variant="ghost" size="sm">
-                        <ImageIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <Button variant="ghost" size="sm">
-                      <Code className="h-4 w-4" />
-                    </Button>
-                  </div>
 
-                  {/* Content Editor */}
-                  <Textarea
-                    value={currentContent}
-                    onChange={(e) => setCurrentContent(e.target.value)}
-                    placeholder="Voer hier uw content in (Markdown ondersteund)..."
-                    className="min-h-[400px] font-mono"
-                  />
-
-                  <Alert>
-                    <AlertDescription>
-                      Tip: Gebruik Markdown syntax voor opmaak. Bijvoorbeeld **vet**, *cursief*, # Koptekst, - Lijst
-                      item
-                    </AlertDescription>
-                  </Alert>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Website Instellingen</CardTitle>
-                <CardDescription>Algemene instellingen voor de BHV360 website</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="siteName">Site Naam</Label>
-                    <Input
-                      id="siteName"
-                      value={websiteSettings.siteName}
-                      onChange={(e) => setWebsiteSettings((prev) => ({ ...prev, siteName: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="tagline">Tagline</Label>
-                    <Input
-                      id="tagline"
-                      value={websiteSettings.tagline}
-                      onChange={(e) => setWebsiteSettings((prev) => ({ ...prev, tagline: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contactEmail">Contact Email</Label>
-                    <Input
-                      id="contactEmail"
-                      type="email"
-                      value={websiteSettings.contactEmail}
-                      onChange={(e) => setWebsiteSettings((prev) => ({ ...prev, contactEmail: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contactPhone">Contact Telefoon</Label>
-                    <Input
-                      id="contactPhone"
-                      value={websiteSettings.contactPhone}
-                      onChange={(e) => setWebsiteSettings((prev) => ({ ...prev, contactPhone: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Adres</Label>
-                  <Textarea
-                    id="address"
-                    value={websiteSettings.address}
-                    onChange={(e) => setWebsiteSettings((prev) => ({ ...prev, address: e.target.value }))}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="design" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Design & Branding</CardTitle>
-                <CardDescription>Pas het uiterlijk van de website aan</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="primaryColor">Primaire Kleur</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="primaryColor"
-                        type="color"
-                        value={websiteSettings.primaryColor}
-                        onChange={(e) => setWebsiteSettings((prev) => ({ ...prev, primaryColor: e.target.value }))}
-                        className="w-16 h-10"
-                      />
-                      <Input
-                        value={websiteSettings.primaryColor}
-                        onChange={(e) => setWebsiteSettings((prev) => ({ ...prev, primaryColor: e.target.value }))}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="secondaryColor">Secundaire Kleur</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="secondaryColor"
-                        type="color"
-                        value={websiteSettings.secondaryColor}
-                        onChange={(e) => setWebsiteSettings((prev) => ({ ...prev, secondaryColor: e.target.value }))}
-                        className="w-16 h-10"
-                      />
-                      <Input
-                        value={websiteSettings.secondaryColor}
-                        onChange={(e) => setWebsiteSettings((prev) => ({ ...prev, secondaryColor: e.target.value }))}
-                        className="flex-1"
-                      />
+                    {/* Mini Pages Preview */}
+                    <div className="space-y-1">
+                      <h4 className="font-semibold text-xs">Pagina's</h4>
+                      {content.pages
+                        .filter((p) => p.published)
+                        .map((page) => (
+                          <div key={page.id} className="text-xs text-gray-600">
+                            • {page.title}
+                          </div>
+                        ))}
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="logoUrl">Logo URL</Label>
-                  <Input
-                    id="logoUrl"
-                    value={websiteSettings.logoUrl}
-                    onChange={(e) => setWebsiteSettings((prev) => ({ ...prev, logoUrl: e.target.value }))}
-                  />
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Pagina's:</span>
+                  <Badge variant="outline">{content.pages.length}</Badge>
                 </div>
-
-                <div className="p-4 border rounded-lg bg-gray-50">
-                  <h4 className="font-medium mb-2">Logo Preview</h4>
-                  <img
-                    src={websiteSettings.logoUrl || "/placeholder.svg"}
-                    alt="Logo Preview"
-                    className="h-12 w-auto object-contain"
-                  />
+                <div className="flex items-center justify-between text-sm">
+                  <span>Gepubliceerd:</span>
+                  <Badge variant="outline">{content.pages.filter((p) => p.published).length}</Badge>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="preview" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Live Preview</CardTitle>
-                    <CardDescription>Bekijk hoe de pagina eruit ziet</CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant={previewMode === "desktop" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setPreviewMode("desktop")}
-                    >
-                      <Monitor className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant={previewMode === "tablet" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setPreviewMode("tablet")}
-                    >
-                      <Tablet className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant={previewMode === "mobile" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setPreviewMode("mobile")}
-                    >
-                      <Smartphone className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span>Features:</span>
+                  <Badge variant="outline">{content.homepage.features.length}</Badge>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-center">
-                  <div className={`${previewSizeClasses[previewMode]} border rounded-lg bg-white p-6 shadow-sm`}>
-                    <div className="prose max-w-none">
-                      {currentContent.split("\n").map((line, index) => {
-                        if (line.startsWith("# ")) {
-                          return (
-                            <h1 key={index} className="text-3xl font-bold mb-4">
-                              {line.substring(2)}
-                            </h1>
-                          )
-                        }
-                        if (line.startsWith("## ")) {
-                          return (
-                            <h2 key={index} className="text-2xl font-semibold mb-3">
-                              {line.substring(3)}
-                            </h2>
-                          )
-                        }
-                        if (line.startsWith("### ")) {
-                          return (
-                            <h3 key={index} className="text-xl font-medium mb-2">
-                              {line.substring(4)}
-                            </h3>
-                          )
-                        }
-                        if (line.startsWith("- ")) {
-                          return (
-                            <li key={index} className="ml-4">
-                              {line.substring(2)}
-                            </li>
-                          )
-                        }
-                        if (line.startsWith("✅ ")) {
-                          return (
-                            <div key={index} className="flex items-center gap-2 mb-1">
-                              <span className="text-green-600">✅</span>
-                              <span>{line.substring(3)}</span>
-                            </div>
-                          )
-                        }
-                        if (line.trim() === "") {
-                          return <br key={index} />
-                        }
-                        return (
-                          <p key={index} className="mb-2">
-                            {line}
-                          </p>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )
