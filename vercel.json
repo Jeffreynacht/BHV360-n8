@@ -7,7 +7,7 @@
     "HUSKY": "0"
   },
   "functions": {
-    "app/api/**/*.ts": {
+    "app/**/*.ts": {
       "runtime": "nodejs20.x"
     }
   },
