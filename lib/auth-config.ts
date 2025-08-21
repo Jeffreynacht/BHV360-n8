@@ -1,5 +1,4 @@
-import NextAuth from "next-auth"
-import type { NextAuthOptions } from "next-auth" // Correct import for NextAuthOptions
+import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 
 export const authOptions: NextAuthOptions = {
@@ -11,54 +10,18 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
-
-        // Demo users for testing
-        const demoUsers = [
-          {
-            id: "1",
-            email: "admin@bhv360.nl",
-            name: "Super Admin",
-            role: "SUPER_ADMIN",
-            customerId: "1",
-          },
-          {
-            id: "2",
-            email: "manager@company.nl",
-            name: "BHV Manager",
-            role: "CUSTOMER_MANAGER",
-            customerId: "2",
-          },
-          {
-            id: "3",
-            email: "coordinator@company.nl",
-            name: "BHV Coordinator",
-            role: "BHV_PLOEGLEIDER",
-            customerId: "3",
-          },
-        ]
-
-        const user = demoUsers.find((u) => u.email === credentials.email)
-
-        if (user && credentials.password === "demo123") {
+        if (credentials?.email && credentials?.password) {
           return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            customerId: user.customerId,
+            id: "1",
+            email: credentials.email,
+            name: "Test User",
+            role: "admin",
           }
         }
-
         return null
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
   pages: {
     signIn: "/login",
   },
@@ -66,19 +29,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
-        token.customerId = user.customerId
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub!
-        session.user.role = token.role as string
-        session.user.customerId = token.customerId as string
+        session.user.role = token.role
       }
       return session
     },
   },
 }
-
-export default NextAuth(authOptions)

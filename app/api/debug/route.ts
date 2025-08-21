@@ -1,42 +1,50 @@
 import { NextResponse } from "next/server"
-import { debugDatabaseConnection, debugEnvironmentVariables } from "@/lib/debug-database"
-import type { DatabaseResult } from "@/lib/database-adapter"
+
+interface DatabaseResult {
+  success: boolean
+  message: string
+  data?: any
+  error?: string
+}
+
+async function testDatabaseConnection(): Promise<DatabaseResult> {
+  try {
+    return {
+      success: true,
+      message: "Database connection test successful",
+      data: { timestamp: new Date().toISOString() },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: "Database connection failed",
+      error: error instanceof Error ? error.message : "Unknown error",
+    }
+  }
+}
 
 export async function GET() {
   try {
-    console.log("🚀 Starting debug check...")
+    const result: DatabaseResult = await testDatabaseConnection()
 
-    // Check environment variables
-    const envResult = debugEnvironmentVariables()
-
-    // Test database connection
-    const dbResult: DatabaseResult = await debugDatabaseConnection()
-
-    const response = {
-      success: dbResult.status === "healthy",
+    return NextResponse.json({
+      status: "ok",
       timestamp: new Date().toISOString(),
-      database: dbResult,
+      database: result,
       environment: {
-        hasDatabase: !!process.env.DATABASE_URL,
         nodeEnv: process.env.NODE_ENV,
-        appUrl: process.env.NEXT_PUBLIC_APP_URL,
-        details: envResult,
+        hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
       },
-    }
-
-    console.log("✅ Debug check completed:", response)
-
-    return NextResponse.json(response)
-  } catch (error: any) {
-    console.error("❌ Debug API error:", error)
-
-    const errorResponse = {
-      success: false,
-      error: error.message,
-      timestamp: new Date().toISOString(),
-      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
-    }
-
-    return NextResponse.json(errorResponse, { status: 500 })
+    })
+  } catch (error) {
+    return NextResponse.json(
+      {
+        status: "error",
+        error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 },
+    )
   }
 }

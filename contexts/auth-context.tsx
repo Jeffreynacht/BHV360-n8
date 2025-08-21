@@ -1,41 +1,60 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
-import { AuthService, type User } from "@/lib/auth-service"
-import { supabase } from "@/lib/auth-service"
+import { createContext, useContext, useEffect, useState } from "react"
+import { supabase, type AuthUser, type AuthSession } from "@/lib/supabase-auth"
+
+export interface User {
+  id: string
+  email: string
+  name?: string
+  role?: string
+  customerId?: string
+  partnerId?: string
+}
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  logout: () => Promise<void>
-  register: (email: string, password: string, userData: Partial<User>) => Promise<{ success: boolean; error?: string }>
-  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>
-  changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>
-  updateProfile: (updates: Partial<User>) => Promise<{ success: boolean; error?: string }>
+  session: AuthSession | null
   isLoading: boolean
-  isAuthenticated: boolean
+  signIn: (email: string, password: string) => Promise<{ error: any }>
+  signUp: (email: string, password: string, userData: any) => Promise<{ error: any }>
+  signOut: () => Promise<void>
+  canAccess: (requiredRole: string) => boolean
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<AuthSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true
+
     // Get initial session
     const getInitialSession = async () => {
-      const { session } = await AuthService.getCurrentSession()
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
 
-      if (session?.user) {
-        const { success, user: profileData } = await AuthService.getUserProfile(session.user.id)
-        if (success && profileData) {
-          setUser(profileData)
+        if (mounted) {
+          setSession(session as AuthSession)
+          if (session?.user) {
+            setUser(transformUser(session.user as AuthUser))
+          }
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error("Error getting initial session:", error)
+        if (mounted) {
+          setIsLoading(false)
         }
       }
-
-      setIsLoading(false)
     }
 
     getInitialSession()
@@ -44,111 +63,101 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        const { success, user: profileData } = await AuthService.getUserProfile(session.user.id)
-        if (success && profileData) {
-          setUser(profileData)
+      if (mounted) {
+        setSession(session as AuthSession)
+        if (session?.user) {
+          setUser(transformUser(session.user as AuthUser))
+        } else {
+          setUser(null)
         }
-      } else if (event === "SIGNED_OUT") {
-        setUser(null)
+        setIsLoading(false)
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true)
+  const transformUser = (authUser: AuthUser): User => {
+    return {
+      id: authUser.id,
+      email: authUser.email || "",
+      name: authUser.user_metadata?.name || authUser.email?.split("@")[0] || "User",
+      role: authUser.user_metadata?.role || "employee",
+      customerId: authUser.user_metadata?.customer_id || "1",
+      partnerId: authUser.user_metadata?.partner_id,
+    }
+  }
 
+  const signIn = async (email: string, password: string) => {
     try {
-      const result = await AuthService.signIn(email, password)
-
-      if (result.success && result.user) {
-        setUser(result.user)
-        return { success: true }
-      }
-
-      return { success: false, error: result.error }
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      return { error }
     } catch (error) {
-      return { success: false, error: "An unexpected error occurred" }
-    } finally {
-      setIsLoading(false)
+      return { error }
+    }
+  }
+
+  const signUp = async (email: string, password: string, userData: any) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: userData,
+        },
+      })
+      return { error }
+    } catch (error) {
+      return { error }
+    }
+  }
+
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut()
+      setUser(null)
+      setSession(null)
+    } catch (error) {
+      console.error("Sign out error:", error)
     }
   }
 
   const logout = async () => {
-    setIsLoading(true)
-
-    try {
-      await AuthService.signOut()
-      setUser(null)
-    } catch (error) {
-      console.error("Logout error:", error)
-    } finally {
-      setIsLoading(false)
-    }
+    await signOut()
   }
 
-  const register = async (email: string, password: string, userData: Partial<User>) => {
-    setIsLoading(true)
+  const canAccess = (requiredRole: string): boolean => {
+    if (!user) return false
 
-    try {
-      const result = await AuthService.signUp(email, password, userData)
-
-      if (result.success && result.user) {
-        // Note: User will need to verify email before they can sign in
-        return { success: true }
-      }
-
-      return { success: false, error: result.error }
-    } catch (error) {
-      return { success: false, error: "An unexpected error occurred" }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const resetPassword = async (email: string) => {
-    return await AuthService.resetPassword(email)
-  }
-
-  const changePassword = async (newPassword: string) => {
-    return await AuthService.changePassword(newPassword)
-  }
-
-  const updateProfile = async (updates: Partial<User>) => {
-    if (!user) {
-      return { success: false, error: "No user logged in" }
+    const roleHierarchy = {
+      "super-admin": 4,
+      "partner-admin": 3,
+      "customer-admin": 2,
+      "bhv-coordinator": 2,
+      employee: 1,
     }
 
-    setIsLoading(true)
+    const userLevel = roleHierarchy[user.role as keyof typeof roleHierarchy] || 0
+    const requiredLevel = roleHierarchy[requiredRole as keyof typeof roleHierarchy] || 0
 
-    try {
-      const result = await AuthService.updateUserProfile(user.id, updates)
-
-      if (result.success && result.user) {
-        setUser(result.user)
-        return { success: true }
-      }
-
-      return { success: false, error: result.error }
-    } catch (error) {
-      return { success: false, error: "An unexpected error occurred" }
-    } finally {
-      setIsLoading(false)
-    }
+    return userLevel >= requiredLevel
   }
 
   const value: AuthContextType = {
     user,
-    login,
-    logout,
-    register,
-    resetPassword,
-    changePassword,
-    updateProfile,
+    session,
     isLoading,
-    isAuthenticated: !!user,
+    signIn,
+    signUp,
+    signOut,
+    canAccess,
+    logout,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

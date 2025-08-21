@@ -12,190 +12,125 @@ export interface User {
   role: "super_admin" | "admin" | "bhv_coordinator" | "employee" | "security" | "partner_admin"
   company?: string
   department?: string
-  active: boolean
-  created_at: string
-  updated_at: string
-}
-
-export interface AuthResponse {
-  success: boolean
-  user?: User
-  error?: string
+  active?: boolean
+  created_at?: string
+  updated_at?: string
 }
 
 export class AuthService {
-  // Sign up new user
-  static async signUp(email: string, password: string, userData: Partial<User>): Promise<AuthResponse> {
-    try {
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-
-      if (authError) {
-        return { success: false, error: authError.message }
-      }
-
-      if (!authData.user) {
-        return { success: false, error: "Failed to create user" }
-      }
-
-      // Create user profile
-      const { data: profileData, error: profileError } = await supabase
-        .from("users")
-        .insert({
-          id: authData.user.id,
-          email,
-          name: userData.name || "",
-          role: userData.role || "employee",
-          company: userData.company || "",
-          department: userData.department || "",
-          active: true,
-        })
-        .select()
-        .single()
-
-      if (profileError) {
-        return { success: false, error: profileError.message }
-      }
-
-      return { success: true, user: profileData }
-    } catch (error) {
-      return { success: false, error: "An unexpected error occurred" }
-    }
-  }
-
-  // Sign in user
-  static async signIn(email: string, password: string): Promise<AuthResponse> {
-    try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (authError) {
-        return { success: false, error: authError.message }
-      }
-
-      if (!authData.user) {
-        return { success: false, error: "Invalid credentials" }
-      }
-
-      // Get user profile
-      const { data: profileData, error: profileError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", authData.user.id)
-        .eq("active", true)
-        .single()
-
-      if (profileError || !profileData) {
-        return { success: false, error: "User profile not found or inactive" }
-      }
-
-      return { success: true, user: profileData }
-    } catch (error) {
-      return { success: false, error: "An unexpected error occurred" }
-    }
-  }
-
-  // Sign out user
-  static async signOut(): Promise<{ success: boolean; error?: string }> {
-    try {
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        return { success: false, error: error.message }
-      }
-      return { success: true }
-    } catch (error) {
-      return { success: false, error: "An unexpected error occurred" }
-    }
-  }
-
-  // Get current session
   static async getCurrentSession() {
     try {
       const {
         data: { session },
         error,
       } = await supabase.auth.getSession()
-      if (error) {
-        return { success: false, error: error.message }
-      }
-      return { success: true, session }
+      return { session, error }
     } catch (error) {
-      return { success: false, error: "An unexpected error occurred" }
+      return { session: null, error }
     }
   }
 
-  // Get user profile by ID
-  static async getUserProfile(userId: string): Promise<AuthResponse> {
+  static async signIn(email: string, password: string) {
     try {
-      const { data, error } = await supabase.from("users").select("*").eq("id", userId).eq("active", true).single()
-
-      if (error || !data) {
-        return { success: false, error: "User not found" }
-      }
-
-      return { success: true, user: data }
-    } catch (error) {
-      return { success: false, error: "An unexpected error occurred" }
-    }
-  }
-
-  // Update user profile
-  static async updateUserProfile(userId: string, updates: Partial<User>): Promise<AuthResponse> {
-    try {
-      const { data, error } = await supabase
-        .from("users")
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId)
-        .select()
-        .single()
-
-      if (error) {
-        return { success: false, error: error.message }
-      }
-
-      return { success: true, user: data }
-    } catch (error) {
-      return { success: false, error: "An unexpected error occurred" }
-    }
-  }
-
-  // Reset password
-  static async resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       })
 
       if (error) {
         return { success: false, error: error.message }
       }
 
-      return { success: true }
+      if (data.user) {
+        const { success, user } = await this.getUserProfile(data.user.id)
+        if (success && user) {
+          return { success: true, user }
+        }
+      }
+
+      return { success: false, error: "Failed to get user profile" }
     } catch (error) {
       return { success: false, error: "An unexpected error occurred" }
     }
   }
 
-  // Change password
-  static async changePassword(newPassword: string): Promise<{ success: boolean; error?: string }> {
+  static async signUp(email: string, password: string, userData: Partial<User>) {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: userData.name,
+            role: userData.role || "employee",
+            company: userData.company,
+            department: userData.department,
+          },
+        },
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      return { success: true, user: data.user }
+    } catch (error) {
+      return { success: false, error: "An unexpected error occurred" }
+    }
+  }
+
+  static async signOut() {
+    try {
+      const { error } = await supabase.auth.signOut()
+      return { success: !error, error: error?.message }
+    } catch (error) {
+      return { success: false, error: "An unexpected error occurred" }
+    }
+  }
+
+  static async resetPassword(email: string) {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email)
+      return { success: !error, error: error?.message }
+    } catch (error) {
+      return { success: false, error: "An unexpected error occurred" }
+    }
+  }
+
+  static async changePassword(newPassword: string) {
     try {
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       })
+      return { success: !error, error: error?.message }
+    } catch (error) {
+      return { success: false, error: "An unexpected error occurred" }
+    }
+  }
+
+  static async getUserProfile(userId: string) {
+    try {
+      const { data, error } = await supabase.from("users").select("*").eq("id", userId).single()
 
       if (error) {
         return { success: false, error: error.message }
       }
 
-      return { success: true }
+      return { success: true, user: data as User }
+    } catch (error) {
+      return { success: false, error: "An unexpected error occurred" }
+    }
+  }
+
+  static async updateUserProfile(userId: string, updates: Partial<User>) {
+    try {
+      const { data, error } = await supabase.from("users").update(updates).eq("id", userId).select().single()
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      return { success: true, user: data as User }
     } catch (error) {
       return { success: false, error: "An unexpected error occurred" }
     }

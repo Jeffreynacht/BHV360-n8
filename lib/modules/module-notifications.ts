@@ -1,266 +1,262 @@
-export interface ModuleActivationRequest {
+import type { ModuleActivationRequest } from "./module-definitions"
+import { getModuleById, calculateModulePrice } from "./module-definitions"
+
+export interface ModuleNotification {
   id: string
+  type: "activation_request" | "activation_approved" | "activation_rejected" | "module_update" | "billing_alert"
+  title: string
+  message: string
   customerId: string
-  customerName: string
-  moduleId: string
-  requestedBy: string
-  requestedByEmail: string
-  requestedAt: Date
-  status: "pending" | "approved" | "rejected"
-  approvedBy?: string
-  approvedAt?: Date
-  rejectedBy?: string
-  rejectedAt?: Date
-  rejectionReason?: string
+  moduleId?: string
+  createdAt: Date
+  readAt?: Date
+  actionRequired: boolean
+  metadata?: Record<string, any>
 }
 
 export class ModuleNotificationService {
-  static async requestModuleActivation(
+  private notifications: Map<string, ModuleNotification[]> = new Map()
+  private activationRequests: Map<string, ModuleActivationRequest> = new Map()
+
+  // Create activation request
+  createActivationRequest(
+    moduleId: string,
     customerId: string,
     customerName: string,
-    moduleId: string,
     requestedBy: string,
     requestedByEmail: string,
-  ): Promise<{ success: boolean; error?: string; autoApproved?: boolean; requestId?: string }> {
-    try {
-      // Get module info
-      const { getModuleById } = await import("./module-definitions")
-      const module = getModuleById(moduleId)
-      if (!module) {
-        return { success: false, error: "Module niet gevonden" }
-      }
-
-      // Check if auto-approval is enabled for this module/customer
-      const autoApprovalRules = await this.getAutoApprovalRules(customerId)
-      const shouldAutoApprove = this.shouldAutoApprove(moduleId, autoApprovalRules)
-
-      if (shouldAutoApprove) {
-        // Auto-approve and activate
-        const { CustomerModuleService } = await import("./customer-modules")
-        const result = await CustomerModuleService.enableModule(
-          customerId,
-          moduleId,
-          `approved_by_system_${Date.now()}`,
-          true, // bypass approval
-        )
-
-        if (result.success) {
-          // Log auto-approval
-          await this.logModuleRequest({
-            id: crypto.randomUUID(),
-            customerId,
-            customerName,
-            moduleId,
-            requestedBy,
-            requestedByEmail,
-            requestedAt: new Date(),
-            status: "approved",
-            approvedBy: "system",
-            approvedAt: new Date(),
-          })
-
-          return { success: true, autoApproved: true }
-        } else {
-          return { success: false, error: result.error }
-        }
-      }
-
-      // Manual approval required
-      const requestId = crypto.randomUUID()
-      const request: ModuleActivationRequest = {
-        id: requestId,
-        customerId,
-        customerName,
-        moduleId,
-        requestedBy,
-        requestedByEmail,
-        requestedAt: new Date(),
-        status: "pending",
-      }
-
-      // Store request
-      await this.logModuleRequest(request)
-
-      // Send notification email (simulated)
-      await this.sendApprovalNotification(request, module)
-
-      return { success: true, requestId }
-    } catch (error) {
-      console.error("Error requesting module activation:", error)
-      return { success: false, error: "Fout bij aanvragen module activatie" }
-    }
-  }
-
-  private static async getAutoApprovalRules(customerId: string): Promise<string[]> {
-    // In productie zou dit uit database komen
-    const stored = localStorage.getItem(`auto_approval_rules_${customerId}`)
-    if (stored) {
-      return JSON.parse(stored)
+    userCount: number,
+    buildingCount: number,
+  ): ModuleActivationRequest {
+    const module = getModuleById(moduleId)
+    if (!module) {
+      throw new Error(`Module ${moduleId} not found`)
     }
 
-    // Default auto-approval rules for demo
-    return ["basic_reporting", "visitor_management", "skills_assessment", "mobile_app"]
-  }
+    const pricing = calculateModulePrice(module, userCount, buildingCount)
+    const monthlyCost = pricing.price
+    const yearlyCost = monthlyCost * 12 * 0.9 // 10% discount
 
-  private static shouldAutoApprove(moduleId: string, autoApprovalRules: string[]): boolean {
-    return autoApprovalRules.includes(moduleId)
-  }
-
-  private static async logModuleRequest(request: ModuleActivationRequest): Promise<void> {
-    const stored = localStorage.getItem("module_activation_requests")
-    const requests: ModuleActivationRequest[] = stored ? JSON.parse(stored) : []
-
-    // Update existing or add new
-    const existingIndex = requests.findIndex((r) => r.id === request.id)
-    if (existingIndex >= 0) {
-      requests[existingIndex] = request
-    } else {
-      requests.push(request)
+    const request: ModuleActivationRequest = {
+      id: `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      moduleId,
+      customerId,
+      customerName,
+      requestedBy,
+      requestedByEmail,
+      requestedAt: new Date(),
+      status: "pending",
+      monthlyCost,
+      yearlyCost,
     }
 
-    // Keep only last 500 requests
-    if (requests.length > 500) {
-      requests.splice(0, requests.length - 500)
+    this.activationRequests.set(request.id, request)
+
+    // Create notification for admins
+    this.createNotification({
+      type: "activation_request",
+      title: "New Module Activation Request",
+      message: `${customerName} has requested activation of ${module.name}`,
+      customerId: "admin",
+      moduleId,
+      actionRequired: true,
+      metadata: {
+        requestId: request.id,
+        monthlyCost,
+        yearlyCost,
+        userCount,
+        buildingCount,
+      },
+    })
+
+    return request
+  }
+
+  // Approve activation request
+  approveActivationRequest(requestId: string, approvedBy: string): boolean {
+    const request = this.activationRequests.get(requestId)
+    if (!request || request.status !== "pending") {
+      return false
     }
 
-    localStorage.setItem("module_activation_requests", JSON.stringify(requests))
+    request.status = "approved"
+    request.approvedBy = approvedBy
+    request.approvedAt = new Date()
+
+    this.activationRequests.set(requestId, request)
+
+    // Notify customer
+    this.createNotification({
+      type: "activation_approved",
+      title: "Module Activation Approved",
+      message: `Your request for ${getModuleById(request.moduleId)?.name} has been approved`,
+      customerId: request.customerId,
+      moduleId: request.moduleId,
+      actionRequired: false,
+      metadata: {
+        requestId,
+        approvedBy,
+        monthlyCost: request.monthlyCost,
+      },
+    })
+
+    return true
   }
 
-  private static async sendApprovalNotification(request: ModuleActivationRequest, module: any): Promise<void> {
-    // Simulate email sending
-    console.log(`📧 Email sent to admin:
-      Subject: Module Activatie Aanvraag - ${module.name}
-      
-      Klant: ${request.customerName}
-      Module: ${module.name}
-      Aangevraagd door: ${request.requestedBy} (${request.requestedByEmail})
-      Datum: ${request.requestedAt.toLocaleString()}
-      
-      Beschrijving: ${module.description}
-      
-      Klik hier om goed te keuren: [APPROVE_LINK]
-      Klik hier om af te wijzen: [REJECT_LINK]
-    `)
+  // Reject activation request
+  rejectActivationRequest(requestId: string, rejectedBy: string, reason: string): boolean {
+    const request = this.activationRequests.get(requestId)
+    if (!request || request.status !== "pending") {
+      return false
+    }
 
-    // In productie zou hier een echte email service gebruikt worden
-    // zoals SendGrid, AWS SES, of een interne mail server
+    request.status = "rejected"
+    request.rejectedBy = rejectedBy
+    request.rejectedAt = new Date()
+    request.rejectionReason = reason
+
+    this.activationRequests.set(requestId, request)
+
+    // Notify customer
+    this.createNotification({
+      type: "activation_rejected",
+      title: "Module Activation Rejected",
+      message: `Your request for ${getModuleById(request.moduleId)?.name} has been rejected: ${reason}`,
+      customerId: request.customerId,
+      moduleId: request.moduleId,
+      actionRequired: false,
+      metadata: {
+        requestId,
+        rejectedBy,
+        reason,
+      },
+    })
+
+    return true
   }
 
-  static async getPendingRequests(): Promise<ModuleActivationRequest[]> {
-    const stored = localStorage.getItem("module_activation_requests")
-    const requests: ModuleActivationRequest[] = stored ? JSON.parse(stored) : []
+  // Create notification
+  createNotification(notification: Omit<ModuleNotification, "id" | "createdAt">): ModuleNotification {
+    const newNotification: ModuleNotification = {
+      ...notification,
+      id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date(),
+    }
 
-    return requests
-      .filter((r) => r.status === "pending")
-      .map((r) => ({
-        ...r,
-        requestedAt: new Date(r.requestedAt),
-        approvedAt: r.approvedAt ? new Date(r.approvedAt) : undefined,
-        rejectedAt: r.rejectedAt ? new Date(r.rejectedAt) : undefined,
-      }))
+    const existing = this.notifications.get(notification.customerId) || []
+    existing.push(newNotification)
+    this.notifications.set(notification.customerId, existing)
+
+    return newNotification
+  }
+
+  // Get notifications for customer
+  getNotifications(customerId: string, unreadOnly = false): ModuleNotification[] {
+    const notifications = this.notifications.get(customerId) || []
+
+    if (unreadOnly) {
+      return notifications.filter((n) => !n.readAt)
+    }
+
+    return notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  }
+
+  // Mark notification as read
+  markAsRead(customerId: string, notificationId: string): boolean {
+    const notifications = this.notifications.get(customerId) || []
+    const notification = notifications.find((n) => n.id === notificationId)
+
+    if (!notification) {
+      return false
+    }
+
+    notification.readAt = new Date()
+    this.notifications.set(customerId, notifications)
+    return true
+  }
+
+  // Get pending activation requests
+  getPendingRequests(): ModuleActivationRequest[] {
+    return Array.from(this.activationRequests.values())
+      .filter((req) => req.status === "pending")
       .sort((a, b) => b.requestedAt.getTime() - a.requestedAt.getTime())
   }
 
-  static async approveRequest(requestId: string, approvedBy: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      const stored = localStorage.getItem("module_activation_requests")
-      const requests: ModuleActivationRequest[] = stored ? JSON.parse(stored) : []
-
-      const request = requests.find((r) => r.id === requestId)
-      if (!request) {
-        return { success: false, error: "Aanvraag niet gevonden" }
-      }
-
-      if (request.status !== "pending") {
-        return { success: false, error: "Aanvraag is al verwerkt" }
-      }
-
-      // Update request status
-      request.status = "approved"
-      request.approvedBy = approvedBy
-      request.approvedAt = new Date()
-
-      // Save updated requests
-      localStorage.setItem("module_activation_requests", JSON.stringify(requests))
-
-      // Activate the module
-      const { CustomerModuleService } = await import("./customer-modules")
-      const result = await CustomerModuleService.enableModule(
-        request.customerId,
-        request.moduleId,
-        `approved_by_${approvedBy}`,
-        true, // bypass approval
-      )
-
-      if (!result.success) {
-        return { success: false, error: result.error }
-      }
-
-      // Send confirmation email (simulated)
-      console.log(`📧 Confirmation email sent to ${request.requestedByEmail}:
-        Subject: Module Activatie Goedgekeurd
-        
-        Beste ${request.requestedBy},
-        
-        Uw aanvraag voor module activatie is goedgekeurd.
-        Module: ${request.moduleId}
-        Goedgekeurd door: ${approvedBy}
-        
-        De module is nu actief in uw account.
-      `)
-
-      return { success: true }
-    } catch (error) {
-      console.error("Error approving request:", error)
-      return { success: false, error: "Fout bij goedkeuren aanvraag" }
-    }
+  // Get activation request by ID
+  getActivationRequest(requestId: string): ModuleActivationRequest | undefined {
+    return this.activationRequests.get(requestId)
   }
 
-  static async rejectRequest(
-    requestId: string,
-    rejectedBy: string,
-    rejectionReason: string,
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      const stored = localStorage.getItem("module_activation_requests")
-      const requests: ModuleActivationRequest[] = stored ? JSON.parse(stored) : []
+  // Get all activation requests for a customer
+  getCustomerRequests(customerId: string): ModuleActivationRequest[] {
+    return Array.from(this.activationRequests.values())
+      .filter((req) => req.customerId === customerId)
+      .sort((a, b) => b.requestedAt.getTime() - a.requestedAt.getTime())
+  }
 
-      const request = requests.find((r) => r.id === requestId)
-      if (!request) {
-        return { success: false, error: "Aanvraag niet gevonden" }
+  // Send module update notification
+  notifyModuleUpdate(moduleId: string, version: string, changes: string[]): void {
+    const module = getModuleById(moduleId)
+    if (!module) return
+
+    // This would typically get customers from the customer service
+    // For now, we'll create a placeholder notification
+    this.createNotification({
+      type: "module_update",
+      title: `${module.name} Updated`,
+      message: `${module.name} has been updated to version ${version}`,
+      customerId: "all", // Special case for broadcast
+      moduleId,
+      actionRequired: false,
+      metadata: {
+        version,
+        changes,
+      },
+    })
+  }
+
+  // Send billing alert
+  sendBillingAlert(customerId: string, moduleId: string, message: string): void {
+    const module = getModuleById(moduleId)
+
+    this.createNotification({
+      type: "billing_alert",
+      title: "Billing Alert",
+      message,
+      customerId,
+      moduleId,
+      actionRequired: true,
+      metadata: {
+        moduleName: module?.name,
+      },
+    })
+  }
+
+  // Get notification statistics
+  getNotificationStats(customerId?: string) {
+    if (customerId) {
+      const notifications = this.getNotifications(customerId)
+      return {
+        total: notifications.length,
+        unread: notifications.filter((n) => !n.readAt).length,
+        actionRequired: notifications.filter((n) => n.actionRequired && !n.readAt).length,
       }
-
-      if (request.status !== "pending") {
-        return { success: false, error: "Aanvraag is al verwerkt" }
-      }
-
-      // Update request status
-      request.status = "rejected"
-      request.rejectedBy = rejectedBy
-      request.rejectedAt = new Date()
-      request.rejectionReason = rejectionReason
-
-      // Save updated requests
-      localStorage.setItem("module_activation_requests", JSON.stringify(requests))
-
-      // Send rejection email (simulated)
-      console.log(`📧 Rejection email sent to ${request.requestedByEmail}:
-        Subject: Module Activatie Afgewezen
-        
-        Beste ${request.requestedBy},
-        
-        Uw aanvraag voor module activatie is afgewezen.
-        Module: ${request.moduleId}
-        Afgewezen door: ${rejectedBy}
-        Reden: ${rejectionReason}
-        
-        Voor vragen kunt u contact opnemen met support.
-      `)
-
-      return { success: true }
-    } catch (error) {
-      console.error("Error rejecting request:", error)
-      return { success: false, error: "Fout bij afwijzen aanvraag" }
     }
+
+    // Global stats
+    let total = 0
+    let unread = 0
+    let actionRequired = 0
+
+    for (const notifications of this.notifications.values()) {
+      total += notifications.length
+      unread += notifications.filter((n) => !n.readAt).length
+      actionRequired += notifications.filter((n) => n.actionRequired && !n.readAt).length
+    }
+
+    return { total, unread, actionRequired }
   }
 }
+
+// Export singleton instance
+export const moduleNotificationService = new ModuleNotificationService()

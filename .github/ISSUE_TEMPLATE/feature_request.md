@@ -1,34 +1,20 @@
 ---
-name: Feature Request
-about: Stel een nieuwe feature voor BHV360 voor
-title: '[FEATURE] '
-labels: enhancement
+name: Feature request
+about: Suggest an idea for this project
+title: ''
+labels: ''
 assignees: ''
+
 ---
 
-## 🚀 Feature Beschrijving
-Een duidelijke beschrijving van welke feature je wilt.
+**Is your feature request related to a problem? Please describe.**
+A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
 
-## 💡 Probleem dat het Oplost
-Beschrijf het probleem dat deze feature zou oplossen.
+**Describe the solution you'd like**
+A clear and concise description of what you want to happen.
 
-## 🎯 Voorgestelde Oplossing
-Een duidelijke beschrijving van wat je wilt dat er gebeurt.
+**Describe alternatives you've considered**
+A clear and concise description of any alternative solutions or features you've considered.
 
-## 🔄 Alternatieven
-Beschrijf eventuele alternatieve oplossingen die je hebt overwogen.
-
-## 📝 Extra Context
-Voeg hier screenshots, mockups of andere context toe.
-
-## 🏷️ Labels
-- [ ] Frontend
-- [ ] Backend  
-- [ ] Database
-- [ ] API
-- [ ] UI/UX
-- [ ] Security
-- [ ] Performance
-\`\`\`
-
-Nu maken we een pull request template:
+**Additional context**
+Add any other context or screenshots about the feature request here.

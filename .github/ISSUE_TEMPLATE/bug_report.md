@@ -1,36 +1,38 @@
 ---
-name: Bug Report
-about: Meld een bug in BHV360
-title: '[BUG] '
-labels: bug
+name: Bug report
+about: Create a report to help us improve
+title: ''
+labels: ''
 assignees: ''
+
 ---
 
-## 🐛 Bug Beschrijving
-Een duidelijke beschrijving van wat er mis gaat.
+**Describe the bug**
+A clear and concise description of what the bug is.
 
-## 🔄 Stappen om te Reproduceren
-1. Ga naar '...'
-2. Klik op '....'
-3. Scroll naar beneden naar '....'
-4. Zie fout
+**To Reproduce**
+Steps to reproduce the behavior:
+1. Go to '...'
+2. Click on '....'
+3. Scroll down to '....'
+4. See error
 
-## ✅ Verwacht Gedrag
-Een duidelijke beschrijving van wat je verwachtte dat er zou gebeuren.
+**Expected behavior**
+A clear and concise description of what you expected to happen.
 
-## 📱 Screenshots
-Voeg screenshots toe om het probleem te verduidelijken.
+**Screenshots**
+If applicable, add screenshots to help explain your problem.
 
-## 🖥️ Desktop (vul aan):
- - OS: [bijv. iOS]
- - Browser [bijv. chrome, safari]
- - Versie [bijv. 22]
+**Desktop (please complete the following information):**
+ - OS: [e.g. iOS]
+ - Browser [e.g. chrome, safari]
+ - Version [e.g. 22]
 
-## 📱 Smartphone (vul aan):
- - Device: [bijv. iPhone6]
- - OS: [bijv. iOS8.1]
- - Browser [bijv. stock browser, safari]
- - Versie [bijv. 22]
+**Smartphone (please complete the following information):**
+ - Device: [e.g. iPhone6]
+ - OS: [e.g. iOS8.1]
+ - Browser [e.g. stock browser, safari]
+ - Version [e.g. 22]
 
-## 📝 Extra Context
-Voeg hier andere context toe over het probleem.
+**Additional context**
+Add any other context about the problem here.
