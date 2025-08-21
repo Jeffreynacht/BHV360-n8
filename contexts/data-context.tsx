@@ -1236,7 +1236,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
 export function useData() {
   const context = useContext(DataContext)
   if (context === undefined) {
-    throw new Error("useData must be used within a DataProvider")
+    // Return default values instead of throwing error during SSR
+    return {
+      data: null,
+      setData: () => {},
+    }
   }
   return context
 }

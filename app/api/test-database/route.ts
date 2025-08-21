@@ -6,6 +6,14 @@ export async function GET() {
     const sql = neon(process.env.DATABASE_URL!)
     const startTime = Date.now()
 
+    // Simple database connection test
+    const testResult = {
+      status: "connected",
+      timestamp: new Date().toISOString(),
+      database: "postgresql",
+      connection: "active",
+    }
+
     // Test 1: Basic connection
     const connectionTest = await sql`SELECT 1 as test`
     if (connectionTest[0]?.test !== 1) {
@@ -54,6 +62,7 @@ export async function GET() {
       success: true,
       timestamp: new Date().toISOString(),
       responseTime: `${responseTime}ms`,
+      data: testResult,
       tests: {
         connection: {
           status: "passed",
@@ -87,14 +96,8 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
+        error: "Database connection failed",
         timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : "Unknown error",
-        tests: {
-          connection: {
-            status: "failed",
-            message: error instanceof Error ? error.message : "Connection failed",
-          },
-        },
       },
       { status: 500 },
     )

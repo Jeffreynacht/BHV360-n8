@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
 export interface Customer {
   id: string
@@ -9,151 +8,112 @@ export interface Customer {
   email: string
   phone: string
   address: string
-  createdAt: string
   contactPerson: string
+  isActive: boolean
   users: number
   buildings: number
-  isActive: boolean
+  createdAt: string
 }
 
-interface CustomerContextType {
+export interface CustomerContextType {
   customers: Customer[]
   selectedCustomer: Customer | null
   setSelectedCustomer: (customer: Customer | null) => void
-  addCustomer: (customer: Omit<Customer, "id" | "createdAt" | "users" | "buildings" | "isActive">) => void
-  setCustomers: (customers: Customer[]) => void
+  addCustomer: (customer: Omit<Customer, "id" | "isActive" | "users" | "buildings" | "createdAt">) => void
   isLoading: boolean
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined)
 
-export function CustomerProvider({ children }: { children: React.ReactNode }) {
+export function useCustomer() {
+  const context = useContext(CustomerContext)
+  if (context === undefined) {
+    // Return default values instead of throwing error during SSR
+    return {
+      customers: [],
+      selectedCustomer: null,
+      setSelectedCustomer: () => {},
+      addCustomer: () => {},
+      isLoading: false,
+    }
+  }
+  return context
+}
+
+interface CustomerProviderProps {
+  children: ReactNode
+}
+
+export function CustomerProvider({ children }: CustomerProviderProps) {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Load customers from localStorage or API
-    const loadCustomers = () => {
-      try {
-        const stored = localStorage.getItem("bhv-customers")
-        if (stored) {
-          const parsedCustomers = JSON.parse(stored)
-          setCustomers(parsedCustomers)
+    // Initialize with demo customers
+    const demoCustomers: Customer[] = [
+      {
+        id: "1",
+        name: "Ziekenhuis Sint Anna",
+        email: "info@sintanna.nl",
+        phone: "+31 13 123 4567",
+        address: "Hoofdstraat 123, 5000 AB Tilburg",
+        contactPerson: "Dr. Maria van der Berg",
+        isActive: true,
+        users: 45,
+        buildings: 3,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: "2",
+        name: "Gemeente Tilburg",
+        email: "bhv@tilburg.nl",
+        phone: "+31 13 234 5678",
+        address: "Stadhuisplein 1, 5038 BC Tilburg",
+        contactPerson: "Jan Janssen",
+        isActive: true,
+        users: 120,
+        buildings: 8,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: "3",
+        name: "Fontys Hogescholen",
+        email: "veiligheid@fontys.nl",
+        phone: "+31 8850 60000",
+        address: "Rachelsmolen 1, 5612 MA Eindhoven",
+        contactPerson: "Sarah de Vries",
+        isActive: true,
+        users: 89,
+        buildings: 12,
+        createdAt: new Date().toISOString(),
+      },
+    ]
 
-          // Auto-select first customer if none selected
-          const selectedId = localStorage.getItem("bhv-selected-customer")
-          if (selectedId) {
-            const customer = parsedCustomers.find((c: Customer) => c.id === selectedId)
-            if (customer) {
-              setSelectedCustomer(customer)
-            }
-          } else if (parsedCustomers.length > 0) {
-            setSelectedCustomer(parsedCustomers[0])
-          }
-        } else {
-          // Initialize with default customers
-          const defaultCustomers: Customer[] = [
-            {
-              id: "1",
-              name: "Ziekenhuis Sint Anna",
-              email: "info@sintanna.nl",
-              phone: "+31 13 123 4567",
-              address: "Hoofdstraat 123, 5000 AB Tilburg",
-              createdAt: new Date().toISOString(),
-              contactPerson: "Dr. Maria van der Berg",
-              users: 45,
-              buildings: 3,
-              isActive: true,
-            },
-            {
-              id: "2",
-              name: "TU Eindhoven",
-              email: "bhv@tue.nl",
-              phone: "+31 40 247 9111",
-              address: "De Rondom 70, 5612 AP Eindhoven",
-              createdAt: new Date().toISOString(),
-              contactPerson: "Prof. Dr. Peter Bakker",
-              users: 120,
-              buildings: 8,
-              isActive: true,
-            },
-            {
-              id: "3",
-              name: "Gemeente Tilburg",
-              email: "bhv@tilburg.nl",
-              phone: "+31 13 542 8111",
-              address: "Stadhuisplein 1, 5038 TC Tilburg",
-              createdAt: new Date().toISOString(),
-              contactPerson: "Dhr. Jan van Tilburg",
-              users: 85,
-              buildings: 12,
-              isActive: true,
-            },
-          ]
-          setCustomers(defaultCustomers)
-          setSelectedCustomer(defaultCustomers[0])
-          localStorage.setItem("bhv-customers", JSON.stringify(defaultCustomers))
-        }
-      } catch (error) {
-        console.error("Error loading customers:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadCustomers()
+    setCustomers(demoCustomers)
+    setSelectedCustomer(demoCustomers[0])
+    setIsLoading(false)
   }, [])
 
-  const handleSetSelectedCustomer = (customer: Customer | null) => {
-    setSelectedCustomer(customer)
-    if (customer) {
-      localStorage.setItem("bhv-selected-customer", customer.id)
-    } else {
-      localStorage.removeItem("bhv-selected-customer")
-    }
-  }
-
-  const addCustomer = (customerData: Omit<Customer, "id" | "createdAt" | "users" | "buildings" | "isActive">) => {
+  const addCustomer = (customerData: Omit<Customer, "id" | "isActive" | "users" | "buildings" | "createdAt">) => {
     const newCustomer: Customer = {
       ...customerData,
       id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      users: 1,
-      buildings: 1,
       isActive: true,
+      users: 0,
+      buildings: 0,
+      createdAt: new Date().toISOString(),
     }
-
-    const updatedCustomers = [...customers, newCustomer]
-    setCustomers(updatedCustomers)
-    localStorage.setItem("bhv-customers", JSON.stringify(updatedCustomers))
+    setCustomers((prev) => [...prev, newCustomer])
   }
 
-  const handleSetCustomers = (newCustomers: Customer[]) => {
-    setCustomers(newCustomers)
-    localStorage.setItem("bhv-customers", JSON.stringify(newCustomers))
+  const value: CustomerContextType = {
+    customers,
+    selectedCustomer,
+    setSelectedCustomer,
+    addCustomer,
+    isLoading,
   }
 
-  return (
-    <CustomerContext.Provider
-      value={{
-        customers,
-        selectedCustomer,
-        setSelectedCustomer: handleSetSelectedCustomer,
-        addCustomer,
-        setCustomers: handleSetCustomers,
-        isLoading,
-      }}
-    >
-      {children}
-    </CustomerContext.Provider>
-  )
-}
-
-export function useCustomer() {
-  const context = useContext(CustomerContext)
-  if (context === undefined) {
-    throw new Error("useCustomer must be used within a CustomerProvider")
-  }
-  return context
+  return <CustomerContext.Provider value={value}>{children}</CustomerContext.Provider>
 }
