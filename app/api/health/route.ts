@@ -3,41 +3,26 @@ import { neon } from "@neondatabase/serverless"
 
 export async function GET() {
   try {
-    // Check database connection
     const sql = neon(process.env.DATABASE_URL!)
 
-    // Simple health check query
-    const result = await sql`SELECT 
-      NOW() as timestamp,
-      version() as postgres_version,
-      current_database() as database_name
-    `
+    // Test database connection
+    const dbTest = await sql`SELECT NOW() as timestamp, version() as version`
 
-    // Check if core tables exist
+    // Check tables
     const tables = await sql`
       SELECT table_name 
       FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-      AND table_name IN ('customers', 'user_profiles', 'subscription_plans')
+      WHERE table_schema = 'public'
       ORDER BY table_name
     `
 
-    // Count records in key tables
+    // Count customers
     let customerCount = 0
-    let userCount = 0
-
     try {
-      const customerResult = await sql`SELECT COUNT(*) as count FROM customers`
-      customerCount = Number.parseInt(customerResult[0].count)
-    } catch (error) {
-      console.log("Customers table not accessible")
-    }
-
-    try {
-      const userResult = await sql`SELECT COUNT(*) as count FROM user_profiles`
-      userCount = Number.parseInt(userResult[0].count)
-    } catch (error) {
-      console.log("User profiles table not accessible")
+      const result = await sql`SELECT COUNT(*) as count FROM customers`
+      customerCount = Number.parseInt(result[0].count)
+    } catch (e) {
+      // Table might not exist yet
     }
 
     return NextResponse.json({
@@ -45,17 +30,15 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       database: {
         connected: true,
-        info: result[0],
-        tables: tables.map((t) => t.table_name),
-        counts: {
-          customers: customerCount,
-          users: userCount,
-        },
+        timestamp: dbTest[0].timestamp,
+        version: dbTest[0].version,
+        tables: tables.length,
+        customers: customerCount,
       },
       application: {
         name: "BHV360",
-        version: process.env.npm_package_version || "2.1.0",
-        environment: process.env.NODE_ENV || "development",
+        version: "2.1.0",
+        environment: process.env.NODE_ENV || "production",
         uptime: process.uptime(),
       },
     })
@@ -72,21 +55,12 @@ export async function GET() {
         },
         application: {
           name: "BHV360",
-          version: process.env.npm_package_version || "2.1.0",
-          environment: process.env.NODE_ENV || "development",
+          version: "2.1.0",
+          environment: process.env.NODE_ENV || "production",
           uptime: process.uptime(),
         },
       },
       { status: 503 },
     )
   }
-}
-
-export async function POST() {
-  return NextResponse.json(
-    {
-      message: "Health check endpoint only supports GET requests",
-    },
-    { status: 405 },
-  )
 }
