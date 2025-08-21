@@ -8,41 +8,28 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "BHV360 - Professionele BHV Software",
-  description: "Complete BHV software oplossing voor bedrijven. Plotkaarten, incidentenbeheer, training en meer.",
-  keywords: "BHV, software, plotkaart, incident, training, bedrijfshulpverlening",
-  authors: [{ name: "BHV360" }],
+  description:
+    "Complete BHV management oplossing met interactieve plattegronden, incident tracking en compliance monitoring voor moderne organisaties.",
+  keywords: "BHV, bedrijfshulpverlening, veiligheid, plotkaarten, incident management, compliance",
+  authors: [{ name: "BHV360 Team" }],
   creator: "BHV360",
   publisher: "BHV360",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  metadataBase: new URL("https://bhv360.nl"),
+  robots: "index, follow",
   openGraph: {
-    title: "BHV360 - Professionele BHV Software",
-    description: "Complete BHV software oplossing voor bedrijven",
-    url: "https://bhv360.nl",
-    siteName: "BHV360",
-    locale: "nl_NL",
     type: "website",
+    locale: "nl_NL",
+    url: "https://bhv360.nl",
+    title: "BHV360 - Professionele BHV Software",
+    description: "Complete BHV management oplossing voor moderne organisaties",
+    siteName: "BHV360",
   },
   twitter: {
     card: "summary_large_image",
     title: "BHV360 - Professionele BHV Software",
-    description: "Complete BHV software oplossing voor bedrijven",
+    description: "Complete BHV management oplossing voor moderne organisaties",
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
+  viewport: "width=device-width, initial-scale=1",
+  themeColor: "#10b981",
     generator: 'v0.app'
 }
 
@@ -53,6 +40,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="nl" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="msapplication-TileColor" content="#10b981" />
+        <meta name="theme-color" content="#10b981" />
+      </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           {children}

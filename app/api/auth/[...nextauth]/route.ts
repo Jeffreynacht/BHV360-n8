@@ -20,7 +20,7 @@ const handler = NextAuth({
             id: "1",
             email: "admin@bhv360.nl",
             password: "admin123",
-            name: "BHV360 Admin",
+            name: "BHV Admin",
             role: "admin",
           },
           {
@@ -32,10 +32,10 @@ const handler = NextAuth({
           },
           {
             id: "3",
-            email: "test@bhv360.nl",
-            password: "test123",
-            name: "Test User",
-            role: "user",
+            email: "coordinator@bhv360.nl",
+            password: "coord123",
+            name: "BHV Coordinator",
+            role: "coordinator",
           },
         ]
 
@@ -63,6 +63,7 @@ const handler = NextAuth({
   },
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -79,6 +80,7 @@ const handler = NextAuth({
       return session
     },
   },
+  secret: process.env.NEXTAUTH_SECRET || "bhv360-secret-key-development",
 })
 
 export { handler as GET, handler as POST }
