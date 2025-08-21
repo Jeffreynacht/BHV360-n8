@@ -1,8 +1,6 @@
 #!/bin/bash
 
 # BHV360 Quick Live Deployment Script
-# This script provides a fast path to production deployment
-
 set -e  # Exit on any error
 
 echo "🚀 BHV360 QUICK LIVE DEPLOYMENT"
@@ -317,14 +315,5 @@ print_success "Deployment info saved to deployment-live.json"
 echo ""
 echo "🚀 BHV360 IS NOW LIVE! 🎉"
 echo ""
-
-# Optional: Open in browser (if available)
-if command -v open &> /dev/null; then
-    print_info "Opening application in browser..."
-    open "$DEPLOYMENT_URL"
-elif command -v xdg-open &> /dev/null; then
-    print_info "Opening application in browser..."
-    xdg-open "$DEPLOYMENT_URL"
-fi
 
 exit 0

@@ -10,7 +10,6 @@
     "deploy:vercel": "vercel --prod",
     "dev": "next dev",
     "health": "curl -s https://bhv360.vercel.app/api/health | jq || curl -s https://bhv360.vercel.app/api/health",
-    "postinstall": "npm run type-check",
     "lint": "next lint",
     "reset": "npm run clean && npm install",
     "start": "next start",
