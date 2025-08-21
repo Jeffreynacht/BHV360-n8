@@ -59,7 +59,6 @@ const nextConfig = {
     ]
   },
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Ignore node-specific modules when bundling for the browser
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -69,7 +68,6 @@ const nextConfig = {
         crypto: false,
       }
     }
-
     return config
   },
   output: "standalone",

@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useState } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,7 +9,30 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Shield, MapPin, Users, AlertTriangle, CheckCircle, Phone, Mail, Building, Clock, ArrowRight, Play, Smartphone, Globe, BarChart3, Eye, LogIn, Zap, Map, Server, Lock, Menu, X } from 'lucide-react'
+import {
+  Shield,
+  MapPin,
+  Users,
+  AlertTriangle,
+  CheckCircle,
+  Phone,
+  Mail,
+  Building,
+  Clock,
+  ArrowRight,
+  Play,
+  Smartphone,
+  Globe,
+  BarChart3,
+  Eye,
+  LogIn,
+  Zap,
+  Map,
+  Server,
+  Lock,
+  Menu,
+  X,
+} from "lucide-react"
 
 export default function HomePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -24,7 +46,6 @@ export default function HomePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
     console.log("Form submitted:", formData)
     alert("Bedankt voor uw interesse! We nemen binnen 24 uur contact met u op.")
     setFormData({ name: "", email: "", company: "", phone: "", message: "" })
@@ -37,15 +58,17 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Image
-                src="/images/bhv360-logo-full.png"
-                alt="BHV360 Logo"
-                width={200}
-                height={60}
-                className="h-10 w-auto"
-                priority
-              />
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center mr-3">
+                <Shield className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                  BHV360
+                </h1>
+                <p className="text-xs text-gray-600">Professional BHV Platform</p>
+              </div>
             </div>
+
             <div className="hidden md:flex items-center space-x-8">
               <Link href="#features" className="text-gray-600 hover:text-green-600 transition-colors">
                 Functionaliteiten
@@ -71,7 +94,7 @@ export default function HomePage() {
                 </Button>
               </Link>
             </div>
-            
+
             {/* Mobile menu button */}
             <div className="md:hidden">
               <button
@@ -94,10 +117,16 @@ export default function HomePage() {
               >
                 Functionaliteiten
               </Link>
-              <Link href="#pricing" className="text-gray-600 hover:text-green-600 block px-3 py-2 text-base font-medium">
+              <Link
+                href="#pricing"
+                className="text-gray-600 hover:text-green-600 block px-3 py-2 text-base font-medium"
+              >
                 Prijzen
               </Link>
-              <Link href="#contact" className="text-gray-600 hover:text-green-600 block px-3 py-2 text-base font-medium">
+              <Link
+                href="#contact"
+                className="text-gray-600 hover:text-green-600 block px-3 py-2 text-base font-medium"
+              >
                 Contact
               </Link>
               <Link href="/demo" className="text-gray-600 hover:text-green-600 block px-3 py-2 text-base font-medium">
@@ -105,7 +134,11 @@ export default function HomePage() {
               </Link>
               <div className="flex flex-col space-y-2 px-3 pt-2">
                 <Link href="/login">
-                  <Button variant="outline" size="sm" className="w-full border-green-600 text-green-600 hover:bg-green-50 bg-transparent">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-green-600 text-green-600 hover:bg-green-50 bg-transparent"
+                  >
                     <LogIn className="w-4 h-4 mr-2" />
                     Inloggen
                   </Button>
@@ -181,13 +214,13 @@ export default function HomePage() {
             </div>
             <div className="relative">
               <div className="bg-white rounded-2xl shadow-2xl p-8">
-                <Image
-                  src="/placeholder.svg?height=400&width=600&text=BHV360+Dashboard+Preview"
-                  alt="BHV360 Dashboard"
-                  width={600}
-                  height={400}
-                  className="rounded-lg"
-                />
+                <div className="w-full h-96 bg-gradient-to-br from-green-100 to-blue-100 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <Shield className="w-16 h-16 text-green-600 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">BHV360 Dashboard</h3>
+                    <p className="text-gray-600">Live Demo Beschikbaar</p>
+                  </div>
+                </div>
               </div>
               <div className="absolute -top-4 -right-4 bg-gradient-to-r from-green-500 to-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
                 Live Demo
@@ -259,7 +292,6 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Core Features */}
             <Card className="bg-gradient-to-br from-green-50 to-blue-50 border-0 hover:from-green-100 hover:to-blue-100 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
               <CardHeader>
                 <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
@@ -600,10 +632,6 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                    <span className="text-gray-700">White label oplossing</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
                     <span className="text-gray-700">Multi-locatie ondersteuning</span>
                   </li>
                   <li className="flex items-center">
@@ -616,7 +644,7 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                    <span className="text-gray-700">24/7 Priority support</span>
+                    <span className="text-gray-700">Priority support (ma-vr 8-18)</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
@@ -860,13 +888,12 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <Image
-                src="/images/bhv360-logo-full.png"
-                alt="BHV360 Logo"
-                width={160}
-                height={40}
-                className="h-8 w-auto mb-4 filter brightness-0 invert"
-              />
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold">BHV360</span>
+              </div>
               <p className="text-gray-400 mb-4">Professioneel BHV management platform voor Nederlandse organisaties.</p>
               <div className="flex space-x-4">
                 <Badge variant="outline" className="border-gray-600 text-gray-400">
