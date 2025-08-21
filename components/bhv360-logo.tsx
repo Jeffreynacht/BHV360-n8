@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 interface BHV360LogoProps {
   size?: "sm" | "md" | "lg" | "xl"
@@ -17,18 +18,30 @@ export function BHV360Logo({ size = "md", variant = "default", showText = true, 
     xl: "h-16 w-auto",
   }
 
-  const logoSrc = "/images/bhv360-logo-full.png"
+  const textSizeClasses = {
+    sm: "text-lg",
+    md: "text-xl",
+    lg: "text-2xl",
+    xl: "text-3xl",
+  }
 
   return (
     <div className={cn("flex items-center", className)}>
-      <img src={logoSrc || "/placeholder.svg"} alt="BHV360 Logo" className={cn(sizeClasses[size], "object-contain")} />
-      {showText && variant !== "default" && (
+      <Image
+        src="/images/bhv360-logo-full.png"
+        alt="BHV360 Logo"
+        width={200}
+        height={60}
+        className={cn(sizeClasses[size], "object-contain")}
+        priority
+      />
+      {showText && (
         <div className="ml-3">
           <div
             className={cn(
               "font-bold",
-              variant === "white" ? "text-white" : "text-gray-900",
-              size === "sm" ? "text-lg" : size === "md" ? "text-xl" : size === "lg" ? "text-2xl" : "text-3xl",
+              variant === "white" ? "text-white" : variant === "dark" ? "text-gray-900" : "text-blue-600",
+              textSizeClasses[size],
             )}
           >
             BHV360

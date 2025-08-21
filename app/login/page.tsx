@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
@@ -10,7 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Shield, Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
+import { BHV360Logo } from "@/components/bhv360-logo"
 import Link from "next/link"
 
 export default function LoginPage() {
@@ -24,7 +24,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user && !isLoading) {
-      router.push("/dashboard")
+      router.push("/platform")
     }
   }, [user, isLoading, router])
 
@@ -39,7 +39,7 @@ export default function LoginPage() {
       if (error) {
         setError(error.message || "Er is een fout opgetreden bij het inloggen")
       } else {
-        router.push("/dashboard")
+        router.push("/platform")
       }
     } catch (err) {
       setError("Er is een onverwachte fout opgetreden")
@@ -65,8 +65,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center mb-4">
-            <Shield className="h-8 w-8 text-blue-600 mr-2" />
-            <span className="text-2xl font-bold">BHV360</span>
+            <BHV360Logo size="lg" showText={false} />
           </div>
           <CardTitle>Welkom terug</CardTitle>
           <CardDescription>Log in op uw BHV360 account</CardDescription>

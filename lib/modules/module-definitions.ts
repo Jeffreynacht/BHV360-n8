@@ -356,6 +356,39 @@ export const moduleDefinitions: ModuleDefinition[] = [
     customers: 198,
     lastUpdated: "2024-01-16",
   },
+  {
+    id: "website-builder",
+    name: "Website Builder",
+    description: "Complete website en content management systeem",
+    category: "enterprise",
+    tier: "enterprise",
+    version: "1.0.0",
+    enabled: true,
+    visible: true,
+    core: false,
+    implemented: true,
+    status: "active",
+    features: [
+      "Drag & drop editor",
+      "Content management",
+      "Multi-page support",
+      "SEO optimization",
+      "Mobile responsive",
+      "Custom branding",
+      "Analytics integration",
+    ],
+    pricing: {
+      basePrice: 19900, // €199.00
+      setupFee: 49900, // €499.00
+      model: "fixed",
+    },
+    rating: 4.7,
+    reviews: 12,
+    popularity: 35,
+    routePath: "/super-admin/website-builder",
+    customers: 8,
+    lastUpdated: "2024-01-20",
+  },
 ]
 
 export const AVAILABLE_MODULES = moduleDefinitions

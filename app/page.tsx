@@ -63,6 +63,123 @@ interface Demo {
   category: string
 }
 
+// Demo Screenshot Component - inline to avoid import issues
+function DemoScreenshot({ type, className }: { type: string; className?: string }) {
+  const screenshots = {
+    plotkaart: (
+      <div className={`bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg ${className || ""}`}>
+        <div className="bg-white rounded shadow-sm p-3 mb-3">
+          <div className="flex items-center space-x-2 mb-2">
+            <Map className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium">Plotkaart Editor</span>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="bg-red-100 p-2 rounded text-xs text-center">🚨 Alarm</div>
+            <div className="bg-green-100 p-2 rounded text-xs text-center">🚪 Uitgang</div>
+            <div className="bg-blue-100 p-2 rounded text-xs text-center">🧯 Blusser</div>
+            <div className="bg-yellow-100 p-2 rounded text-xs text-center">⚡ AED</div>
+          </div>
+        </div>
+        <div className="bg-white rounded shadow-sm p-2">
+          <div className="text-xs text-gray-600">Drag & Drop Interface</div>
+        </div>
+      </div>
+    ),
+    incident: (
+      <div className={`bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg ${className || ""}`}>
+        <div className="bg-white rounded shadow-sm p-3 mb-2">
+          <div className="flex items-center space-x-2 mb-2">
+            <AlertTriangle className="w-4 h-4 text-red-600" />
+            <span className="text-sm font-medium">Incident #2024-001</span>
+            <Badge className="bg-red-100 text-red-800 text-xs">Actief</Badge>
+          </div>
+          <div className="text-xs text-gray-600 mb-2">Brand alarm - Verdieping 2</div>
+          <div className="flex space-x-1">
+            <div className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Evacuatie</div>
+            <div className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">BHV Actief</div>
+          </div>
+        </div>
+      </div>
+    ),
+    "bhv-dashboard": (
+      <div className={`bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg ${className || ""}`}>
+        <div className="bg-white rounded shadow-sm p-3">
+          <div className="flex items-center space-x-2 mb-3">
+            <Shield className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium">BHV Team Status</span>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span>Aanwezig</span>
+              <span className="text-green-600 font-medium">8/12</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span>Gecertificeerd</span>
+              <span className="text-blue-600 font-medium">12/12</span>
+            </div>
+            <div className="bg-green-100 rounded p-2 text-xs text-center">✅ Team Operationeel</div>
+          </div>
+        </div>
+      </div>
+    ),
+    mobile: (
+      <div className={`bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg ${className || ""}`}>
+        <div className="bg-white rounded-lg shadow-sm p-3 max-w-32 mx-auto">
+          <div className="flex items-center space-x-1 mb-2">
+            <Smartphone className="w-3 h-3 text-purple-600" />
+            <span className="text-xs font-medium">BHV360 App</span>
+          </div>
+          <div className="space-y-1">
+            <div className="bg-purple-100 p-1 rounded text-xs text-center">📱 Dashboard</div>
+            <div className="bg-gray-100 p-1 rounded text-xs text-center">🗺️ Plotkaart</div>
+            <div className="bg-gray-100 p-1 rounded text-xs text-center">🚨 Incident</div>
+            <div className="bg-gray-100 p-1 rounded text-xs text-center">👥 Team</div>
+          </div>
+        </div>
+      </div>
+    ),
+    nfc: (
+      <div className={`bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg ${className || ""}`}>
+        <div className="bg-white rounded shadow-sm p-3">
+          <div className="flex items-center space-x-2 mb-2">
+            <QrCode className="w-4 h-4 text-orange-600" />
+            <span className="text-sm font-medium">NFC Scanner</span>
+          </div>
+          <div className="text-center">
+            <div className="bg-orange-100 rounded-full w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+              <span className="text-2xl">📱</span>
+            </div>
+            <div className="text-xs text-gray-600">Scan NFC Tag</div>
+            <div className="text-xs text-orange-600 font-medium">Blusser #B-001</div>
+          </div>
+        </div>
+      </div>
+    ),
+    analytics: (
+      <div className={`bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg ${className || ""}`}>
+        <div className="bg-white rounded shadow-sm p-3">
+          <div className="flex items-center space-x-2 mb-2">
+            <BarChart3 className="w-4 h-4 text-gray-600" />
+            <span className="text-sm font-medium">Analytics</span>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span>Incidenten</span>
+              <span className="font-medium">3 deze maand</span>
+            </div>
+            <div className="bg-gray-100 h-2 rounded">
+              <div className="bg-blue-500 h-2 rounded w-3/4"></div>
+            </div>
+            <div className="text-xs text-gray-600">↗️ 15% verbetering</div>
+          </div>
+        </div>
+      </div>
+    ),
+  }
+
+  return screenshots[type as keyof typeof screenshots] || null
+}
+
 export default function HomePage() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
 
@@ -183,7 +300,7 @@ export default function HomePage() {
       description: "Bekijk hoe je interactieve BHV plotkaarten maakt met onze drag-and-drop editor",
       icon: Map,
       href: "/demo/plotkaart-editor",
-      image: "/placeholder.svg?height=200&width=300&text=Plotkaart+Editor",
+      image: "/placeholder.svg?height=200&width=300&text=Plotkaart+Editor+Demo&bg=f0f9ff&color=1e40af",
       category: "Core Feature",
     },
     {
@@ -191,7 +308,7 @@ export default function HomePage() {
       description: "Ervaar real-time incident tracking en automatische escalatie procedures",
       icon: AlertTriangle,
       href: "/demo/incident-simulator",
-      image: "/placeholder.svg?height=200&width=300&text=Incident+Management",
+      image: "/placeholder.svg?height=200&width=300&text=Incident+Management&bg=fef2f2&color=dc2626",
       category: "Safety",
     },
     {
@@ -199,7 +316,7 @@ export default function HomePage() {
       description: "Zie hoe je je BHV team coördineert en hun status monitort",
       icon: Shield,
       href: "/demo/bhv-status",
-      image: "/placeholder.svg?height=200&width=300&text=BHV+Dashboard",
+      image: "/placeholder.svg?height=200&width=300&text=BHV+Team+Dashboard&bg=f0fdf4&color=16a34a",
       category: "Team Management",
     },
     {
@@ -207,7 +324,7 @@ export default function HomePage() {
       description: "Test de volledige functionaliteit van onze native mobile applicatie",
       icon: Smartphone,
       href: "/mobile-app",
-      image: "/placeholder.svg?height=200&width=300&text=Mobile+App",
+      image: "/placeholder.svg?height=200&width=300&text=Mobile+App&bg=faf5ff&color=7c3aed",
       category: "Mobile",
     },
     {
@@ -215,7 +332,7 @@ export default function HomePage() {
       description: "Probeer onze NFC tag scanning voor equipment verificatie",
       icon: QrCode,
       href: "/nfc-scan",
-      image: "/placeholder.svg?height=200&width=300&text=NFC+Scanner",
+      image: "/placeholder.svg?height=200&width=300&text=NFC+Scanner&bg=fff7ed&color=ea580c",
       category: "Technology",
     },
     {
@@ -223,7 +340,7 @@ export default function HomePage() {
       description: "Ontdek uitgebreide rapportages en real-time veiligheidsanalytics",
       icon: BarChart3,
       href: "/demo/overview",
-      image: "/placeholder.svg?height=200&width=300&text=Analytics",
+      image: "/placeholder.svg?height=200&width=300&text=Analytics+Dashboard&bg=f8fafc&color=475569",
       category: "Insights",
     },
   ]
@@ -339,7 +456,7 @@ export default function HomePage() {
             </div>
 
             <div className="flex items-center space-x-4">
-              <Link href="/platform">
+              <Link href="/login">
                 <Button variant="ghost" className="text-gray-700 hover:text-green-600">
                   <LogIn className="w-4 h-4 mr-2" />
                   Inloggen
@@ -536,12 +653,21 @@ export default function HomePage() {
                 <Link key={index} href={demo.href}>
                   <Card className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group border-0 hover:-translate-y-1">
                     <div className="relative overflow-hidden rounded-t-lg">
-                      <Image
-                        src={demo.image || "/placeholder.svg"}
-                        alt={demo.title}
-                        width={300}
-                        height={200}
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      <DemoScreenshot
+                        type={
+                          demo.title.includes("Plotkaart")
+                            ? "plotkaart"
+                            : demo.title.includes("Incident")
+                              ? "incident"
+                              : demo.title.includes("BHV Team")
+                                ? "bhv-dashboard"
+                                : demo.title.includes("Mobile")
+                                  ? "mobile"
+                                  : demo.title.includes("NFC")
+                                    ? "nfc"
+                                    : "analytics"
+                        }
+                        className="w-full h-48 group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute top-4 left-4">
                         <Badge className="bg-white/90 text-gray-700">{demo.category}</Badge>
