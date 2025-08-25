@@ -110,3 +110,83 @@ export function clampSafe(value: number, min: number, max: number): number {
 
   return Math.min(Math.max(safeValue, safeMin), safeMax)
 }
+
+/**
+ * Formats a number with thousands separators
+ * @param value - The number to format
+ * @param separator - Thousands separator (default: ',')
+ * @returns Formatted number string
+ */
+export function formatNumberSafe(value: number, separator = ","): string {
+  const safeValue = toNumberSafe(value, 0)
+  return safeValue.toLocaleString("en-US").replace(/,/g, separator)
+}
+
+/**
+ * Rounds a number to specified decimal places
+ * @param value - The number to round
+ * @param decimals - Number of decimal places (default: 0)
+ * @returns Rounded number
+ */
+export function roundSafe(value: number, decimals = 0): number {
+  const safeValue = toNumberSafe(value, 0)
+  const factor = Math.pow(10, Math.max(0, Math.floor(decimals)))
+  return Math.round(safeValue * factor) / factor
+}
+
+/**
+ * Calculates the average of an array of numbers safely
+ * @param values - Array of numbers
+ * @returns Average value, 0 if array is empty or invalid
+ */
+export function averageSafe(values: number[]): number {
+  if (!Array.isArray(values) || values.length === 0) {
+    return 0
+  }
+
+  const safeValues = values.map((v) => toNumberSafe(v, 0))
+  const sum = safeValues.reduce((acc, val) => acc + val, 0)
+  return sum / safeValues.length
+}
+
+/**
+ * Finds the maximum value in an array safely
+ * @param values - Array of numbers
+ * @returns Maximum value, 0 if array is empty or invalid
+ */
+export function maxSafe(values: number[]): number {
+  if (!Array.isArray(values) || values.length === 0) {
+    return 0
+  }
+
+  const safeValues = values.map((v) => toNumberSafe(v, 0))
+  return Math.max(...safeValues)
+}
+
+/**
+ * Finds the minimum value in an array safely
+ * @param values - Array of numbers
+ * @returns Minimum value, 0 if array is empty or invalid
+ */
+export function minSafe(values: number[]): number {
+  if (!Array.isArray(values) || values.length === 0) {
+    return 0
+  }
+
+  const safeValues = values.map((v) => toNumberSafe(v, 0))
+  return Math.min(...safeValues)
+}
+
+/**
+ * Calculates the sum of an array of numbers safely
+ * @param values - Array of numbers
+ * @returns Sum of all values, 0 if array is empty or invalid
+ */
+export function sumSafe(values: number[]): number {
+  if (!Array.isArray(values) || values.length === 0) {
+    return 0
+  }
+
+  const safeValues = values.map((v) => toNumberSafe(v, 0))
+  return safeValues.reduce((acc, val) => acc + val, 0)
+}
