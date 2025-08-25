@@ -5,29 +5,57 @@ export async function GET() {
     const healthData = {
       status: "healthy",
       timestamp: new Date().toISOString(),
-      version: "1.0.0",
-      environment: process.env.NODE_ENV || "development",
       uptime: process.uptime(),
-      memory: {
-        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
-      },
+      environment: process.env.NODE_ENV || "development",
+      version: "1.0.0",
       services: {
         database: "connected",
         api: "operational",
         auth: "operational",
+        storage: "available",
+        notifications: "active",
+      },
+      memory: {
+        used: process.memoryUsage().heapUsed,
+        total: process.memoryUsage().heapTotal,
+        external: process.memoryUsage().external,
+      },
+      system: {
+        platform: process.platform,
+        arch: process.arch,
+        nodeVersion: process.version,
       },
     }
 
-    return NextResponse.json(healthData, { status: 200 })
+    return NextResponse.json(healthData, {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    })
   } catch (error) {
+    console.error("Health check failed:", error)
+
     return NextResponse.json(
       {
         status: "unhealthy",
-        error: "Health check failed",
         timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : "Unknown error",
+        services: {
+          database: "unknown",
+          api: "error",
+          auth: "unknown",
+          storage: "unknown",
+          notifications: "unknown",
+        },
       },
       { status: 500 },
     )
   }
+}
+
+export async function HEAD() {
+  return new NextResponse(null, { status: 200 })
 }

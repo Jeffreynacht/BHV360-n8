@@ -50,6 +50,9 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   },
 })
 
+// Export createClient for direct use in other modules
+export { createClient }
+
 // Helper functions
 export async function testSupabaseConnection() {
   try {
