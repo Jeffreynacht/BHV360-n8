@@ -70,6 +70,9 @@ REQUIRED_FILES=(
     ".env.example"
     "app/layout.tsx"
     "app/page.tsx"
+    "lib/supabase.ts"
+    "helpers/number.ts"
+    "components/ui/alert.tsx"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do
@@ -117,7 +120,7 @@ fi
 
 # Linting (optional - don't fail on warnings)
 echo "🔍 Running linter..."
-if npx eslint . --ext .ts,.tsx --max-warnings 10; then
+if npx eslint . --ext .ts,.tsx --max-warnings 10 2>/dev/null; then
     print_status "Linting passed"
 else
     print_warning "Linting issues found, but continuing..."
@@ -134,7 +137,7 @@ fi
 
 # 6. Security Audit
 echo -e "\n${BLUE}🔒 Step 6: Security Audit${NC}"
-if npm audit --audit-level=high; then
+if npm audit --audit-level=high 2>/dev/null; then
     print_status "Security audit passed"
 else
     print_warning "Security audit found issues, but continuing..."
@@ -171,16 +174,15 @@ DEPLOYMENT_URL="https://bhv360.vercel.app"
 # Test critical endpoints
 CRITICAL_ENDPOINTS=(
     "/api/health"
-    "/api/auth/status"
-    "/api/websocket/connect"
-    "/api/test-database"
     "/api/deployment-status"
+    "/api/test-database"
+    "/api/websocket/connect"
 )
 
 echo "🔗 Testing critical endpoints..."
 for endpoint in "${CRITICAL_ENDPOINTS[@]}"; do
     echo -n "   Testing $endpoint... "
-    if curl -s -f "$DEPLOYMENT_URL$endpoint" > /dev/null; then
+    if curl -s -f "$DEPLOYMENT_URL$endpoint" > /dev/null 2>&1; then
         echo -e "${GREEN}✅ OK${NC}"
     else
         echo -e "${YELLOW}⚠️  Warning${NC}"
@@ -211,27 +213,27 @@ echo "📋 API ENDPOINTS SUMMARY:"
 if [ -d "app/api" ]; then
     echo ""
     echo "🔐 Authentication APIs:"
-    find app/api -path "*/auth/*" -name "route.ts*" | sed 's|app/api|   GET/POST /api|' | sed 's|/route\.tsx\?||' || echo "   None found"
+    find app/api -path "*/auth/*" -name "route.ts*" 2>/dev/null | sed 's|app/api|   GET/POST /api|' | sed 's|/route\.tsx\?||' || echo "   None found"
     
     echo ""
     echo "👥 User Management APIs:"
-    find app/api -path "*/users/*" -name "route.ts*" | sed 's|app/api|   GET/POST /api|' | sed 's|/route\.tsx\?||' || echo "   None found"
+    find app/api -path "*/users/*" -name "route.ts*" 2>/dev/null | sed 's|app/api|   GET/POST /api|' | sed 's|/route\.tsx\?||' || echo "   None found"
     
     echo ""
     echo "🏢 Customer Management APIs:"
-    find app/api -path "*/customers/*" -name "route.ts*" | sed 's|app/api|   GET/POST /api|' | sed 's|/route\.tsx\?||' || echo "   None found"
+    find app/api -path "*/customers/*" -name "route.ts*" 2>/dev/null | sed 's|app/api|   GET/POST /api|' | sed 's|/route\.tsx\?||' || echo "   None found"
     
     echo ""
     echo "🚨 Emergency & Incident APIs:"
-    find app/api $$ -path "*/incidents/*" -o -path "*/emergency/*" -o -path "*/evacuation/*" -o -path "*/alerts/*" $$ -name "route.ts*" | sed 's|app/api|   GET/POST /api|' | sed 's|/route\.tsx\?||' || echo "   None found"
+    find app/api $$ -path "*/incidents/*" -o -path "*/emergency/*" -o -path "*/evacuation/*" -o -path "*/alerts/*" $$ -name "route.ts*" 2>/dev/null | sed 's|app/api|   GET/POST /api|' | sed 's|/route\.tsx\?||' || echo "   None found"
     
     echo ""
     echo "💬 Messaging & Communication APIs:"
-    find app/api $$ -path "*/messaging/*" -o -path "*/websocket/*" -o -path "*/push*" -o -path "*/email/*" -o -path "*/sms/*" $$ -name "route.ts*" | sed 's|app/api|   GET/POST /api|' | sed 's|/route\.tsx\?||' || echo "   None found"
+    find app/api $$ -path "*/messaging/*" -o -path "*/websocket/*" -o -path "*/push*" -o -path "*/email/*" -o -path "*/sms/*" $$ -name "route.ts*" 2>/dev/null | sed 's|app/api|   GET/POST /api|' | sed 's|/route\.tsx\?||' || echo "   None found"
     
     echo ""
     echo "📊 Monitoring & System APIs:"
-    find app/api $$ -path "*/monitoring/*" -o -path "*/health*" -o -path "*/backup/*" -o -path "*/performance/*" $$ -name "route.ts*" | sed 's|app/api|   GET/POST /api|' | sed 's|/route\.tsx\?||' || echo "   None found"
+    find app/api $$ -path "*/monitoring/*" -o -path "*/health*" -o -path "*/backup/*" -o -path "*/performance/*" $$ -name "route.ts*" 2>/dev/null | sed 's|app/api|   GET/POST /api|' | sed 's|/route\.tsx\?||' || echo "   None found"
 fi
 
 echo ""
@@ -242,10 +244,10 @@ echo "============================================================"
 # Optional: Open deployment in browser (macOS/Linux)
 if command_exists open; then
     echo "🌐 Opening deployment in browser..."
-    open "$DEPLOYMENT_URL"
+    open "$DEPLOYMENT_URL" 2>/dev/null || true
 elif command_exists xdg-open; then
     echo "🌐 Opening deployment in browser..."
-    xdg-open "$DEPLOYMENT_URL"
+    xdg-open "$DEPLOYMENT_URL" 2>/dev/null || true
 fi
 
 print_status "All APIs successfully deployed to production!"

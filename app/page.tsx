@@ -1,351 +1,605 @@
+import type { Metadata } from "next"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import {
-  CheckCircle,
-  Shield,
   Users,
-  Zap,
-  ArrowRight,
-  Phone,
-  Mail,
   MapPin,
+  AlertTriangle,
+  Phone,
+  Clock,
+  CheckCircle,
+  ArrowRight,
   Star,
-  Award,
-  Building2,
+  Mail,
   Smartphone,
-  Globe,
-  HeadphonesIcon,
+  BarChart3,
+  UserCheck,
+  PlayCircle,
+  FileX,
+  Eye,
 } from "lucide-react"
 import Image from "next/image"
-import Link from "next/link"
+
+export const metadata: Metadata = {
+  title: "BHV360 - BHV Beheer Gemaakt Eenvoudig",
+  description:
+    "Van papieren chaos naar digitale controle. BHV360 maakt veiligheidsmanagement eenvoudig, compliant en effectief voor elke organisatie.",
+}
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+      <header className="border-b bg-white sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center">
               <Image
                 src="/images/bhv360-logo-full.png"
                 alt="BHV360 Logo"
-                width={200}
-                height={40}
-                className="h-10 w-auto"
+                width={640}
+                height={160}
+                className="h-40 w-auto"
                 priority
               />
             </div>
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="/platform" className="text-gray-600 hover:text-emerald-600 transition-colors">
-                Platform
+            <nav className="hidden md:flex items-center space-x-8">
+              <Link href="/modules" className="text-gray-700 hover:text-emerald-600 transition-colors font-medium">
+                Modules
               </Link>
-              <Link href="/demo" className="text-gray-600 hover:text-emerald-600 transition-colors">
-                Demo
+              <Link href="/pricing" className="text-gray-700 hover:text-emerald-600 transition-colors font-medium">
+                Prijzen
               </Link>
-              <Link href="/help" className="text-gray-600 hover:text-emerald-600 transition-colors">
-                Support
+              <Link href="/demo" className="text-gray-700 hover:text-emerald-600 transition-colors font-medium">
+                Demo's
               </Link>
-              <Button asChild variant="outline">
-                <Link href="/login">Inloggen</Link>
-              </Button>
-              <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
-                <Link href="/register">Gratis Starten</Link>
-              </Button>
+              <Link href="/contact" className="text-gray-700 hover:text-emerald-600 transition-colors font-medium">
+                Contact
+              </Link>
+              <Link href="/login">
+                <Button
+                  variant="outline"
+                  className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 bg-transparent"
+                >
+                  Inloggen
+                </Button>
+              </Link>
             </nav>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto text-center">
-          <Badge className="mb-6 bg-emerald-100 text-emerald-800 hover:bg-emerald-200">
-            🚀 Nieuw: AI-gestuurde BHV planning
-          </Badge>
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-            Professionele BHV
-            <span className="text-emerald-600"> Plotkaart</span>
-            <br />
-            Software
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Maak professionele BHV plotkaarten, beheer evacuatieprocedures en zorg voor optimale veiligheid in uw
-            organisatie. Volledig compliant met Nederlandse BHV-wetgeving.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button asChild size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-lg px-8 py-4">
-              <Link href="/register">
-                Gratis Proberen <ArrowRight className="ml-2 h-5 w-5" />
+      <section className="py-20 px-4 bg-gradient-to-br from-blue-50 via-cyan-50 to-emerald-100">
+        <div className="container mx-auto">
+          <div className="flex items-start justify-between mb-8">
+            <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200">
+              Professioneel
+            </Badge>
+          </div>
+          <div className="text-center max-w-5xl mx-auto">
+            <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
+              BHV Beheer
+              <br />
+              <span className="text-emerald-600">Gemaakt Eenvoudig</span>
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-4xl mx-auto">
+              Van papieren chaos naar digitale controle. BHV360 maakt veiligheidsmanagement eenvoudig, compliant en
+              effectief voor elke organisatie.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+              <Link href="/demo">
+                <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-lg px-8 py-4 text-white">
+                  Bekijk Demo
+                  <PlayCircle className="ml-2 h-5 w-5" />
+                </Button>
               </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="text-lg px-8 py-4 bg-transparent">
-              <Link href="/demo">Live Demo Bekijken</Link>
-            </Button>
-          </div>
-
-          {/* Trust Indicators */}
-          <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-500 mb-16">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-emerald-600" />
-              <span>ISO 27001 Gecertificeerd</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-emerald-600" />
-              <span>GDPR Compliant</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Award className="h-4 w-4 text-emerald-600" />
-              <span>Nederlandse BHV Standaard</span>
-            </div>
-          </div>
-
-          {/* Hero Image/Demo */}
-          <div className="relative max-w-5xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-2xl border overflow-hidden">
-              <div className="bg-gradient-to-r from-emerald-600 to-blue-600 p-4">
-                <div className="flex items-center gap-2 text-white">
-                  <div className="w-3 h-3 bg-white/30 rounded-full"></div>
-                  <div className="w-3 h-3 bg-white/30 rounded-full"></div>
-                  <div className="w-3 h-3 bg-white/30 rounded-full"></div>
-                  <span className="ml-4 text-sm">BHV360 Dashboard</span>
-                </div>
-              </div>
-              <div className="p-8 bg-gray-50">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">Plotkaart Editor</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-32 bg-emerald-100 rounded-lg flex items-center justify-center">
-                        <Building2 className="h-12 w-12 text-emerald-600" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">BHV Beheer</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-32 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Users className="h-12 w-12 text-blue-600" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">Rapportages</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-32 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <Zap className="h-12 w-12 text-purple-600" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+              <Link href="/register">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="text-lg px-8 py-4 border-emerald-600 text-emerald-600 hover:bg-emerald-50 bg-transparent"
+                >
+                  30 Dagen Gratis
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Benefits Section */}
+      <section className="py-16 px-4 bg-white">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">BHV360 Voordelen</h2>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <div className="flex items-center space-x-3">
+              <CheckCircle className="h-6 w-6 text-emerald-500 flex-shrink-0" />
+              <span className="text-gray-700 font-medium">100% digitale BHV administratie</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <CheckCircle className="h-6 w-6 text-emerald-500 flex-shrink-0" />
+              <span className="text-gray-700 font-medium">Interactieve plotkaarten met real-time status</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <CheckCircle className="h-6 w-6 text-emerald-500 flex-shrink-0" />
+              <span className="text-gray-700 font-medium">Automatische compliance rapportage</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <CheckCircle className="h-6 w-6 text-emerald-500 flex-shrink-0" />
+              <span className="text-gray-700 font-medium">Mobiele app voor alle BHV'ers</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <CheckCircle className="h-6 w-6 text-emerald-500 flex-shrink-0" />
+              <span className="text-gray-700 font-medium">Instant incident management</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Problems Section */}
+      <section className="py-20 px-4 bg-red-50">
+        <div className="container mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Stop met BHV Frustraties</h2>
+            <p className="text-xl text-gray-600">
+              Deze problemen kosten u tijd, geld en zorgen voor compliance risico's
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <Card className="border-red-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="text-center pb-4">
+                <FileX className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <CardTitle className="text-lg text-gray-900">Papieren BHV administratie</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm text-center">
+                  Verloren documenten, verouderde informatie, geen overzicht
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-red-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="text-center pb-4">
+                <MapPin className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <CardTitle className="text-lg text-gray-900">Onduidelijke evacuatieroutes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm text-center">Statische plattegronden, geen real-time updates</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-red-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="text-center pb-4">
+                <Clock className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <CardTitle className="text-lg text-gray-900">Trage incident afhandeling</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm text-center">Handmatige processen, geen automatisering</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-red-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="text-center pb-4">
+                <Eye className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <CardTitle className="text-lg text-gray-900">Geen inzicht in compliance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm text-center">Onduidelijke rapportages, geen real-time monitoring</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
       <section className="py-20 px-4 bg-white">
         <div className="container mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Alles wat u nodig heeft voor professionele BHV</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Van plotkaart ontwerp tot evacuatieprocedures - onze complete suite helpt u bij elke stap
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Transparante Prijzen</h2>
+            <p className="text-xl text-gray-600">Kies het plan dat perfect past bij uw organisatie</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Starter Plan */}
+            <Card className="border-2 border-gray-200 hover:border-emerald-300 transition-colors shadow-lg">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl text-gray-900">Starter</CardTitle>
+                <div className="text-4xl font-bold text-emerald-600 my-4">
+                  €49<span className="text-lg text-gray-500">/maand</span>
+                </div>
+                <CardDescription className="text-gray-600">Perfect voor kleine organisaties</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-3">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Tot 50 gebruikers</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Basis plotkaarten</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Incident registratie</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Email ondersteuning</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Standaard rapportages</span>
+                  </li>
+                </ul>
+                <Button
+                  className="w-full mt-6 border-emerald-600 text-emerald-600 hover:bg-emerald-50 bg-transparent"
+                  variant="outline"
+                >
+                  Start Gratis Trial
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Professional Plan */}
+            <Card className="border-2 border-emerald-500 relative shadow-xl">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <Badge className="bg-emerald-500 text-white px-4 py-1 text-sm font-medium">Meest Populair</Badge>
+              </div>
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl text-gray-900">Professional</CardTitle>
+                <div className="text-4xl font-bold text-emerald-600 my-4">
+                  €149<span className="text-lg text-gray-500">/maand</span>
+                </div>
+                <CardDescription className="text-gray-600">Ideaal voor middelgrote bedrijven</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-3">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Tot 250 gebruikers</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Geavanceerde plotkaarten</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Real-time monitoring</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Telefoon ondersteuning</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Custom rapportages</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">API integraties</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Multi-locatie support</span>
+                  </li>
+                </ul>
+                <Button className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white">
+                  Start Gratis Trial
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Enterprise Plan */}
+            <Card className="border-2 border-gray-200 hover:border-emerald-300 transition-colors shadow-lg">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl text-gray-900">Enterprise</CardTitle>
+                <div className="text-4xl font-bold text-emerald-600 my-4">Op maat</div>
+                <CardDescription className="text-gray-600">Voor grote organisaties</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-3">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Onbeperkt gebruikers</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">White-label oplossing</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Dedicated support</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Custom ontwikkeling</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">SLA garanties</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">On-premise optie</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Training & consultancy</span>
+                  </li>
+                </ul>
+                <Button
+                  className="w-full mt-6 border-emerald-600 text-emerald-600 hover:bg-emerald-50 bg-transparent"
+                  variant="outline"
+                >
+                  Contact Opnemen
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center mt-12">
+            <p className="text-gray-600 text-lg mb-4">Alle plannen bevatten een 30-dagen gratis proefperiode</p>
+            <div className="flex justify-center space-x-8 text-sm text-gray-500">
+              <span>✓ Geen setup kosten</span>
+              <span>✓ Maandelijks opzegbaar</span>
+              <span>✓ Nederlandse support</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Modules Section */}
+      <section className="py-20 px-4 bg-gray-50">
+        <div className="container mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">BHV360 Modules</h2>
+            <p className="text-xl text-gray-600">
+              Ontdek alle functionaliteiten die BHV360 biedt voor professioneel veiligheidsmanagement.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card className="hover:shadow-lg transition-shadow bg-white border border-gray-200">
               <CardHeader>
-                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mb-4">
-                  <Building2 className="h-6 w-6 text-emerald-600" />
+                <div className="flex justify-between items-start mb-4">
+                  <Users className="h-12 w-12 text-emerald-600" />
+                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">
+                    €39/maand
+                  </Badge>
                 </div>
-                <CardTitle>Plotkaart Editor</CardTitle>
-                <CardDescription>Intuïtieve drag-and-drop editor voor professionele BHV plotkaarten</CardDescription>
+                <CardTitle className="text-gray-900">BHV Dashboard</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Complete BHV administratie met certificering tracking
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Voorgedefinieerde BHV symbolen
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Automatische compliance check
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Export naar PDF/PNG
-                  </li>
-                </ul>
+                <Button
+                  variant="outline"
+                  className="w-full border-emerald-600 text-emerald-600 hover:bg-emerald-50 bg-transparent"
+                >
+                  Meer Info
+                </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow bg-white border border-gray-200">
               <CardHeader>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                  <Users className="h-6 w-6 text-blue-600" />
+                <div className="flex justify-between items-start mb-4">
+                  <MapPin className="h-12 w-12 text-teal-600" />
+                  <Badge variant="secondary" className="bg-teal-100 text-teal-800">
+                    €29/maand
+                  </Badge>
                 </div>
-                <CardTitle>BHV Beheer</CardTitle>
-                <CardDescription>Centraal beheer van BHV'ers, certificaten en roosters</CardDescription>
+                <CardTitle className="text-gray-900">Interactieve Plotkaarten</CardTitle>
+                <CardDescription className="text-gray-600">Digitale plattegronden met real-time status</CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Certificaat tracking
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Automatische herinneringen
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Rooster planning
-                  </li>
-                </ul>
+                <Button
+                  variant="outline"
+                  className="w-full border-teal-600 text-teal-600 hover:bg-teal-50 bg-transparent"
+                >
+                  Meer Info
+                </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow bg-white border border-gray-200">
               <CardHeader>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                  <Shield className="h-6 w-6 text-purple-600" />
+                <div className="flex justify-between items-start mb-4">
+                  <AlertTriangle className="h-12 w-12 text-red-600" />
+                  <Badge variant="secondary" className="bg-red-100 text-red-800">
+                    €49/maand
+                  </Badge>
                 </div>
-                <CardTitle>Incident Management</CardTitle>
-                <CardDescription>Registreer en analyseer incidenten voor continue verbetering</CardDescription>
+                <CardTitle className="text-gray-900">Incident Management</CardTitle>
+                <CardDescription className="text-gray-600">Snelle incident registratie met workflows</CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Incident registratie
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Trend analyse
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Actie tracking
-                  </li>
-                </ul>
+                <Button variant="outline" className="w-full border-red-600 text-red-600 hover:bg-red-50 bg-transparent">
+                  Meer Info
+                </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow bg-white border border-gray-200">
               <CardHeader>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-                  <Smartphone className="h-6 w-6 text-orange-600" />
+                <div className="flex justify-between items-start mb-4">
+                  <UserCheck className="h-12 w-12 text-purple-600" />
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                    €35/maand
+                  </Badge>
                 </div>
-                <CardTitle>Mobile App</CardTitle>
-                <CardDescription>Toegang tot plotkaarten en procedures vanaf elke locatie</CardDescription>
+                <CardTitle className="text-gray-900">Bezoeker Registratie</CardTitle>
+                <CardDescription className="text-gray-600">Professionele bezoeker check-in systeem</CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Offline toegang
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    QR code scanning
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Push notificaties
-                  </li>
-                </ul>
+                <Button
+                  variant="outline"
+                  className="w-full border-purple-600 text-purple-600 hover:bg-purple-50 bg-transparent"
+                >
+                  Meer Info
+                </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow bg-white border border-gray-200">
               <CardHeader>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                  <Zap className="h-6 w-6 text-green-600" />
+                <div className="flex justify-between items-start mb-4">
+                  <BarChart3 className="h-12 w-12 text-blue-600" />
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    €25/maand
+                  </Badge>
                 </div>
-                <CardTitle>Rapportages</CardTitle>
-                <CardDescription>Uitgebreide rapportages voor compliance en management</CardDescription>
+                <CardTitle className="text-gray-900">Analytics & Rapportage</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Uitgebreide analytics en compliance rapportage
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Compliance dashboards
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Automatische rapporten
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Export mogelijkheden
-                  </li>
-                </ul>
+                <Button
+                  variant="outline"
+                  className="w-full border-blue-600 text-blue-600 hover:bg-blue-50 bg-transparent"
+                >
+                  Meer Info
+                </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow bg-white border border-gray-200">
               <CardHeader>
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
-                  <Globe className="h-6 w-6 text-red-600" />
+                <div className="flex justify-between items-start mb-4">
+                  <Smartphone className="h-12 w-12 text-indigo-600" />
+                  <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
+                    €19/maand
+                  </Badge>
                 </div>
-                <CardTitle>Integraties</CardTitle>
-                <CardDescription>Koppel met bestaande systemen en externe diensten</CardDescription>
+                <CardTitle className="text-gray-900">Mobiele App</CardTitle>
+                <CardDescription className="text-gray-600">Complete mobiele toegang voor BHV'ers</CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    HR systemen
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    Alarm systemen
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    API toegang
-                  </li>
-                </ul>
+                <Button
+                  variant="outline"
+                  className="w-full border-indigo-600 text-indigo-600 hover:bg-indigo-50 bg-transparent"
+                >
+                  Meer Info
+                </Button>
               </CardContent>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-emerald-600 to-blue-600 text-white">
+      {/* Results Section */}
+      <section className="py-20 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
         <div className="container mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Vertrouwd door organisaties in heel Nederland</h2>
-            <p className="text-xl opacity-90">Meer dan 1000+ organisaties vertrouwen op BHV360</p>
+            <h2 className="text-4xl font-bold mb-4">Bewezen Resultaten</h2>
+            <p className="text-xl opacity-90">Onze klanten zien direct resultaat</p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <div className="grid md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold mb-2">1000+</div>
-              <div className="text-lg opacity-90">Actieve Klanten</div>
+              <div className="text-5xl font-bold mb-2">75%</div>
+              <div className="text-xl mb-2 font-semibold">Tijd besparing</div>
+              <div className="text-sm opacity-80">Minder administratie</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">50K+</div>
-              <div className="text-lg opacity-90">BHV'ers Beheerd</div>
+              <div className="text-5xl font-bold mb-2">98%</div>
+              <div className="text-xl mb-2 font-semibold">Compliance score</div>
+              <div className="text-sm opacity-80">Verhoogde compliance</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">99.9%</div>
-              <div className="text-lg opacity-90">Uptime</div>
+              <div className="text-5xl font-bold mb-2">60%</div>
+              <div className="text-xl mb-2 font-semibold">Incident respons</div>
+              <div className="text-sm opacity-80">Snellere afhandeling</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">24/7</div>
-              <div className="text-lg opacity-90">Support</div>
+              <div className="text-5xl font-bold mb-2">€15.000</div>
+              <div className="text-xl mb-2 font-semibold">Kosten reductie</div>
+              <div className="text-sm opacity-80">Jaarlijkse besparing</div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Demo Section */}
+      <section className="py-20 px-4 bg-white">
+        <div className="container mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Ervaar BHV360 in Actie</h2>
+            <p className="text-xl text-gray-600">
+              Ontdek hoe BHV360 werkt met onze interactieve demo's. Geen registratie vereist.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="hover:shadow-lg transition-shadow border border-gray-200">
+              <CardHeader className="text-center">
+                <Users className="h-16 w-16 text-emerald-600 mx-auto mb-4" />
+                <CardTitle className="text-gray-900">BHV Dashboard</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Bekijk het complete BHV dashboard met team overzicht en certificeringen.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <PlayCircle className="mr-2 h-4 w-4" />
+                  Start Demo
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow border border-gray-200">
+              <CardHeader className="text-center">
+                <MapPin className="h-16 w-16 text-teal-600 mx-auto mb-4" />
+                <CardTitle className="text-gray-900">Plotkaart Editor</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Ervaar hoe eenvoudig het is om interactieve plotkaarten te maken.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white">
+                  <PlayCircle className="mr-2 h-4 w-4" />
+                  Start Demo
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow border border-gray-200">
+              <CardHeader className="text-center">
+                <AlertTriangle className="h-16 w-16 text-red-600 mx-auto mb-4" />
+                <CardTitle className="text-gray-900">Incident Simulator</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Simuleer een noodsituatie en zie hoe BHV360 automatisch reageert.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full bg-red-600 hover:bg-red-700 text-white">
+                  <PlayCircle className="mr-2 h-4 w-4" />
+                  Start Demo
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center mt-12">
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 bg-transparent"
+            >
+              Alle Demo's Bekijken
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         </div>
       </section>
@@ -354,76 +608,57 @@ export default function HomePage() {
       <section className="py-20 px-4 bg-gray-50">
         <div className="container mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Wat onze klanten zeggen</h2>
-            <p className="text-xl text-gray-600">Ontdek waarom organisaties kiezen voor BHV360</p>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Waarom 500+ Organisaties Kiezen voor BHV360</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="border-0 shadow-lg">
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="bg-white border border-gray-200 shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-600 mb-4">
-                  "BHV360 heeft onze BHV processen volledig getransformeerd. De plotkaart editor is intuïtief en de
-                  compliance features geven ons vertrouwen dat we aan alle eisen voldoen."
+                <p className="text-gray-600 mb-4 italic">
+                  "BHV360 heeft onze BHV administratie van chaos naar complete controle gebracht. Aanrader!"
                 </p>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-emerald-600 font-semibold">MJ</span>
-                  </div>
-                  <div>
-                    <div className="font-semibold">Maria Jansen</div>
-                    <div className="text-sm text-gray-500">Facility Manager, TechCorp</div>
-                  </div>
+                <div className="text-sm">
+                  <div className="font-semibold text-gray-900">- Jan Bakker</div>
+                  <div className="text-gray-500">Facility Manager</div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg">
+            <Card className="bg-white border border-gray-200 shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-600 mb-4">
-                  "De mobile app is fantastisch. Onze BHV'ers hebben nu altijd toegang tot de laatste plotkaarten en
-                  procedures, zelfs zonder internetverbinding."
+                <p className="text-gray-600 mb-4 italic">
+                  "Eindelijk een systeem dat werkt! Compliance is nu een fluitje van een cent."
                 </p>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-blue-600 font-semibold">PV</span>
-                  </div>
-                  <div>
-                    <div className="font-semibold">Pieter van der Berg</div>
-                    <div className="text-sm text-gray-500">BHV Coördinator, MediCenter</div>
-                  </div>
+                <div className="text-sm">
+                  <div className="font-semibold text-gray-900">- Maria de Vries</div>
+                  <div className="text-gray-500">HR Manager</div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg">
+            <Card className="bg-white border border-gray-200 shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-600 mb-4">
-                  "De rapportage functionaliteit bespaart ons uren werk. Compliance rapportages worden automatisch
-                  gegenereerd en zijn altijd up-to-date."
+                <p className="text-gray-600 mb-4 italic">
+                  "De ROI was binnen 3 maanden zichtbaar. Tijd en kosten besparing is enorm."
                 </p>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-purple-600 font-semibold">SK</span>
-                  </div>
-                  <div>
-                    <div className="font-semibold">Sandra Koster</div>
-                    <div className="text-sm text-gray-500">Safety Manager, LogisticsPro</div>
-                  </div>
+                <div className="text-sm">
+                  <div className="font-semibold text-gray-900">- Peter Jansen</div>
+                  <div className="text-gray-500">Operations Director</div>
                 </div>
               </CardContent>
             </Card>
@@ -431,81 +666,206 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* Contact Form Section */}
       <section className="py-20 px-4 bg-white">
-        <div className="container mx-auto text-center">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Klaar om te starten met professionele BHV?</h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Begin vandaag nog met een gratis proefperiode. Geen creditcard vereist, volledige toegang tot alle functies.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-lg px-8 py-4">
-              <Link href="/register">
-                Gratis 30 Dagen Proberen <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="text-lg px-8 py-4 bg-transparent">
-              <Link href="/demo">Plan een Demo</Link>
-            </Button>
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Krijg Uw Persoonlijke Demo</h2>
+            <p className="text-xl text-gray-600">
+              Zie hoe BHV360 uw specifieke uitdagingen oplost. Gratis demo op maat van uw organisatie.
+            </p>
           </div>
-          <p className="text-sm text-gray-500 mt-4">30 dagen gratis • Geen setup kosten • Cancel elk moment</p>
+
+          <div className="grid md:grid-cols-2 gap-12">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Demo Aanvragen</h3>
+              <p className="text-gray-600 mb-8">
+                Vul het formulier in en we tonen u binnen 24 uur hoe BHV360 uw problemen oplost.
+              </p>
+
+              <form className="space-y-6">
+                <div>
+                  <Label htmlFor="name" className="text-gray-700 font-medium">
+                    Naam *
+                  </Label>
+                  <Input
+                    id="name"
+                    placeholder="Uw volledige naam"
+                    required
+                    className="mt-1 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email" className="text-gray-700 font-medium">
+                    E-mail *
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="uw.email@bedrijf.nl"
+                    required
+                    className="mt-1 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone" className="text-gray-700 font-medium">
+                    Telefoon
+                  </Label>
+                  <Input
+                    id="phone"
+                    placeholder="+31 6 12345678"
+                    className="mt-1 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="company" className="text-gray-700 font-medium">
+                    Bedrijfsnaam *
+                  </Label>
+                  <Input
+                    id="company"
+                    placeholder="Uw bedrijfsnaam"
+                    required
+                    className="mt-1 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="message" className="text-gray-700 font-medium">
+                    Aanvullende Informatie
+                  </Label>
+                  <Textarea
+                    id="message"
+                    placeholder="Vertel ons meer over uw specifieke situatie..."
+                    rows={4}
+                    className="mt-1 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
+                  />
+                </div>
+                <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-lg py-3">
+                  Gratis Demo Aanvragen
+                </Button>
+              </form>
+
+              <div className="flex justify-center space-x-6 mt-6 text-sm text-gray-500">
+                <span>✓ Geen verplichtingen</span>
+                <span>✓ Binnen 24 uur reactie</span>
+                <span>✓ Op maat van uw organisatie</span>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Direct Contact</h3>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Sales & Demo's</h4>
+                  <div className="flex items-center space-x-3 text-gray-600">
+                    <Mail className="h-5 w-5 text-emerald-600" />
+                    <span>info@BHV360.nl</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Direct Bellen</h4>
+                  <div className="flex items-center space-x-3 text-gray-600">
+                    <Phone className="h-5 w-5 text-emerald-600" />
+                    <span>033-4614303</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Reactietijd</h4>
+                  <div className="flex items-center space-x-3 text-gray-600">
+                    <Clock className="h-5 w-5 text-emerald-600" />
+                    <span>Binnen 4 uur op werkdagen</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 p-6 bg-emerald-50 rounded-lg border border-emerald-200">
+                <h4 className="font-semibold text-gray-900 mb-4">Wat u krijgt</h4>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />
+                    Persoonlijke demo op maat
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />
+                    ROI berekening voor uw situatie
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />
+                    Implementatie roadmap
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />
+                    30 dagen gratis proefperiode
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />
+                    Gratis training voor uw team
+                  </li>
+                </ul>
+
+                <div className="mt-6 text-center">
+                  <div className="text-sm text-gray-600">Gemiddelde ROI</div>
+                  <div className="text-3xl font-bold text-emerald-600">320%</div>
+                  <div className="text-sm text-gray-600">Binnen 12 maanden</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-16 px-4">
         <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
-              <Image
-                src="/images/bhv360-logo-full.png"
-                alt="BHV360 Logo"
-                width={160}
-                height={32}
-                className="h-8 w-auto brightness-0 invert mb-4"
-              />
-              <p className="text-gray-400 mb-4">
-                Professionele BHV software voor moderne organisaties. Compliant, betrouwbaar en gebruiksvriendelijk.
+              <div className="flex items-center space-x-2 mb-4">
+                <Image
+                  src="/images/bhv360-logo-full.png"
+                  alt="BHV360 Logo"
+                  width={480}
+                  height={120}
+                  className="h-32 w-auto filter brightness-200 contrast-200"
+                />
+              </div>
+              <p className="text-gray-400 text-sm mb-4">
+                BHV software van Nederland. Vertrouwd door 500+ organisaties voor professioneel veiligheidsmanagement.
               </p>
-              <div className="flex space-x-4">
-                <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-                  <span className="text-xs">f</span>
+              <div className="space-y-2 text-sm text-gray-400">
+                <div className="flex items-center space-x-2">
+                  <Mail className="h-4 w-4" />
+                  <span>info@BHV360.nl</span>
                 </div>
-                <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-                  <span className="text-xs">t</span>
-                </div>
-                <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-                  <span className="text-xs">in</span>
+                <div className="flex items-center space-x-2">
+                  <Phone className="h-4 w-4" />
+                  <span>033-4614303</span>
                 </div>
               </div>
             </div>
 
             <div>
               <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li>
-                  <Link href="/platform" className="hover:text-white transition-colors">
-                    Platform
-                  </Link>
-                </li>
+              <ul className="space-y-2 text-sm text-gray-400">
                 <li>
                   <Link href="/demo" className="hover:text-white transition-colors">
-                    Demo
+                    Demo's
                   </Link>
                 </li>
                 <li>
-                  <Link href="/mobile-app" className="hover:text-white transition-colors">
-                    Mobile App
+                  <Link href="/modules" className="hover:text-white transition-colors">
+                    Modules
                   </Link>
                 </li>
                 <li>
-                  <Link href="/integrations" className="hover:text-white transition-colors">
-                    Integraties
+                  <Link href="/plotkaarten" className="hover:text-white transition-colors">
+                    Plotkaarten
                   </Link>
                 </li>
                 <li>
-                  <Link href="/api" className="hover:text-white transition-colors">
-                    API
+                  <Link href="/incidenten" className="hover:text-white transition-colors">
+                    Incidenten
                   </Link>
                 </li>
               </ul>
@@ -513,20 +873,20 @@ export default function HomePage() {
 
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-gray-400">
+              <ul className="space-y-2 text-sm text-gray-400">
                 <li>
                   <Link href="/help" className="hover:text-white transition-colors">
-                    Help Center
+                    Helpdesk
                   </Link>
                 </li>
                 <li>
-                  <Link href="/video-tutorials" className="hover:text-white transition-colors">
-                    Video Tutorials
+                  <Link href="/training" className="hover:text-white transition-colors">
+                    Training
                   </Link>
                 </li>
                 <li>
-                  <Link href="/contact" className="hover:text-white transition-colors">
-                    Contact
+                  <Link href="/login" className="hover:text-white transition-colors">
+                    Inloggen
                   </Link>
                 </li>
                 <li>
@@ -538,41 +898,26 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-4">Contact</h3>
-              <ul className="space-y-3 text-gray-400">
-                <li className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  <span>+31 (0)20 123 4567</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  <span>info@bhv360.nl</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>Amsterdam, Nederland</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <HeadphonesIcon className="h-4 w-4" />
-                  <span>24/7 Support</span>
-                </li>
-              </ul>
+              <h3 className="font-semibold mb-4">Compliance</h3>
+              <div className="space-y-2 text-sm text-gray-400">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-400" />
+                  <span>GDPR Compliant</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-400" />
+                  <span>Voldoet aan ISO Standaarden</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-400" />
+                  <span>Nederlandse Support</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 text-sm">© 2024 BHV360. Alle rechten voorbehouden.</p>
-            <div className="flex space-x-6 text-sm text-gray-400 mt-4 md:mt-0">
-              <Link href="/privacy" className="hover:text-white transition-colors">
-                Privacy
-              </Link>
-              <Link href="/terms" className="hover:text-white transition-colors">
-                Voorwaarden
-              </Link>
-              <Link href="/cookies" className="hover:text-white transition-colors">
-                Cookies
-              </Link>
-            </div>
+          <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
+            <p>&copy; 2025 BHV360 - BHV Software van Nederland</p>
           </div>
         </div>
       </footer>

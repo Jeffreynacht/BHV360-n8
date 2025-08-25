@@ -1,61 +1,61 @@
 import { NextResponse } from "next/server"
+import { supabase, testSupabaseConnection } from "@/lib/supabase"
 
 export async function GET() {
   try {
     const startTime = Date.now()
 
-    // Simulate database operations
-    await new Promise((resolve) => setTimeout(resolve, Math.random() * 100))
+    // Test basic connection
+    const connectionTest = await testSupabaseConnection()
+
+    // Test table access
+    const { data: customers, error: customersError } = await supabase.from("customers").select("id, name").limit(5)
+
+    const { data: users, error: usersError } = await supabase.from("users").select("id, name, role").limit(5)
 
     const endTime = Date.now()
-    const latency = endTime - startTime
+    const totalLatency = endTime - startTime
 
-    const testResult = {
-      status: "success",
-      message: "Database connection test completed successfully",
+    const testResults = {
+      success: connectionTest.success && !customersError && !usersError,
       timestamp: new Date().toISOString(),
-      connection: {
-        status: "active",
-        latency: `${latency}ms`,
-        pool: {
-          active: 5,
-          idle: 3,
-          total: 8,
+      latency: `${totalLatency}ms`,
+      connection: connectionTest,
+      tables: {
+        customers: {
+          accessible: !customersError,
+          count: customers?.length || 0,
+          error: customersError?.message || null,
+        },
+        users: {
+          accessible: !usersError,
+          count: users?.length || 0,
+          error: usersError?.message || null,
         },
       },
-      operations: {
-        select: "working",
-        insert: "working",
-        update: "working",
-        delete: "working",
-      },
-      tables: {
-        customers: "accessible",
-        users: "accessible",
-        inspections: "accessible",
-        incidents: "accessible",
-      },
-      performance: {
-        queryTime: `${Math.random() * 50 + 10}ms`,
-        indexUsage: "optimal",
-        cacheHitRate: "95%",
+      environment: {
+        supabase_url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        supabase_anon_key: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        supabase_service_key: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        database_url: !!process.env.DATABASE_URL,
       },
     }
 
-    return NextResponse.json(testResult, { status: 200 })
+    return NextResponse.json(testResults, {
+      status: testResults.success ? 200 : 500,
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+    })
   } catch (error) {
-    console.error("Database test failed:", error)
+    console.error("Database test error:", error)
 
     return NextResponse.json(
       {
-        status: "error",
-        message: "Database connection test failed",
+        success: false,
         timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : "Unknown database error",
-        connection: {
-          status: "failed",
-          latency: "timeout",
-        },
+        error: error instanceof Error ? error.message : "Unknown error",
+        message: "Database test failed",
       },
       { status: 500 },
     )
@@ -64,33 +64,51 @@ export async function GET() {
 
 export async function POST() {
   try {
-    const writeTest = {
-      status: "success",
-      message: "Database write operations test completed",
-      timestamp: new Date().toISOString(),
-      operations: {
-        create: "success",
-        update: "success",
-        delete: "success",
-        transaction: "success",
-      },
-      performance: {
-        insertTime: "15ms",
-        updateTime: "12ms",
-        deleteTime: "8ms",
-      },
+    // Create test data
+    const testCustomer = {
+      name: "Test Customer",
+      contact_person: "Test Person",
+      email: "test@example.com",
+      phone: "06-12345678",
+      active: true,
     }
 
-    return NextResponse.json(writeTest, { status: 200 })
+    const { data: customer, error: customerError } = await supabase
+      .from("customers")
+      .insert([testCustomer])
+      .select()
+      .single()
+
+    if (customerError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: customerError.message,
+          message: "Failed to create test customer",
+        },
+        { status: 500 },
+      )
+    }
+
+    // Clean up test data
+    await supabase.from("customers").delete().eq("id", customer.id)
+
+    return NextResponse.json({
+      success: true,
+      message: "Database write/read test successful",
+      testData: {
+        created: customer,
+        cleaned: true,
+      },
+    })
   } catch (error) {
-    console.error("Database write test failed:", error)
+    console.error("Database write test error:", error)
 
     return NextResponse.json(
       {
-        status: "error",
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
         message: "Database write test failed",
-        timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : "Unknown write error",
       },
       { status: 500 },
     )

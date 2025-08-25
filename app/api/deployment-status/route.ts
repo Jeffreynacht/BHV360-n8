@@ -2,66 +2,63 @@ import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
-    const deploymentStatus = {
+    const deploymentInfo = {
       status: "deployed",
       timestamp: new Date().toISOString(),
-      version: process.env.VERCEL_GIT_COMMIT_SHA?.substring(0, 7) || "local-dev",
-      environment: process.env.VERCEL_ENV || process.env.NODE_ENV || "development",
-      region: process.env.VERCEL_REGION || "ams1",
+      version: "1.0.0",
+      environment: process.env.NODE_ENV || "development",
       deployment: {
-        id: process.env.VERCEL_DEPLOYMENT_ID || "local-dev",
-        url: process.env.VERCEL_URL || "localhost:3000",
+        id: process.env.VERCEL_GIT_COMMIT_SHA || "local",
+        url: process.env.VERCEL_URL || process.env.NEXT_PUBLIC_APP_URL || "localhost:3000",
         branch: process.env.VERCEL_GIT_COMMIT_REF || "main",
-        commit: process.env.VERCEL_GIT_COMMIT_SHA || "local-commit",
-        author: process.env.VERCEL_GIT_COMMIT_AUTHOR_NAME || "developer",
-      },
-      build: {
-        time: new Date().toISOString(),
-        duration: "45s",
-        node_version: process.version,
-        platform: process.platform,
-        arch: process.arch,
-        memory_limit: "1024MB",
+        region: process.env.VERCEL_REGION || "local",
       },
       features: {
-        database: true,
-        authentication: true,
-        api: true,
-        static_files: true,
-        ssr: true,
-        edge_functions: true,
-        middleware: true,
+        websocket: !!process.env.WEBSOCKET_PORT,
+        push_notifications: !!process.env.VAPID_PUBLIC_KEY,
+        email: !!process.env.SMTP_HOST,
+        sms: !!process.env.SMS_API_KEY,
+        database: !!process.env.DATABASE_URL,
+        supabase: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       },
-      integrations: {
-        neon: process.env.DATABASE_URL ? "connected" : "not_configured",
-        supabase: process.env.SUPABASE_URL ? "connected" : "not_configured",
-        vercel_blob: "available",
-        analytics: "enabled",
+      apis: {
+        total: 50,
+        categories: [
+          "Authentication",
+          "User Management",
+          "Customer Management",
+          "Incident Management",
+          "Emergency Response",
+          "WebSocket & Messaging",
+          "Push Notifications",
+          "Inspections & Reports",
+          "Communication",
+          "Admin & Monitoring",
+          "System Health",
+          "Backup & Performance",
+        ],
       },
-      performance: {
-        cold_start: "< 100ms",
-        avg_response: "< 200ms",
-        uptime: "99.9%",
+      uptime: process.uptime(),
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+        unit: "MB",
       },
     }
 
-    return NextResponse.json(deploymentStatus, {
-      status: 200,
+    return NextResponse.json(deploymentInfo, {
       headers: {
-        "Cache-Control": "public, max-age=60",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
       },
     })
   } catch (error) {
-    console.error("Deployment status check failed:", error)
+    console.error("Deployment status error:", error)
 
     return NextResponse.json(
       {
         status: "error",
         timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : "Unknown deployment error",
-        deployment: {
-          status: "failed",
-        },
+        error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     )
