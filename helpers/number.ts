@@ -188,3 +188,40 @@ export function lerp(start: number, end: number, factor: number): number {
 export function mapRange(value: number, fromMin: number, fromMax: number, toMin: number, toMax: number): number {
   return ((value - fromMin) * (toMax - toMin)) / (fromMax - fromMin) + toMin
 }
+
+/**
+ * Safely convert a number to fixed decimal places, handling edge cases
+ */
+export function toFixedSafe(num: number, decimals = 2): string {
+  if (typeof num !== "number" || isNaN(num)) {
+    return "0.00"
+  }
+
+  if (!isFinite(num)) {
+    return "0.00"
+  }
+
+  try {
+    return num.toFixed(decimals)
+  } catch (error) {
+    return "0.00"
+  }
+}
+
+/**
+ * Safely convert a value to a number, with fallback
+ */
+export function toNumberSafe(value: any, fallback = 0): number {
+  if (typeof value === "number" && !isNaN(value) && isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value.replace(/[^\d.-]/g, ""))
+    if (!isNaN(parsed) && isFinite(parsed)) {
+      return parsed
+    }
+  }
+
+  return fallback
+}
