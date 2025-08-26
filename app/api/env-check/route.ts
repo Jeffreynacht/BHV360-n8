@@ -15,6 +15,14 @@ const optionalEnvVars = [
   "GROQ_API_KEY",
   "POSTGRES_URL",
   "NEON_PROJECT_ID",
+  "SMTP_HOST",
+  "SMTP_PORT",
+  "SMTP_USER",
+  "SMTP_PASS",
+  "S3_BUCKET",
+  "S3_REGION",
+  "S3_ACCESS_KEY",
+  "S3_SECRET_KEY",
 ]
 
 export async function GET() {
@@ -25,6 +33,25 @@ export async function GET() {
 
     const status = missing.length === 0 ? "OK" : "ERROR"
     const statusCode = missing.length === 0 ? 200 : 500
+
+    // Check if DATABASE_URL can be constructed from Neon variables
+    let databaseUrlStatus = "OK"
+    let databaseUrlMessage = "DATABASE_URL is set"
+
+    if (!process.env.DATABASE_URL) {
+      const pgUser = process.env.PGUSER
+      const pgPassword = process.env.PGPASSWORD
+      const pgHost = process.env.POSTGRES_HOST || process.env.PGHOST
+      const pgDatabase = process.env.PGDATABASE
+
+      if (pgUser && pgPassword && pgHost && pgDatabase) {
+        databaseUrlStatus = "CONSTRUCTABLE"
+        databaseUrlMessage = "DATABASE_URL can be constructed from Neon variables"
+      } else {
+        databaseUrlStatus = "MISSING"
+        databaseUrlMessage = "DATABASE_URL missing and cannot be constructed from Neon variables"
+      }
+    }
 
     const envCheckData = {
       status,
@@ -40,6 +67,10 @@ export async function GET() {
         total: optionalEnvVars.length,
         present: optionalPresent.length,
         presentVars: optionalPresent,
+      },
+      database: {
+        status: databaseUrlStatus,
+        message: databaseUrlMessage,
       },
       summary:
         missing.length === 0

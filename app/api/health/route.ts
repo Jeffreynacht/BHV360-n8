@@ -7,8 +7,13 @@ export async function GET() {
       status: "healthy",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      version: "1.0.0",
+      version: "2.1.1",
       environment: process.env.NODE_ENV || "development",
+      node_version: process.version,
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+      },
     }
 
     return NextResponse.json(healthData, {

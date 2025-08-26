@@ -50,10 +50,14 @@ export interface NotificationPayload {
 export class NotificationService {
   private static instance: NotificationService
   private vapidKeys = {
-    publicKey:
-      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-      "BLBz-HXFSjHdJyFjKxfFHPGeGgHgJP_zLNYOFQJZMECJQqLxK8RuOLCFxUXiL_LQ-0i8qQXYqKKLEHeAGZ8hDHo",
-    privateKey: process.env.VAPID_PRIVATE_KEY || "3KzvKasA2SoCxsp0iIG_o_0q1WzVX4vUvCQsRjfEZqc",
+    publicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY!,
+    privateKey: process.env.VAPID_PRIVATE_KEY!,
+  }
+
+  constructor() {
+    if (!this.vapidKeys.publicKey || !this.vapidKeys.privateKey) {
+      throw new Error("Missing VAPID keys (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)")
+    }
   }
 
   static getInstance(): NotificationService {
@@ -298,7 +302,7 @@ export class NotificationService {
 
   // Get notification URL for deep linking
   private getNotificationUrl(payload: NotificationPayload): string {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://bhv360.vercel.app"
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.bhv360.nl"
 
     switch (payload.category) {
       case "emergency":
@@ -326,7 +330,7 @@ export class NotificationService {
       category: payload.category,
       priority: payload.priority,
       timestamp: new Date().toLocaleString("nl-NL"),
-      appUrl: process.env.NEXT_PUBLIC_APP_URL,
+      appUrl: process.env.NEXT_PUBLIC_APP_URL || "https://www.bhv360.nl",
       ...payload.data,
     }
 
@@ -385,8 +389,11 @@ export class NotificationService {
   // Get user push subscription (mock implementation)
   private async getUserPushSubscription(userId: string): Promise<any> {
     // In production, fetch from database
-    const stored = localStorage.getItem(`push_subscription_${userId}`)
-    return stored ? JSON.parse(stored) : null
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(`push_subscription_${userId}`)
+      return stored ? JSON.parse(stored) : null
+    }
+    return null
   }
 
   // Get user data (mock implementation)
