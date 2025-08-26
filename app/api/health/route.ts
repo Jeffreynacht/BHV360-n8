@@ -9,6 +9,8 @@ export async function GET() {
       uptime: process.uptime(),
       version: "2.1.1",
       environment: process.env.NODE_ENV || "development",
+      app_name: process.env.NEXT_PUBLIC_APP_NAME || "BHV360",
+      site_url: process.env.NEXT_PUBLIC_SITE_URL || "Not configured",
       node_version: process.version,
       memory: {
         used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),

@@ -7,11 +7,12 @@ const requiredEnvVars = [
   "NEXTAUTH_SECRET",
   "VAPID_PUBLIC_KEY",
   "VAPID_PRIVATE_KEY",
+  "NEXT_PUBLIC_SITE_URL",
+  "NEXT_PUBLIC_APP_NAME",
 ]
 
 const optionalEnvVars = [
   "SUPABASE_SERVICE_ROLE_KEY",
-  "NEXT_PUBLIC_APP_URL",
   "GROQ_API_KEY",
   "POSTGRES_URL",
   "NEON_PROJECT_ID",
@@ -34,29 +35,24 @@ export async function GET() {
     const status = missing.length === 0 ? "OK" : "ERROR"
     const statusCode = missing.length === 0 ? 200 : 500
 
-    // Check if DATABASE_URL can be constructed from Neon variables
+    // Check if DATABASE_URL can be constructed from POSTGRES_URL
     let databaseUrlStatus = "OK"
     let databaseUrlMessage = "DATABASE_URL is set"
 
-    if (!process.env.DATABASE_URL) {
-      const pgUser = process.env.PGUSER
-      const pgPassword = process.env.PGPASSWORD
-      const pgHost = process.env.POSTGRES_HOST || process.env.PGHOST
-      const pgDatabase = process.env.PGDATABASE
-
-      if (pgUser && pgPassword && pgHost && pgDatabase) {
-        databaseUrlStatus = "CONSTRUCTABLE"
-        databaseUrlMessage = "DATABASE_URL can be constructed from Neon variables"
-      } else {
-        databaseUrlStatus = "MISSING"
-        databaseUrlMessage = "DATABASE_URL missing and cannot be constructed from Neon variables"
-      }
+    if (!process.env.DATABASE_URL && process.env.POSTGRES_URL) {
+      databaseUrlStatus = "FALLBACK"
+      databaseUrlMessage = "DATABASE_URL missing but POSTGRES_URL available"
+    } else if (!process.env.DATABASE_URL) {
+      databaseUrlStatus = "MISSING"
+      databaseUrlMessage = "DATABASE_URL missing and no POSTGRES_URL fallback"
     }
 
     const envCheckData = {
       status,
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || "development",
+      app_name: process.env.NEXT_PUBLIC_APP_NAME || "Unknown",
+      site_url: process.env.NEXT_PUBLIC_SITE_URL || "Not set",
       required: {
         total: requiredEnvVars.length,
         present: present.length,

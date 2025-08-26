@@ -5,34 +5,19 @@ export async function GET() {
   try {
     console.log("🔍 Testing database connection...")
 
-    // Check if DATABASE_URL exists or can be constructed
-    let databaseUrl = process.env.DATABASE_URL
+    // Check if DATABASE_URL exists or use POSTGRES_URL as fallback
+    const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL
 
     if (!databaseUrl) {
-      // Try to construct from Neon variables
-      const pgUser = process.env.PGUSER
-      const pgPassword = process.env.PGPASSWORD
-      const pgHost = process.env.POSTGRES_HOST || process.env.PGHOST
-      const pgDatabase = process.env.PGDATABASE
-
-      if (pgUser && pgPassword && pgHost && pgDatabase) {
-        databaseUrl = `postgres://${pgUser}:${pgPassword}@${pgHost}/${pgDatabase}?sslmode=require`
-        console.log("📝 Constructed DATABASE_URL from Neon variables")
-      } else {
-        return NextResponse.json({
-          success: false,
-          error: "DATABASE_URL not found and cannot be constructed from Neon variables",
-          env: {
-            NODE_ENV: process.env.NODE_ENV,
-            hasDbUrl: !!process.env.DATABASE_URL,
-            hasPostgresUrl: !!process.env.POSTGRES_URL,
-            hasPgUser: !!process.env.PGUSER,
-            hasPgPassword: !!process.env.PGPASSWORD,
-            hasPgHost: !!(process.env.POSTGRES_HOST || process.env.PGHOST),
-            hasPgDatabase: !!process.env.PGDATABASE,
-          },
-        })
-      }
+      return NextResponse.json({
+        success: false,
+        error: "Neither DATABASE_URL nor POSTGRES_URL environment variable found",
+        env: {
+          NODE_ENV: process.env.NODE_ENV,
+          hasDbUrl: !!process.env.DATABASE_URL,
+          hasPostgresUrl: !!process.env.POSTGRES_URL,
+        },
+      })
     }
 
     const sql = neon(databaseUrl)
@@ -51,7 +36,7 @@ export async function GET() {
 
     let customers = []
     if (tableCheck[0].table_exists) {
-      customers = await sql`SELECT * FROM customers ORDER BY name LIMIT 10`
+      customers = await sql`SELECT id, name, contact_person, active FROM customers ORDER BY name LIMIT 10`
       console.log("📊 Found customers:", customers.length)
     } else {
       console.log("⚠️ Customers table does not exist")
@@ -66,7 +51,7 @@ export async function GET() {
         customers_table_exists: tableCheck[0].table_exists,
         customers_count: customers.length,
         customers: customers.slice(0, 5), // Only return first 5 for brevity
-        url_source: process.env.DATABASE_URL ? "DATABASE_URL" : "constructed_from_neon_vars",
+        url_source: process.env.DATABASE_URL ? "DATABASE_URL" : "POSTGRES_URL",
       },
     })
   } catch (error) {
