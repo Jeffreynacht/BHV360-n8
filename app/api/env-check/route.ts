@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server"
 
-const requiredEnvVars = [
+const required = [
   "DATABASE_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "NEXTAUTH_SECRET",
   "VAPID_PUBLIC_KEY",
   "VAPID_PRIVATE_KEY",
-  "NEXT_PUBLIC_SITE_URL",
-  "NEXT_PUBLIC_APP_NAME",
 ]
 
-const optionalEnvVars = [
+const optional = [
+  "NEXT_PUBLIC_SITE_URL",
+  "NEXT_PUBLIC_APP_NAME",
+  "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
+  "NEXTAUTH_URL",
   "GROQ_API_KEY",
   "POSTGRES_URL",
   "NEON_PROJECT_ID",
@@ -20,58 +22,36 @@ const optionalEnvVars = [
   "SMTP_PORT",
   "SMTP_USER",
   "SMTP_PASS",
-  "S3_BUCKET",
-  "S3_REGION",
-  "S3_ACCESS_KEY",
-  "S3_SECRET_KEY",
+  "S3_BACKUP_ENABLED",
+  "VERCEL_GIT_COMMIT_MESSAGE",
 ]
 
 export async function GET() {
   try {
-    const missing = requiredEnvVars.filter((key) => !process.env[key])
-    const present = requiredEnvVars.filter((key) => !!process.env[key])
-    const optionalPresent = optionalEnvVars.filter((key) => !!process.env[key])
+    const missing = required.filter((k) => !process.env[k])
+    const present = required.filter((k) => !!process.env[k])
+    const optionalPresent = optional.filter((k) => !!process.env[k])
 
-    const status = missing.length === 0 ? "OK" : "ERROR"
-    const statusCode = missing.length === 0 ? 200 : 500
-
-    // Check if DATABASE_URL can be constructed from POSTGRES_URL
-    let databaseUrlStatus = "OK"
-    let databaseUrlMessage = "DATABASE_URL is set"
-
-    if (!process.env.DATABASE_URL && process.env.POSTGRES_URL) {
-      databaseUrlStatus = "FALLBACK"
-      databaseUrlMessage = "DATABASE_URL missing but POSTGRES_URL available"
-    } else if (!process.env.DATABASE_URL) {
-      databaseUrlStatus = "MISSING"
-      databaseUrlMessage = "DATABASE_URL missing and no POSTGRES_URL fallback"
-    }
+    const status = missing.length ? "ERROR" : "OK"
+    const statusCode = missing.length ? 500 : 200
 
     const envCheckData = {
       status,
+      missing,
+      present,
+      optional_present: optionalPresent,
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || "development",
-      app_name: process.env.NEXT_PUBLIC_APP_NAME || "Unknown",
-      site_url: process.env.NEXT_PUBLIC_SITE_URL || "Not set",
-      required: {
-        total: requiredEnvVars.length,
-        present: present.length,
-        missing: missing.length,
-        missingVars: missing,
-      },
-      optional: {
-        total: optionalEnvVars.length,
-        present: optionalPresent.length,
-        presentVars: optionalPresent,
-      },
-      database: {
-        status: databaseUrlStatus,
-        message: databaseUrlMessage,
-      },
-      summary:
-        missing.length === 0
-          ? "All required environment variables are present"
-          : `Missing ${missing.length} required environment variables`,
+      app_name: process.env.NEXT_PUBLIC_APP_NAME || "BHV360",
+      site_url: process.env.NEXT_PUBLIC_SITE_URL || "Not configured",
+      database_url_source: process.env.DATABASE_URL
+        ? "DATABASE_URL"
+        : process.env.POSTGRES_URL
+          ? "POSTGRES_URL (fallback)"
+          : "MISSING",
+      summary: missing.length
+        ? `Missing ${missing.length} required environment variables`
+        : "All required environment variables are present",
     }
 
     return NextResponse.json(envCheckData, {

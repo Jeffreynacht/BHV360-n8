@@ -8,25 +8,43 @@ if (!url || !anon) {
 }
 
 export const supabase = createClient(url, anon, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-  db: { schema: "public" },
-  global: { headers: { "X-Client-Info": "bhv360" } },
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+  db: {
+    schema: "public",
+  },
+  global: {
+    headers: {
+      "X-Client-Info": "bhv360",
+    },
+  },
 })
 
-// Server-side admin client
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+// Server-side client for admin operations
+export const createServerClient = () => {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-export const supabaseAdmin = serviceKey
-  ? createClient(url, serviceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-      db: {
-        schema: "public",
-      },
-    })
-  : null
+  if (!serviceRoleKey) {
+    console.warn("SUPABASE_SERVICE_ROLE_KEY not found, using anon key")
+    return supabase
+  }
+
+  return createClient(url, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+    db: {
+      schema: "public",
+    },
+    global: {
+      headers: { "X-Client-Info": "bhv360-server" },
+    },
+  })
+}
 
 // Export createClient for direct use in other modules
 export { createClient }

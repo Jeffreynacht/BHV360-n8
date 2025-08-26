@@ -7,7 +7,7 @@ export async function GET() {
       status: "healthy",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      version: "2.1.1",
+      version: "2.1.2",
       environment: process.env.NODE_ENV || "development",
       app_name: process.env.NEXT_PUBLIC_APP_NAME || "BHV360",
       site_url: process.env.NEXT_PUBLIC_SITE_URL || "Not configured",

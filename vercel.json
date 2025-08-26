@@ -2,14 +2,18 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "pnpm run build",
   "outputDirectory": ".next",
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs",
   "regions": ["ams1"],
   "env": {
-    "HUSKY": "0"
+    "HUSKY": "0",
+    "NEXT_TELEMETRY_DISABLED": "1"
   },
   "functions": {
     "app/**/*.ts": {
+      "runtime": "nodejs20.x"
+    },
+    "app/**/*.tsx": {
       "runtime": "nodejs20.x"
     }
   },
