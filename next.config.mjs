@@ -18,25 +18,37 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'www.bhv360.nl',
+        hostname: '**.vercel.app',
       },
     ],
     unoptimized: true,
   },
-  env: {
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-  },
   async headers() {
     return [
       {
-        source: '/api/auth/(.*)',
+        source: '/api/auth/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, max-age=0',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
           },
         ],
+      },
+    ]
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/auth/:path*',
+        destination: '/api/auth/:path*',
       },
     ]
   },
