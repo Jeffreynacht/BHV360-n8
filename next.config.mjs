@@ -23,6 +23,10 @@ const nextConfig = {
     ],
     unoptimized: true,
   },
+  env: {
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+  },
   async headers() {
     return [
       {
@@ -41,14 +45,6 @@ const nextConfig = {
             value: '0',
           },
         ],
-      },
-    ]
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/api/auth/:path*',
-        destination: '/api/auth/:path*',
       },
     ]
   },

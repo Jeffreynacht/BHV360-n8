@@ -116,6 +116,7 @@ export interface DataContextType {
   data: any
   setData: (data: any) => void
   loading: boolean
+  setLoading: (loading: boolean) => void
   error: string | null
   refreshData: () => Promise<void>
   lastRefresh: Date | null
@@ -1198,6 +1199,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     data,
     setData,
     loading,
+    setLoading,
     error,
     refreshData,
     lastRefresh,
@@ -1236,11 +1238,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 export function useData() {
   const context = useContext(DataContext)
   if (context === undefined) {
-    // Return default values instead of throwing error during SSR
-    return {
-      data: null,
-      setData: () => {},
-    }
+    throw new Error("useData must be used within a DataProvider")
   }
   return context
 }

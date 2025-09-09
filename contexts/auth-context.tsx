@@ -1,17 +1,16 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
 
-export interface User {
+interface User {
   id: string
-  email: string
   name: string
-  role: "admin" | "employee" | "security" | "super_admin" | "bhv_coordinator" | "partner_admin"
-  customerId?: string
-  partnerId?: string
+  email: string
+  role: string
 }
 
-export interface AuthContextType {
+interface AuthContextType {
   user: User | null
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
@@ -21,78 +20,61 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    // Return default values instead of throwing error during SSR
-    return {
-      user: null,
-      login: async () => false,
-      logout: () => {},
-      loading: false,
-      canAccess: () => false,
-    }
-  }
-  return context
-}
-
-interface AuthProviderProps {
-  children: ReactNode
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
-    // Initialize with demo user
-    const demoUser: User = {
-      id: "1",
-      email: "demo@bhv360.nl",
-      name: "Demo Gebruiker",
-      role: "admin",
-      customerId: "1",
+    // Simulate checking for existing session
+    const checkAuth = async () => {
+      try {
+        // In a real app, check for existing session/token
+        const savedUser = localStorage.getItem("user")
+        if (savedUser) {
+          setUser(JSON.parse(savedUser))
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error)
+      } finally {
+        setLoading(false)
+      }
     }
-    setUser(demoUser)
-    setLoading(false)
+
+    checkAuth()
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Demo login logic
-    if (email === "demo@bhv360.nl" && password === "demo") {
-      const demoUser: User = {
+    setLoading(true)
+    try {
+      // Simulate login API call
+      const mockUser = {
         id: "1",
-        email: "demo@bhv360.nl",
-        name: "Demo Gebruiker",
+        name: "Demo User",
+        email,
         role: "admin",
-        customerId: "1",
       }
-      setUser(demoUser)
+      setUser(mockUser)
+      localStorage.setItem("user", JSON.stringify(mockUser))
       return true
+    } catch (error) {
+      console.error("Login failed:", error)
+      return false
+    } finally {
+      setLoading(false)
     }
-    return false
   }
 
   const logout = () => {
     setUser(null)
+    localStorage.removeItem("user")
+    router.push("/login")
   }
 
   const canAccess = (requiredRole: string): boolean => {
-    if (!user) return false
-
-    const roleHierarchy = {
-      super_admin: 5,
-      partner_admin: 4,
-      admin: 3,
-      bhv_coordinator: 2,
-      security: 1,
-      employee: 0,
-    }
-
-    const userLevel = roleHierarchy[user.role as keyof typeof roleHierarchy] || 0
-    const requiredLevel = roleHierarchy[requiredRole as keyof typeof roleHierarchy] || 0
-
-    return userLevel >= requiredLevel
+    // Implement your role-based access control logic here
+    // This is a placeholder, replace with your actual implementation
+    return true
   }
 
   const value: AuthContextType = {
@@ -104,4 +86,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider")
+  }
+  return context
 }

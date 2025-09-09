@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient()
@@ -31,6 +33,7 @@ export async function GET(request: NextRequest) {
       .order("started_at", { ascending: false })
 
     if (error) {
+      console.error("Error fetching evacuation status:", error)
       return NextResponse.json({ error: "Kon evacuatie status niet ophalen" }, { status: 500 })
     }
 
