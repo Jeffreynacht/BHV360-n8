@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(req: NextRequest) {
   const p = req.nextUrl.pathname;
-  if (p.startsWith('/api/auth')) return NextResponse.next(); // auth ongemoeid laten
+  if (p.startsWith('/api/auth')) return NextResponse.next();
   return NextResponse.next();
 }
 
