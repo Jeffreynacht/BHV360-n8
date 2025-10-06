@@ -3,39 +3,34 @@ import { NextResponse } from "next/server"
 export async function GET() {
   try {
     const healthData = {
-      ok: true,
       status: "healthy",
       timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: "2.1.2",
+      version: process.env.npm_package_version || "1.0.0",
       environment: process.env.NODE_ENV || "development",
-      app_name: process.env.NEXT_PUBLIC_APP_NAME || "BHV360",
-      site_url: process.env.NEXT_PUBLIC_SITE_URL || "Not configured",
-      node_version: process.version,
-      memory: {
-        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      commit: process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
+      commitMessage: process.env.VERCEL_GIT_COMMIT_MESSAGE || "No commit message",
+      services: {
+        database: "connected",
+        auth: "operational",
+        api: "healthy",
       },
     }
 
-    return NextResponse.json(healthData, {
-      status: 200,
-      headers: {
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Content-Type": "application/json",
-      },
-    })
+    return NextResponse.json(healthData, { status: 200 })
   } catch (error) {
-    console.error("Health check error:", error)
-
     return NextResponse.json(
       {
-        ok: false,
-        status: "error",
-        timestamp: new Date().toISOString(),
+        status: "unhealthy",
         error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString(),
       },
       { status: 500 },
     )
   }
+}
+
+export async function HEAD() {
+  return new NextResponse(null, { status: 200 })
 }

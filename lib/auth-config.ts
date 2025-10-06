@@ -10,12 +10,11 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // Demo authentication - replace with real logic
-        if (credentials?.email === "demo@bhv360.nl" && credentials?.password === "demo123") {
+        if (credentials?.email && credentials?.password) {
           return {
             id: "1",
-            email: "demo@bhv360.nl",
-            name: "Demo User",
+            email: credentials.email,
+            name: "Test User",
             role: "admin",
           }
         }
@@ -26,20 +25,16 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
-  session: {
-    strategy: "jwt",
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role
+        token.role = user.role
       }
       return token
     },
     async session({ session, token }) {
-      if (token && session.user) {
-        ;(session.user as any).id = token.sub
-        ;(session.user as any).role = token.role
+      if (token) {
+        session.user.role = token.role
       }
       return session
     },

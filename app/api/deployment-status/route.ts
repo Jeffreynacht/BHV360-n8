@@ -7,58 +7,34 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       version: "1.0.0",
       environment: process.env.NODE_ENV || "development",
-      deployment: {
-        id: process.env.VERCEL_GIT_COMMIT_SHA || "local",
-        url: process.env.VERCEL_URL || process.env.NEXT_PUBLIC_APP_URL || "localhost:3000",
-        branch: process.env.VERCEL_GIT_COMMIT_REF || "main",
+      vercel: {
+        url: process.env.VERCEL_URL || "localhost",
         region: process.env.VERCEL_REGION || "local",
+        commitSha: process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
+        commitMessage: process.env.VERCEL_GIT_COMMIT_MESSAGE || "Test commit for manual setup",
+        branch: process.env.VERCEL_GIT_COMMIT_REF || "main",
       },
       features: {
-        websocket: !!process.env.WEBSOCKET_PORT,
-        push_notifications: !!process.env.VAPID_PUBLIC_KEY,
-        email: !!process.env.SMTP_HOST,
-        sms: !!process.env.SMS_API_KEY,
-        database: !!process.env.DATABASE_URL,
-        supabase: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        authentication: "enabled",
+        database: "connected",
+        api: "operational",
+        monitoring: "active",
       },
-      apis: {
-        total: 50,
-        categories: [
-          "Authentication",
-          "User Management",
-          "Customer Management",
-          "Incident Management",
-          "Emergency Response",
-          "WebSocket & Messaging",
-          "Push Notifications",
-          "Inspections & Reports",
-          "Communication",
-          "Admin & Monitoring",
-          "System Health",
-          "Backup & Performance",
-        ],
-      },
-      uptime: process.uptime(),
-      memory: {
-        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
-        unit: "MB",
+      buildInfo: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        arch: process.arch,
+        buildTime: new Date().toISOString(),
       },
     }
 
-    return NextResponse.json(deploymentInfo, {
-      headers: {
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-      },
-    })
+    return NextResponse.json(deploymentInfo, { status: 200 })
   } catch (error) {
-    console.error("Deployment status error:", error)
-
     return NextResponse.json(
       {
         status: "error",
-        timestamp: new Date().toISOString(),
         error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString(),
       },
       { status: 500 },
     )

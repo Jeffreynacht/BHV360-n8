@@ -2,15 +2,47 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { Providers } from "@/components/providers"
-import { Toaster } from "@/components/ui/toaster"
+import { ThemeProvider } from "@/components/theme-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "BHV360 - BHV Beheer Gemaakt Eenvoudig",
-  description:
-    "Van papieren chaos naar digitale controle. BHV360 maakt veiligheidsmanagement eenvoudig, compliant en effectief voor elke organisatie.",
+  title: "BHV360 - Professionele BHV Software",
+  description: "Complete BHV software oplossing voor bedrijven. Plotkaarten, incidentenbeheer, training en meer.",
+  keywords: "BHV, software, plotkaart, incident, training, bedrijfshulpverlening",
+  authors: [{ name: "BHV360" }],
+  creator: "BHV360",
+  publisher: "BHV360",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL("https://bhv360.nl"),
+  openGraph: {
+    title: "BHV360 - Professionele BHV Software",
+    description: "Complete BHV software oplossing voor bedrijven",
+    url: "https://bhv360.nl",
+    siteName: "BHV360",
+    locale: "nl_NL",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BHV360 - Professionele BHV Software",
+    description: "Complete BHV software oplossing voor bedrijven",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
     generator: 'v0.app'
 }
 
@@ -20,12 +52,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="nl">
+    <html lang="nl" suppressHydrationWarning>
       <body className={inter.className}>
-        <Providers>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           {children}
-          <Toaster />
-        </Providers>
+        </ThemeProvider>
       </body>
     </html>
   )

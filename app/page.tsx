@@ -1,87 +1,48 @@
-"use client"
-
-import { useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import {
-  Shield,
-  Users,
-  MapPin,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Building,
-  Phone,
-  Mail,
-  ArrowRight,
-  Star,
-  Zap,
-  Target,
-} from "lucide-react"
-import Link from "next/link"
+import { CheckCircle, Shield, Users, Zap, Phone, Mail, MapPin, ArrowRight } from "lucide-react"
 
 export default function HomePage() {
-  const [activeFeature, setActiveFeature] = useState(0)
-
-  const features = [
-    {
-      icon: <MapPin className="h-8 w-8" />,
-      title: "Interactieve Plotkaarten",
-      description: "Digitale plattegronden met real-time locatie van BHV'ers en voorzieningen",
-      benefits: ["Snelle evacuatie", "Overzichtelijke weergave", "Mobile-first ontwerp"],
-    },
-    {
-      icon: <AlertTriangle className="h-8 w-8" />,
-      title: "Incident Management",
-      description: "Professioneel beheer van incidenten van melding tot afhandeling",
-      benefits: ["Gestructureerde afhandeling", "Automatische rapportage", "Compliance tracking"],
-    },
-    {
-      icon: <Users className="h-8 w-8" />,
-      title: "BHV Beheer",
-      description: "Complete administratie van BHV'ers, certificaten en roosters",
-      benefits: ["Certificaat tracking", "Automatische herinneringen", "Competentie matrix"],
-    },
-    {
-      icon: <Shield className="h-8 w-8" />,
-      title: "Compliance Dashboard",
-      description: "Real-time inzicht in compliance status en verbeterpunten",
-      benefits: ["Audit-ready rapporten", "Risico monitoring", "Actieplan beheer"],
-    },
-  ]
-
-  const stats = [
-    { number: "500+", label: "Tevreden Klanten", icon: <Building className="h-5 w-5" /> },
-    { number: "99.9%", label: "Uptime Garantie", icon: <CheckCircle className="h-5 w-5" /> },
-    { number: "24/7", label: "Support Beschikbaar", icon: <Clock className="h-5 w-5" /> },
-    { number: "< 2min", label: "Gemiddelde Response", icon: <Zap className="h-5 w-5" /> },
-  ]
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Shield className="h-6 w-6 text-white" />
+      <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <Shield className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">BHV360</h1>
-                <p className="text-xs text-gray-500">Professional BHV Software</p>
-              </div>
+              <span className="text-xl font-bold text-gray-900">BHV360</span>
             </div>
+            <nav className="hidden md:flex items-center space-x-8">
+              <Link href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">
+                Functies
+              </Link>
+              <Link href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">
+                Prijzen
+              </Link>
+              <Link href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors">
+                Contact
+              </Link>
+              <Link href="/demo" className="text-gray-600 hover:text-gray-900 transition-colors">
+                Demo
+              </Link>
+            </nav>
             <div className="flex items-center space-x-4">
               <Link href="/login">
                 <Button variant="outline" size="sm">
                   Inloggen
                 </Button>
               </Link>
-              <Link href="/demo">
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                  Demo Bekijken
+              <Link href="/register">
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700"
+                >
+                  Gratis Proberen
                 </Button>
               </Link>
             </div>
@@ -90,199 +51,260 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto text-center">
-          <Badge className="mb-6 bg-blue-100 text-blue-800 border-blue-200">
-            <Star className="h-3 w-3 mr-1" />
-            #1 BHV Software Nederland
-          </Badge>
-
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-            BHV Beheer
-            <span className="block text-blue-600">Gemaakt Eenvoudig</span>
-          </h1>
-
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Van papieren chaos naar digitale controle. BHV360 maakt veiligheidsmanagement eenvoudig, compliant en
-            effectief voor elke organisatie.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <Link href="/demo">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
-                Gratis Demo Starten
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/contact">
-              <Button variant="outline" size="lg" className="text-lg px-8 py-3 bg-transparent">
-                <Phone className="mr-2 h-5 w-5" />
-                Persoonlijke Demo
-              </Button>
-            </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="flex items-center justify-center mb-2">{stat.icon}</div>
-                <div className="text-2xl font-bold text-gray-900">{stat.number}</div>
-                <div className="text-sm text-gray-600">{stat.label}</div>
-              </div>
-            ))}
+      <section className="py-20 bg-gradient-to-br from-emerald-50 via-blue-50 to-cyan-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-4xl mx-auto">
+            <Badge className="mb-4 bg-gradient-to-r from-emerald-500 to-blue-600 text-white">
+              Professionele BHV Software
+            </Badge>
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+              Moderne BHV Software voor{" "}
+              <span className="bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                Veilige Werkplekken
+              </span>
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+              Beheer plotkaarten, coördineer BHV-ers en zorg voor optimale veiligheid met onze gebruiksvriendelijke
+              software.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/register">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white px-8 py-3"
+                >
+                  Start Gratis Trial
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+              <Link href="/demo">
+                <Button variant="outline" size="lg" className="px-8 py-3 bg-transparent">
+                  Bekijk Demo
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-white">
-        <div className="container mx-auto">
+      <section id="features" className="py-20 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-green-100 text-green-800 border-green-200">
-              <Target className="h-3 w-3 mr-1" />
-              Kernfunctionaliteiten
-            </Badge>
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Alles wat je nodig hebt voor professioneel BHV beheer
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Alles wat je nodig hebt voor BHV</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Een complete suite van tools die samenwerken om jouw veiligheidsprocessen te optimaliseren
+              Van plotkaarten tot incidentenbeheer - onze software ondersteunt alle aspecten van bedrijfshulpverlening.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              {features.map((feature, index) => (
-                <Card
-                  key={index}
-                  className={`cursor-pointer transition-all duration-300 ${
-                    activeFeature === index ? "border-blue-500 shadow-lg bg-blue-50" : "hover:border-gray-300"
-                  }`}
-                  onClick={() => setActiveFeature(index)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center space-x-3">
-                      <div
-                        className={`p-2 rounded-lg ${
-                          activeFeature === index ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"
-                        }`}
-                      >
-                        {feature.icon}
-                      </div>
-                      <CardTitle className="text-lg">{feature.title}</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-base mb-3">{feature.description}</CardDescription>
-                    <div className="flex flex-wrap gap-2">
-                      {feature.benefits.map((benefit, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
-                          {benefit}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-blue-50">
+              <CardHeader>
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-lg flex items-center justify-center mb-4">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <CardTitle>Interactieve Plotkaarten</CardTitle>
+                <CardDescription>
+                  Maak en beheer professionele plotkaarten met alle veiligheidsvoorzieningen.
+                </CardDescription>
+              </CardHeader>
+            </Card>
 
-            <div className="lg:pl-8">
-              <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
-                <CardHeader>
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="p-3 bg-blue-600 rounded-lg text-white">{features[activeFeature].icon}</div>
-                    <div>
-                      <CardTitle className="text-xl text-blue-900">{features[activeFeature].title}</CardTitle>
-                      <CardDescription className="text-blue-700">Live Preview</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-white rounded-lg p-6 shadow-inner">
-                    <div className="space-y-4">
-                      <div className="h-4 bg-blue-200 rounded animate-pulse"></div>
-                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-4 bg-blue-100 rounded animate-pulse"></div>
-                      <div className="grid grid-cols-3 gap-2 mt-6">
-                        <div className="h-8 bg-green-100 rounded"></div>
-                        <div className="h-8 bg-yellow-100 rounded"></div>
-                        <div className="h-8 bg-blue-100 rounded"></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4 text-center">
-                    <Link href="/demo">
-                      <Button className="bg-blue-600 hover:bg-blue-700">
-                        Interactieve Demo
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50">
+              <CardHeader>
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-lg flex items-center justify-center mb-4">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <CardTitle>BHV-er Beheer</CardTitle>
+                <CardDescription>Coördineer je BHV-team, beheer certificeringen en plan trainingen.</CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-cyan-50 to-emerald-50">
+              <CardHeader>
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-lg flex items-center justify-center mb-4">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+                <CardTitle>Real-time Monitoring</CardTitle>
+                <CardDescription>Monitor veiligheidsvoorzieningen en ontvang automatische meldingen.</CardDescription>
+              </CardHeader>
+            </Card>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
-        <div className="container mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6">Klaar om te starten met professioneel BHV beheer?</h2>
-          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Sluit je aan bij honderden organisaties die hun veiligheidsprocessen hebben geoptimaliseerd met BHV360
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/demo">
-              <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
-                Gratis Demo Starten
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/contact">
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-lg px-8 py-3 border-white text-white hover:bg-white hover:text-blue-600 bg-transparent"
-              >
-                <Mail className="mr-2 h-5 w-5" />
-                Contact Opnemen
-              </Button>
-            </Link>
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Transparante Prijzen</h2>
+            <p className="text-xl text-gray-600">Kies het plan dat bij jouw organisatie past</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Card className="border-2 border-gray-200 shadow-lg">
+              <CardHeader className="text-center pb-8">
+                <CardTitle className="text-2xl">Starter</CardTitle>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold text-gray-900">€49</span>
+                  <span className="text-gray-600">/maand</span>
+                </div>
+                <CardDescription className="mt-2">Perfect voor kleine organisaties</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
+                    <span className="text-gray-700">Tot 50 werknemers</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
+                    <span className="text-gray-700">Basis plotkaarten</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
+                    <span className="text-gray-700">Email ondersteuning</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
+                    <span className="text-gray-700">Standaard rapportages</span>
+                  </li>
+                </ul>
+                <Button className="w-full bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700">
+                  Start Gratis Trial
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-emerald-500 shadow-xl relative">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <Badge className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white px-4 py-1">
+                  Meest Populair
+                </Badge>
+              </div>
+              <CardHeader className="text-center pb-8">
+                <CardTitle className="text-2xl">Professional</CardTitle>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold text-gray-900">€149</span>
+                  <span className="text-gray-600">/maand</span>
+                </div>
+                <CardDescription className="mt-2">Voor groeiende organisaties</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
+                    <span className="text-gray-700">Onbeperkt werknemers</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
+                    <span className="text-gray-700">Geavanceerde plotkaarten</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
+                    <span className="text-gray-700">Telefoon & email support</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
+                    <span className="text-gray-700">API integraties</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
+                    <span className="text-gray-700">Aangepaste rapportages</span>
+                  </li>
+                </ul>
+                <Button className="w-full bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700">
+                  Start Gratis Trial
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="py-20 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Neem Contact Op</h2>
+            <p className="text-xl text-gray-600">Vragen? We helpen je graag verder</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <Card className="text-center border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-blue-50">
+              <CardHeader>
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Phone className="w-6 h-6 text-white" />
+                </div>
+                <CardTitle>Telefoon</CardTitle>
+                <CardDescription>
+                  <a href="tel:033-461-6303" className="text-emerald-600 hover:text-emerald-700">
+                    033 461 6303
+                  </a>
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="text-center border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50">
+              <CardHeader>
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Mail className="w-6 h-6 text-white" />
+                </div>
+                <CardTitle>Email</CardTitle>
+                <CardDescription>
+                  <a href="mailto:info@bhv360.nl" className="text-emerald-600 hover:text-emerald-700">
+                    info@bhv360.nl
+                  </a>
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="text-center border-0 shadow-lg bg-gradient-to-br from-cyan-50 to-emerald-50">
+              <CardHeader>
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <MapPin className="w-6 h-6 text-white" />
+                </div>
+                <CardTitle>Adres</CardTitle>
+                <CardDescription>
+                  Fokkerstraat 16
+                  <br />
+                  3833 LD Leusden
+                </CardDescription>
+              </CardHeader>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 px-4">
-        <div className="container mx-auto">
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-white" />
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-lg font-bold">BHV360</span>
+                <span className="text-xl font-bold">BHV360</span>
               </div>
-              <p className="text-gray-400 text-sm">Professionele BHV software voor moderne organisaties</p>
+              <p className="text-gray-400">Professionele BHV software voor veilige werkplekken.</p>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-3">Product</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
+              <h3 className="font-semibold mb-4">Product</h3>
+              <ul className="space-y-2 text-gray-400">
                 <li>
-                  <Link href="/features" className="hover:text-white">
-                    Functionaliteiten
+                  <Link href="#features" className="hover:text-white transition-colors">
+                    Functies
                   </Link>
                 </li>
                 <li>
-                  <Link href="/pricing" className="hover:text-white">
+                  <Link href="#pricing" className="hover:text-white transition-colors">
                     Prijzen
                   </Link>
                 </li>
                 <li>
-                  <Link href="/demo" className="hover:text-white">
+                  <Link href="/demo" className="hover:text-white transition-colors">
                     Demo
                   </Link>
                 </li>
@@ -290,49 +312,33 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-3">Ondersteuning</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
+              <h3 className="font-semibold mb-4">Ondersteuning</h3>
+              <ul className="space-y-2 text-gray-400">
                 <li>
-                  <Link href="/help" className="hover:text-white">
-                    Hulp Center
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className="hover:text-white">
+                  <Link href="#contact" className="hover:text-white transition-colors">
                     Contact
                   </Link>
                 </li>
                 <li>
-                  <Link href="/status" className="hover:text-white">
-                    Status
+                  <Link href="/help" className="hover:text-white transition-colors">
+                    Help Center
                   </Link>
                 </li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-3">Bedrijf</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li>
-                  <Link href="/about" className="hover:text-white">
-                    Over Ons
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/privacy" className="hover:text-white">
-                    Privacy
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/terms" className="hover:text-white">
-                    Voorwaarden
-                  </Link>
-                </li>
-              </ul>
+              <h3 className="font-semibold mb-4">Contact</h3>
+              <div className="space-y-2 text-gray-400">
+                <p>Fokkerstraat 16</p>
+                <p>3833 LD Leusden</p>
+                <p>033 461 6303</p>
+                <p>info@bhv360.nl</p>
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
             <p>&copy; 2024 BHV360. Alle rechten voorbehouden.</p>
           </div>
         </div>

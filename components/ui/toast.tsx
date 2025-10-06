@@ -100,6 +100,22 @@ type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>
 
 type ToastActionElement = React.ReactElement<typeof ToastAction>
 
+// Toast function for programmatic usage
+const toast = ({
+  title,
+  description,
+  variant = "default",
+  ...props
+}: {
+  title?: string
+  description?: string
+  variant?: "default" | "destructive"
+  [key: string]: any
+}) => {
+  // This is a simple implementation - in a real app you'd integrate with a toast system
+  console.log("Toast:", { title, description, variant, ...props })
+}
+
 export {
   type ToastProps,
   type ToastActionElement,
@@ -110,4 +126,5 @@ export {
   ToastDescription,
   ToastClose,
   ToastAction,
+  toast,
 }

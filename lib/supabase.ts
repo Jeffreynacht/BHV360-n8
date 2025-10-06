@@ -1,53 +1,54 @@
 import { createClient } from "@supabase/supabase-js"
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Jeffrey's BHV360 Production Configuration
+const supabaseUrl = "https://ybxmvuzgqevqpusimgmm.supabase.co"
+const supabaseAnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlieG12dXpncWV2cXB1c2ltZ21tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NDk4NDEsImV4cCI6MjA2NjMyNTg0MX0.MFB7ytqPId2c3HEm5KyK2RFZCO-cBrpmiO-FwHJXSv4"
 
-if (!url || !anon) {
-  throw new Error("Missing Supabase env vars (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)")
+// Veiligheidscheck
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error("❌ Missing Supabase environment variables")
 }
 
-export const supabase = createClient(url, anon, {
+// Client-side Supabase client (singleton pattern)
+let supabaseClient: any = null
+
+export const supabase = (() => {
+  if (!supabaseClient) {
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+      db: {
+        schema: "public",
+      },
+      global: {
+        headers: {
+          "X-Client-Info": "bhv360-jeffrey-production-v1.0",
+        },
+      },
+    })
+  }
+  return supabaseClient
+})()
+
+// Server-side admin client
+const supabaseServiceKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlieG12dXpncWV2cXB1c2ltZ21tIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDc0OTg0MSwiZXhwIjoyMDY2MzI1ODQxfQ.9sDOiFEbnx4hn69ay6P9J-YTaC_2DTBWiFSGRDul7dI"
+
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
+    autoRefreshToken: false,
+    persistSession: false,
   },
   db: {
     schema: "public",
   },
-  global: {
-    headers: {
-      "X-Client-Info": "bhv360",
-    },
-  },
 })
-
-// Server-side client for admin operations
-export const createServerClient = () => {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!serviceRoleKey) {
-    console.warn("SUPABASE_SERVICE_ROLE_KEY not found, using anon key")
-    return supabase
-  }
-
-  return createClient(url, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-    db: {
-      schema: "public",
-    },
-    global: {
-      headers: { "X-Client-Info": "bhv360-server" },
-    },
-  })
-}
-
-// Export createClient for direct use in other modules
-export { createClient }
 
 // Helper functions
 export async function testSupabaseConnection() {

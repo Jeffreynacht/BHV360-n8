@@ -1,383 +1,469 @@
-import { toast } from "@/hooks/use-toast"
-
-export interface NotificationOptions {
-  title: string
-  body: string
-  icon?: string
-  badge?: string
-  tag?: string
-  requireInteraction?: boolean
-  actions?: NotificationAction[]
-  data?: any
-  silent?: boolean
-  vibrate?: number[]
+export interface NotificationChannel {
+  type: "push" | "email" | "sms" | "webhook"
+  enabled: boolean
+  config: Record<string, any>
 }
 
-export interface NotificationAction {
-  action: string
+export interface NotificationPreferences {
+  userId: string
+  channels: NotificationChannel[]
+  emergencyBypass: boolean // Bypass Do Not Disturb for emergencies
+  quietHours: {
+    enabled: boolean
+    start: string // HH:MM format
+    end: string
+  }
+  categories: {
+    emergency: boolean
+    incidents: boolean
+    training: boolean
+    maintenance: boolean
+    system: boolean
+  }
+}
+
+export interface NotificationTemplate {
+  id: string
+  name: string
+  category: "emergency" | "incident" | "training" | "maintenance" | "system"
+  channels: string[]
+  subject: string
+  body: string
+  priority: "low" | "normal" | "high" | "critical"
+  variables: string[] // Template variables like {{userName}}, {{location}}
+}
+
+export interface NotificationPayload {
+  id: string
+  templateId?: string
+  userId: string
   title: string
-  icon?: string
+  body: string
+  category: string
+  priority: "low" | "normal" | "high" | "critical"
+  data?: Record<string, any>
+  scheduledFor?: Date
+  expiresAt?: Date
+  channels?: string[]
 }
 
 export class NotificationService {
   private static instance: NotificationService
-  private registration: ServiceWorkerRegistration | null = null
-  private vapidPublicKey: string
-
-  private constructor() {
-    this.vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ""
-    if (!this.vapidPublicKey) {
-      console.warn("VAPID public key not found. Push notifications will not work.")
-    }
+  private vapidKeys = {
+    publicKey:
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
+      "BLBz-HXFSjHdJyFjKxfFHPGeGgHgJP_zLNYOFQJZMECJQqLxK8RuOLCFxUXiL_LQ-0i8qQXYqKKLEHeAGZ8hDHo",
+    privateKey: process.env.VAPID_PRIVATE_KEY || "3KzvKasA2SoCxsp0iIG_o_0q1WzVX4vUvCQsRjfEZqc",
   }
 
-  public static getInstance(): NotificationService {
+  static getInstance(): NotificationService {
     if (!NotificationService.instance) {
       NotificationService.instance = new NotificationService()
     }
     return NotificationService.instance
   }
 
-  public async initialize(): Promise<boolean> {
-    if (!("serviceWorker" in navigator) || !("Notification" in window)) {
-      console.warn("Service Worker or Notifications not supported")
-      return false
+  // Send notification via all enabled channels
+  async sendNotification(payload: NotificationPayload): Promise<{
+    success: boolean
+    results: { channel: string; success: boolean; error?: string }[]
+  }> {
+    const preferences = await this.getUserPreferences(payload.userId)
+    const results: { channel: string; success: boolean; error?: string }[] = []
+
+    // Check if notification should be sent based on preferences
+    if (!this.shouldSendNotification(payload, preferences)) {
+      return { success: false, results: [{ channel: "all", success: false, error: "Blocked by user preferences" }] }
     }
 
-    try {
-      this.registration = await navigator.serviceWorker.register("/service-worker.js")
-      console.log("Service Worker registered successfully")
-      return true
-    } catch (error) {
-      console.error("Service Worker registration failed:", error)
-      return false
+    // Determine channels to use
+    const channels = payload.channels || preferences.channels.filter((c) => c.enabled).map((c) => c.type)
+
+    // Send via each channel
+    for (const channelType of channels) {
+      try {
+        switch (channelType) {
+          case "push":
+            await this.sendPushNotification(payload, preferences)
+            results.push({ channel: "push", success: true })
+            break
+          case "email":
+            await this.sendEmailNotification(payload, preferences)
+            results.push({ channel: "email", success: true })
+            break
+          case "sms":
+            await this.sendSMSNotification(payload, preferences)
+            results.push({ channel: "sms", success: true })
+            break
+          case "webhook":
+            await this.sendWebhookNotification(payload, preferences)
+            results.push({ channel: "webhook", success: true })
+            break
+        }
+      } catch (error) {
+        results.push({
+          channel: channelType,
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        })
+      }
     }
-  }
 
-  public async requestPermission(): Promise<NotificationPermission> {
-    if (!("Notification" in window)) {
-      console.warn("Notifications not supported")
-      return "denied"
-    }
+    // Log notification
+    await this.logNotification(payload, results)
 
-    if (Notification.permission === "granted") {
-      return "granted"
-    }
-
-    if (Notification.permission === "denied") {
-      return "denied"
-    }
-
-    const permission = await Notification.requestPermission()
-    return permission
-  }
-
-  public async subscribeToPush(): Promise<PushSubscription | null> {
-    if (!this.registration || !this.vapidPublicKey) {
-      console.error("Service Worker not registered or VAPID key missing")
-      return null
-    }
-
-    try {
-      const subscription = await this.registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey),
-      })
-
-      // Send subscription to server
-      await fetch("/api/push/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(subscription),
-      })
-
-      return subscription
-    } catch (error) {
-      console.error("Push subscription failed:", error)
-      return null
+    return {
+      success: results.some((r) => r.success),
+      results,
     }
   }
 
-  public async showNotification(options: NotificationOptions): Promise<void> {
-    const permission = await this.requestPermission()
-
-    if (permission !== "granted") {
-      // Fallback to toast notification
-      toast({
-        title: options.title,
-        description: options.body,
-        duration: 5000,
-      })
-      return
+  // Send push notification
+  private async sendPushNotification(
+    payload: NotificationPayload,
+    preferences: NotificationPreferences,
+  ): Promise<void> {
+    const subscription = await this.getUserPushSubscription(payload.userId)
+    if (!subscription) {
+      throw new Error("No push subscription found for user")
     }
 
-    if (!this.registration) {
-      // Fallback to browser notification
-      new Notification(options.title, {
-        body: options.body,
-        icon: options.icon || "/images/bhv360-logo.png",
-        badge: options.badge || "/images/bhv360-logo.png",
-        tag: options.tag,
-        requireInteraction: options.requireInteraction || false,
-        silent: options.silent || false,
-        vibrate: options.vibrate || [200, 100, 200],
-        data: options.data,
-      })
-      return
+    const notificationPayload = {
+      title: payload.title,
+      body: payload.body,
+      icon: "/images/bhv360-logo.png",
+      badge: "/images/bhv360-logo.png",
+      data: {
+        id: payload.id,
+        category: payload.category,
+        priority: payload.priority,
+        url: this.getNotificationUrl(payload),
+        timestamp: new Date().toISOString(),
+        ...payload.data,
+      },
+      actions: this.getNotificationActions(payload),
+      requireInteraction: payload.priority === "critical",
+      silent: false,
+      tag: payload.category,
+      renotify: payload.priority === "critical",
+      vibrate: this.getVibrationPattern(payload.priority),
     }
 
-    // Use Service Worker notification
-    await this.registration.showNotification(options.title, {
-      body: options.body,
-      icon: options.icon || "/images/bhv360-logo.png",
-      badge: options.badge || "/images/bhv360-logo.png",
-      tag: options.tag,
-      requireInteraction: options.requireInteraction || false,
-      actions: options.actions || [],
-      data: options.data,
-      silent: options.silent || false,
-      vibrate: options.vibrate || [200, 100, 200],
+    // Use Web Push library
+    const webpush = await import("web-push")
+    webpush.setVapidDetails("mailto:info@bhv360.nl", this.vapidKeys.publicKey, this.vapidKeys.privateKey)
+
+    await webpush.sendNotification(subscription, JSON.stringify(notificationPayload))
+  }
+
+  // Send email notification
+  private async sendEmailNotification(
+    payload: NotificationPayload,
+    preferences: NotificationPreferences,
+  ): Promise<void> {
+    const user = await this.getUser(payload.userId)
+    if (!user?.email) {
+      throw new Error("No email address found for user")
+    }
+
+    const template = await this.getEmailTemplate(payload)
+    const emailContent = this.processTemplate(template, payload, user)
+
+    const emailPayload = {
+      to: user.email,
+      subject: emailContent.subject,
+      html: emailContent.html,
+      text: emailContent.text,
+      priority: payload.priority,
+      headers: {
+        "X-BHV360-Notification-ID": payload.id,
+        "X-BHV360-Category": payload.category,
+        "X-BHV360-Priority": payload.priority,
+      },
+    }
+
+    await fetch("/api/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(emailPayload),
     })
   }
 
-  public async sendEmergencyAlert(message: string, location?: string): Promise<void> {
-    const emergencyOptions: NotificationOptions = {
-      title: "🚨 NOODMELDING - BHV360",
-      body: `${message}${location ? ` - Locatie: ${location}` : ""}`,
-      icon: "/images/emergency-alert.png",
-      badge: "/images/bhv360-logo.png",
-      tag: "emergency-alert",
-      requireInteraction: true,
-      vibrate: [300, 100, 300, 100, 300],
-      actions: [
-        {
-          action: "acknowledge",
-          title: "Bevestigen",
-          icon: "/images/check-icon.png",
-        },
-        {
-          action: "respond",
-          title: "Reageren",
-          icon: "/images/respond-icon.png",
-        },
+  // Send SMS notification
+  private async sendSMSNotification(payload: NotificationPayload, preferences: NotificationPreferences): Promise<void> {
+    const user = await this.getUser(payload.userId)
+    if (!user?.phone) {
+      throw new Error("No phone number found for user")
+    }
+
+    const smsContent = this.formatSMSContent(payload)
+
+    const smsPayload = {
+      to: user.phone,
+      message: smsContent,
+      priority: payload.priority,
+    }
+
+    await fetch("/api/sms/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(smsPayload),
+    })
+  }
+
+  // Send webhook notification
+  private async sendWebhookNotification(
+    payload: NotificationPayload,
+    preferences: NotificationPreferences,
+  ): Promise<void> {
+    const webhookConfig = preferences.channels.find((c) => c.type === "webhook")?.config
+    if (!webhookConfig?.url) {
+      throw new Error("No webhook URL configured")
+    }
+
+    const webhookPayload = {
+      event: "notification",
+      notification: payload,
+      timestamp: new Date().toISOString(),
+      signature: this.generateWebhookSignature(payload),
+    }
+
+    await fetch(webhookConfig.url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-BHV360-Signature": webhookPayload.signature,
+      },
+      body: JSON.stringify(webhookPayload),
+    })
+  }
+
+  // Check if notification should be sent
+  private shouldSendNotification(payload: NotificationPayload, preferences: NotificationPreferences): boolean {
+    // Check category preferences
+    if (!preferences.categories[payload.category as keyof typeof preferences.categories]) {
+      return false
+    }
+
+    // Check quiet hours (unless emergency bypass is enabled)
+    if (preferences.quietHours.enabled && !preferences.emergencyBypass) {
+      const now = new Date()
+      const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`
+
+      if (currentTime >= preferences.quietHours.start && currentTime <= preferences.quietHours.end) {
+        // Allow critical notifications during quiet hours
+        return payload.priority === "critical"
+      }
+    }
+
+    return true
+  }
+
+  // Get notification actions based on category
+  private getNotificationActions(payload: NotificationPayload): any[] {
+    switch (payload.category) {
+      case "emergency":
+        return [
+          { action: "acknowledge", title: "✅ Bevestigen", icon: "/icons/check.png" },
+          { action: "respond", title: "🚨 Reageren", icon: "/icons/emergency.png" },
+        ]
+      case "incident":
+        return [
+          { action: "view", title: "👁️ Bekijken", icon: "/icons/view.png" },
+          { action: "assign", title: "👤 Toewijzen", icon: "/icons/assign.png" },
+        ]
+      case "training":
+        return [
+          { action: "enroll", title: "📚 Inschrijven", icon: "/icons/training.png" },
+          { action: "schedule", title: "📅 Plannen", icon: "/icons/calendar.png" },
+        ]
+      default:
+        return [{ action: "view", title: "👁️ Bekijken", icon: "/icons/view.png" }]
+    }
+  }
+
+  // Get vibration pattern based on priority
+  private getVibrationPattern(priority: string): number[] {
+    switch (priority) {
+      case "critical":
+        return [200, 100, 200, 100, 200, 100, 200] // Urgent pattern
+      case "high":
+        return [100, 50, 100, 50, 100] // Important pattern
+      case "normal":
+        return [100, 50, 100] // Standard pattern
+      default:
+        return [100] // Simple buzz
+    }
+  }
+
+  // Get notification URL for deep linking
+  private getNotificationUrl(payload: NotificationPayload): string {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://bhv360.vercel.app"
+
+    switch (payload.category) {
+      case "emergency":
+        return `${baseUrl}/incidents/${payload.data?.incidentId || "emergency"}`
+      case "incident":
+        return `${baseUrl}/incidents/${payload.data?.incidentId}`
+      case "training":
+        return `${baseUrl}/training/${payload.data?.trainingId}`
+      default:
+        return `${baseUrl}/notifications/${payload.id}`
+    }
+  }
+
+  // Process email template with variables
+  private processTemplate(
+    template: any,
+    payload: NotificationPayload,
+    user: any,
+  ): { subject: string; html: string; text: string } {
+    const variables = {
+      userName: user.name,
+      userEmail: user.email,
+      title: payload.title,
+      body: payload.body,
+      category: payload.category,
+      priority: payload.priority,
+      timestamp: new Date().toLocaleString("nl-NL"),
+      appUrl: process.env.NEXT_PUBLIC_APP_URL,
+      ...payload.data,
+    }
+
+    let subject = template.subject
+    let html = template.html
+    let text = template.text
+
+    // Replace variables
+    Object.entries(variables).forEach(([key, value]) => {
+      const placeholder = `{{${key}}}`
+      subject = subject.replace(new RegExp(placeholder, "g"), value)
+      html = html.replace(new RegExp(placeholder, "g"), value)
+      text = text.replace(new RegExp(placeholder, "g"), value)
+    })
+
+    return { subject, html, text }
+  }
+
+  // Format SMS content
+  private formatSMSContent(payload: NotificationPayload): string {
+    const prefix = payload.priority === "critical" ? "🚨 URGENT" : "📢 BHV360"
+    return `${prefix}: ${payload.title}\n\n${payload.body}\n\nTijd: ${new Date().toLocaleString("nl-NL")}`
+  }
+
+  // Generate webhook signature
+  private generateWebhookSignature(payload: NotificationPayload): string {
+    // In production, use proper HMAC signature
+    return `sha256=${Buffer.from(JSON.stringify(payload)).toString("base64")}`
+  }
+
+  // Get user preferences (mock implementation)
+  private async getUserPreferences(userId: string): Promise<NotificationPreferences> {
+    // In production, fetch from database
+    return {
+      userId,
+      channels: [
+        { type: "push", enabled: true, config: {} },
+        { type: "email", enabled: true, config: {} },
       ],
-      data: {
-        type: "emergency",
-        timestamp: new Date().toISOString(),
-        location: location,
+      emergencyBypass: true,
+      quietHours: {
+        enabled: true,
+        start: "22:00",
+        end: "07:00",
+      },
+      categories: {
+        emergency: true,
+        incidents: true,
+        training: true,
+        maintenance: true,
+        system: false,
       },
     }
+  }
 
-    await this.showNotification(emergencyOptions)
+  // Get user push subscription (mock implementation)
+  private async getUserPushSubscription(userId: string): Promise<any> {
+    // In production, fetch from database
+    const stored = localStorage.getItem(`push_subscription_${userId}`)
+    return stored ? JSON.parse(stored) : null
+  }
 
-    // Also send to server for logging
-    try {
-      await fetch("/api/emergency/alert", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message,
-          location,
-          timestamp: new Date().toISOString(),
-        }),
-      })
-    } catch (error) {
-      console.error("Failed to log emergency alert:", error)
+  // Get user data (mock implementation)
+  private async getUser(userId: string): Promise<any> {
+    // In production, fetch from database
+    return {
+      id: userId,
+      name: "Test Gebruiker",
+      email: "test@bhv360.nl",
+      phone: "+31612345678",
     }
   }
 
-  public async sendBHVAlert(bhvMember: string, incident: string, location: string): Promise<void> {
-    const bhvOptions: NotificationOptions = {
-      title: `🚨 BHV Oproep - ${bhvMember}`,
-      body: `Incident: ${incident} - Locatie: ${location}`,
-      icon: "/images/bhv-helmet.png",
-      badge: "/images/bhv360-logo.png",
-      tag: "bhv-alert",
-      requireInteraction: true,
-      vibrate: [200, 100, 200, 100, 200],
-      actions: [
-        {
-          action: "accept",
-          title: "Accepteren",
-          icon: "/images/accept-icon.png",
-        },
-        {
-          action: "decline",
-          title: "Afwijzen",
-          icon: "/images/decline-icon.png",
-        },
-      ],
-      data: {
-        type: "bhv-alert",
-        bhvMember,
-        incident,
-        location,
-        timestamp: new Date().toISOString(),
-      },
+  // Get email template (mock implementation)
+  private async getEmailTemplate(payload: NotificationPayload): Promise<any> {
+    return {
+      subject: "🚨 BHV360: {{title}}",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: #dc2626; color: white; padding: 20px; text-align: center;">
+            <h1>🚨 BHV360 Notificatie</h1>
+          </div>
+          <div style="padding: 20px;">
+            <h2>{{title}}</h2>
+            <p>{{body}}</p>
+            <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 15px 0;">
+              <p><strong>Categorie:</strong> {{category}}</p>
+              <p><strong>Prioriteit:</strong> {{priority}}</p>
+              <p><strong>Tijd:</strong> {{timestamp}}</p>
+            </div>
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="{{appUrl}}" style="background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                Open BHV360 App
+              </a>
+            </div>
+          </div>
+        </div>
+      `,
+      text: "BHV360 Notificatie: {{title}}\n\n{{body}}\n\nCategorie: {{category}}\nPrioriteit: {{priority}}\nTijd: {{timestamp}}",
+    }
+  }
+
+  // Log notification for audit trail
+  private async logNotification(payload: NotificationPayload, results: any[]): Promise<void> {
+    const log = {
+      id: payload.id,
+      userId: payload.userId,
+      category: payload.category,
+      priority: payload.priority,
+      channels: results.map((r) => r.channel),
+      success: results.some((r) => r.success),
+      timestamp: new Date().toISOString(),
+      results,
     }
 
-    await this.showNotification(bhvOptions)
+    // In production, save to database
+    console.log("Notification sent:", log)
   }
 
-  public async sendEvacuationAlert(building: string, exitRoutes: string[]): Promise<void> {
-    const evacuationOptions: NotificationOptions = {
-      title: "🚨 EVACUATIE ALARM",
-      body: `Evacueer ${building} onmiddellijk. Gebruik uitgangen: ${exitRoutes.join(", ")}`,
-      icon: "/images/evacuation-arrow-green.png",
-      badge: "/images/bhv360-logo.png",
-      tag: "evacuation-alert",
-      requireInteraction: true,
-      vibrate: [500, 200, 500, 200, 500],
-      actions: [
-        {
-          action: "evacuating",
-          title: "Aan het evacueren",
-          icon: "/images/evacuating-icon.png",
-        },
-        {
-          action: "safe",
-          title: "Veilig buiten",
-          icon: "/images/safe-icon.png",
-        },
-      ],
-      data: {
-        type: "evacuation",
-        building,
-        exitRoutes,
-        timestamp: new Date().toISOString(),
-      },
+  // Bulk send notifications
+  async sendBulkNotifications(payloads: NotificationPayload[]): Promise<void> {
+    const promises = payloads.map((payload) => this.sendNotification(payload))
+    await Promise.allSettled(promises)
+  }
+
+  // Schedule notification
+  async scheduleNotification(payload: NotificationPayload, scheduledFor: Date): Promise<void> {
+    const delay = scheduledFor.getTime() - Date.now()
+
+    if (delay <= 0) {
+      await this.sendNotification(payload)
+    } else {
+      setTimeout(async () => {
+        await this.sendNotification(payload)
+      }, delay)
     }
-
-    await this.showNotification(evacuationOptions)
-  }
-
-  public async sendMaintenanceReminder(equipment: string, dueDate: string): Promise<void> {
-    const maintenanceOptions: NotificationOptions = {
-      title: "🔧 Onderhoud Herinnering",
-      body: `${equipment} heeft onderhoud nodig voor ${dueDate}`,
-      icon: "/images/maintenance-icon.png",
-      badge: "/images/bhv360-logo.png",
-      tag: "maintenance-reminder",
-      requireInteraction: false,
-      actions: [
-        {
-          action: "schedule",
-          title: "Inplannen",
-          icon: "/images/calendar-icon.png",
-        },
-        {
-          action: "completed",
-          title: "Voltooid",
-          icon: "/images/check-icon.png",
-        },
-      ],
-      data: {
-        type: "maintenance",
-        equipment,
-        dueDate,
-        timestamp: new Date().toISOString(),
-      },
-    }
-
-    await this.showNotification(maintenanceOptions)
-  }
-
-  public async sendTrainingReminder(training: string, date: string): Promise<void> {
-    const trainingOptions: NotificationOptions = {
-      title: "📚 Training Herinnering",
-      body: `BHV Training "${training}" op ${date}`,
-      icon: "/images/training-icon.png",
-      badge: "/images/bhv360-logo.png",
-      tag: "training-reminder",
-      requireInteraction: false,
-      actions: [
-        {
-          action: "confirm",
-          title: "Bevestigen",
-          icon: "/images/confirm-icon.png",
-        },
-        {
-          action: "reschedule",
-          title: "Herplannen",
-          icon: "/images/reschedule-icon.png",
-        },
-      ],
-      data: {
-        type: "training",
-        training,
-        date,
-        timestamp: new Date().toISOString(),
-      },
-    }
-
-    await this.showNotification(trainingOptions)
-  }
-
-  private urlBase64ToUint8Array(base64String: string): Uint8Array {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
-    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/")
-
-    const rawData = window.atob(base64)
-    const outputArray = new Uint8Array(rawData.length)
-
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i)
-    }
-    return outputArray
-  }
-
-  public async clearAllNotifications(): Promise<void> {
-    if (!this.registration) return
-
-    const notifications = await this.registration.getNotifications()
-    notifications.forEach((notification) => notification.close())
-  }
-
-  public async clearNotificationsByTag(tag: string): Promise<void> {
-    if (!this.registration) return
-
-    const notifications = await this.registration.getNotifications({ tag })
-    notifications.forEach((notification) => notification.close())
-  }
-
-  public isSupported(): boolean {
-    return "serviceWorker" in navigator && "Notification" in window && "PushManager" in window
-  }
-
-  public getPermissionStatus(): NotificationPermission {
-    return Notification.permission
   }
 }
 
-// Export singleton instance
 export const notificationService = NotificationService.getInstance()
-
-// Export utility functions
-export const showToast = (title: string, description: string, duration = 5000) => {
-  toast({
-    title,
-    description,
-    duration,
-  })
-}
-
-export const showErrorToast = (message: string) => {
-  toast({
-    title: "Fout",
-    description: message,
-    variant: "destructive",
-    duration: 5000,
-  })
-}
-
-export const showSuccessToast = (message: string) => {
-  toast({
-    title: "Gelukt",
-    description: message,
-    duration: 3000,
-  })
-}
